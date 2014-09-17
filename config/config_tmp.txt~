@@ -1,0 +1,139 @@
+# Length of the main window
+INIT_SIZE_X : 750
+
+# Indentation width of the text in the TextEdit
+TEXT_INDENT : 50
+
+# The mark to put in front of the temporary files' name
+TMP_FILE_MARK : ~
+
+# Margin of the text edit
+TEXT_MARGIN : 50
+
+# Name of the Font in the TextEdit
+TEXT_FONT : Times
+
+# Allow or not the autosave
+AUTOSAVE : False
+
+# Default directory when opening or saving as
+DLT_OPEN_SAVE_SITE : ~
+
+# Time in seconds between each autosave
+AUTOSAVE_TEMPO : 300.0
+
+# Height of the interline in the TextEdit
+TEXT_LINE_HEIGHT : 100
+
+# Time it leaves a message into the status bar (put 0 if it is indefinitely)
+TIME_STATUS_MESSAGE : 3000
+
+# Alignment in the TextEdit ('justify', 'right', 'left' or 'center')
+TEXT_ALIGNMENT : justify
+
+# Is True if you want tot save the meta-data file, while saving each file.
+DO_METADATA : True
+
+# Path to the external software where to send the file.
+EXTERNAL_SOFT_PATH : 
+
+# Size of the text in the TextEdit
+TEXT_SIZE : 20
+
+# Height of the main window
+INIT_SIZE_Y : 500
+
+# Maximum size for the central widget (if negative, no limit)
+CENTRAL_MAX_SIZE : -1
+
+### Sub-constants : FileManagement ###
+
+# The path to the last-opened-files file
+FileManagement.LAST_FILES_FILE_PATH : ./config/last_files.txt
+
+# The path to the auto-correction file
+FileManagement.AUROCORRECTION_FILE_PATH : ./config/autocorrection.txt
+
+### Sub-constants : FileImport ###
+
+# The command to open libreoffice (in Linux, just 'libreoffice' should be enough
+FileImport.LIBREOFFICE_COMMAND : libreoffice
+
+### Sub-constants : TextFormats ###
+
+# The string that will represent the separators
+TextFormats.SEPARATOR_MOTIF : ***
+
+# The style of the code block
+TextFormats.CODE_STYLE : font_size 20 | font_name Courier
+
+# The style of the separator (for the different options see TEFormatClass description)
+TextFormats.SEPARATOR_STYLE : alignment center
+
+# The style of the header1
+TextFormats.HEADER1_STYLE : font_size 30 | char_style bold | alignment center
+
+# The style of the header3
+TextFormats.HEADER3_STYLE : font_size 20 | char_style bold
+
+# The style of the emphasize style (for the different options see TEFormatClass description)
+TextFormats.EMPHASIZE_STYLE : char_style italic
+
+# The style of the header2
+TextFormats.HEADER2_STYLE : font_size 25 | char_style bold
+
+### Sub-constants : LastFiles ###
+
+# If true, check if each file is existing.
+LastFiles.SKIP_NON_EXISTING : False
+
+# The number of files to keep in memory.
+LastFiles.LENGTH_FILES_LIST : 10
+
+### Sub-constants : FileExport ###
+
+# The command to open pdflatex (in Linux, just 'pdflatex' should be enough
+FileExport.PDFLATEX_COMMAND : pdflatex
+
+# The command to open ebook-convert calibre conversion (in Linux, just 'ebook-convert' should be enough
+FileExport.EBOOKCONVERT_COMMAND : ebook-convert
+
+### Sub-constants : TextEdit ###
+
+# Will recheck the typography of the file when opening
+TextEdit.RECHECK_TEXT_OPEN : False
+
+# The limit of recursion to come back before the typography correction while making an undo
+TextEdit.LIM_RECURSIV_UNDO : 100
+
+# Will perform the typography checking while writing
+TextEdit.DO_TYPOGRAPHY : True
+
+# Set whenever the spelling needs to be check
+TextEdit.SPELL_CHECK : True
+
+# Will perform the word auto-correction while writing
+TextEdit.AUTO_CORRECTION : True
+
+# The default writing language
+TextEdit.DFT_WRITING_LANGUAGE : French
+
+# Number of chars in which the context is inserted when searching for a pattern.
+TextEdit.FIND_LEN_CONTEXT : 10
+
+### Sub-constants : TextStatistics ###
+
+# Number of line in a page of a book
+TextStatistics.NB_LINE_PER_PAGE : 35
+
+# Number maximum of char in a line of a book
+TextStatistics.NB_CHAR_PER_LINE : 56
+
+# Number of spaces that represent the indent
+TextStatistics.NB_CHAR_PER_INDENT : 4
+
+### Sub-constants : MetaData ###
+
+# Default author when creating a new file
+MetaData.DEFAULT_AUTHOR : Renaud Dessalles
+
