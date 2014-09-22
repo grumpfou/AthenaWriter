@@ -1,3 +1,10 @@
+"""
+TODO :
+
+remove the ugly self.__dict__ !!
+make a better variable change by looking the type
+"""
+
 from PyQt4 import QtGui, QtCore
 
 import xml.dom.minidom as XML
@@ -15,7 +22,9 @@ def getFirstElementsByTagName(node,name):
 
 
 class MDMetaData:
-	element_list = ['author','title','date','language','version']
+	element_list  = ['author','title','date' ,'language','version','lastpos']
+	element_type  = [unicode ,unicode,unicode,unicode   ,float    ,int      ]
+	element_modif = [True    ,True   ,True   ,True      ,True     ,False    ]
 	@staticmethod
 	def init_from_xml_string(xml_string=None):
 		"""Class that will interpret the text in order to get the informations"""
@@ -24,12 +33,16 @@ class MDMetaData:
 		node_structure  = getFirstElementsByTagName(dom ,'structure')
 		
 		element_dict = {}
-		for element in MDMetaData.element_list:
+		zipp = zip(MDMetaData.element_list,MDMetaData.element_type)
+		for element,type_ in zipp:
 			node	= getFirstElementsByTagName(node_structure,element)
 			information = None
 			if node!=None and node.hasChildNodes():
-				information = node.childNodes[0].toxml()
-				
+				try : 
+					information = type_(node.childNodes[0].toxml())
+				except ValueError:
+					print "Warning, metadata <"+element+\
+							"> do not fit the format"
 			element_dict[element]=information
 		
 		return MDMetaData(element_dict=element_dict)
@@ -54,7 +67,7 @@ class MDMetaData:
 		for k in self.element_list:
 			if self.__dict__[k]!=None:
 				node=doc.createElement(k)
-				text_node = doc.createTextNode(self.__dict__[k])
+				text_node = doc.createTextNode(unicode(self.__dict__[k]))
 				node.appendChild(text_node)
 				structure_node.appendChild(node)				
 
@@ -124,12 +137,14 @@ class MDMetaDataDialog (MDMetaData,QtGui.QDialog):
 		self.dict_choice={}
 		layout_info=QtGui.QFormLayout()
 		
-		for k in self.metadata.element_list:
-			choice = QtGui.QLineEdit()
-			if self.metadata.__dict__[k]!=None:
-				choice.setText (self.metadata.__dict__[k])
-			self.dict_choice[k]=choice
-			layout_info.addRow(k+':',choice)
+		zipp = zip(self.metadata.element_list,self.metadata.element_modif)
+		for k,modifable in zipp:
+			if modifable:
+				choice = QtGui.QLineEdit()
+				if self.metadata.__dict__[k]!=None:
+					choice.setText (unicode(self.metadata.__dict__[k]))
+				self.dict_choice[k]=choice
+				layout_info.addRow(k+':',choice)
 			
 		
 		layout_button=QtGui.QHBoxLayout ()
@@ -148,12 +163,20 @@ class MDMetaDataDialog (MDMetaData,QtGui.QDialog):
 		self.connect(button_ok 	  , QtCore.SIGNAL("clicked()"), self.generateMeta)
 	
 	def generateMeta(self):
-		for k in self.metadata.element_list:
-			v = unicode(self.dict_choice[k].text())
-			if len(v)>0:
-				self.metadata.__dict__[k]=v
-			else:
-				self.metadata.__dict__[k]=None
+		zipp = zip(	MDMetaData.element_list,
+					MDMetaData.element_type,
+					MDMetaData.element_modif,
+					)		
+		for k,type_,modifable in zipp:
+			if modifable:
+				try :
+					v = type_(self.dict_choice[k].text())
+				except  ValueError:
+					v = ""
+				if len(v)>0:
+					self.metadata.__dict__[k]=v
+				else:
+					self.metadata.__dict__[k]=None
 		self.close()
 				
 if __name__ == '__main__':

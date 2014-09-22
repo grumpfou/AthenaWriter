@@ -292,6 +292,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.CMD_FileOpen(filepath)
 			
 			self.actionFileSave.setEnabled(False)
+
 			self.setWindowTitle("AthenaWriter : "+self.filepath)
 			tmp,filename = os.path.split(filepath)
 			self.changeMessageStatusBar("Has opened "+filename)

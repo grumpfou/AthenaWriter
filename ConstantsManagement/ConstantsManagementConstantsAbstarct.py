@@ -129,7 +129,8 @@ class CMConstantsAbstarct:
 		else:
 			assert type(k)==str or type(k)==unicode , "k should be either a "+\
 					"string or a dictionary"
-			self.constants[k] = self.set_type(self.all_constants[k][0],v)
+			self.constants[k] = CMConstantsAbstarct.set_type(
+												self.all_constants[k][0],v)
 			
 			
 	
@@ -162,49 +163,7 @@ class CMConstantsAbstarct:
 			else:
 				raise KeyError('The key <'+key+'> is unknown')
 
-	def set_type(self,type_to_perform,value):
-		# if we should create a list
-		if type(type_to_perform)==list:
-			type_to_perform=type_to_perform[0]
-			if type(value)!=list:
-				value=[value]
-			return [self.set_type(type_to_perform,v) for v in value]
-		
-		# if we should create a dictionary
-		elif type(type_to_perform)==dict:
-			res = {}
-			type_to_perform_key		= type_to_perform.keys()[0]
-			type_to_perform_value	= type_to_perform.values()[0]
-			
-			if type(value)==dict:
-				return {
-						self.set_type(type_to_perform_key,key) : \
-						self.set_type(type_to_perform_value,val) \
-						for key, val in value.items()
-						}
-			elif type(value)!=list:
-				value=[value]
-			for kv in value:
-				list_words = kv.split(' ')
-				key = self.set_type(type_to_perform_key ,list_words[0])
-				val = self.set_type(type_to_perform_value, ' '.join(
-															list_words[1:]))
-				res[key]=val
-			return res
-		
-		# if we should create a boolean
-		elif type_to_perform==bool:
-			if type(value)==str or type(value)==unicode:
-				if value.lower()=='true':
-					return True
-				elif value.lower()=='false' :
-					return False
-			else :
-				return bool(int(value))			
-		
-		# otherwise
-		else :
-			return type_to_perform(value)
+
 		
 	
 	def to_string(self,with_descr=True,comment_sign='#',skip_same_as_dft=False,
@@ -314,6 +273,72 @@ class CMConstantsAbstarct:
 			file_manager.save(self.to_string(),file_to_read)
 		else:
 			raise Exception('file_to_read was not specified')
+	
+	
+	@staticmethod
+	def set_type(type_to_perform,value):
+		# if we should create a list
+		if type(type_to_perform)==list:
+			return CMConstantsAbstarct.str_to_list(value,type_to_perform)
+		
+		# if we should create a dictionary
+		elif type(type_to_perform)==dict:
+			return CMConstantsAbstarct.str_to_dict(value,type_to_perform)
+		
+		# if we should create a boolean
+		elif type_to_perform==bool:
+			return CMConstantsAbstarct.str_to_bool(value)		
+		
+		# otherwise
+		else :
+			return type_to_perform(value)	
+	
+	
+	
+	@staticmethod
+	def str_to_list(value,type_to_perform):
+		"""if we should create a list"""
+		type_to_perform=type_to_perform[0]
+		if type(value)!=list:
+			value=[value]
+		return [CMConstantsAbstarct.set_type(type_to_perform,v) for v in value]
+
+	@staticmethod
+	def str_to_dict(value,type_to_perform):
+		"""if we should create a dictionary"""
+		res = {}
+		type_to_perform_key		= type_to_perform.keys()[0]
+		type_to_perform_value	= type_to_perform.values()[0]
+		
+		if type(value)==dict:
+			return {
+					CMConstantsAbstarct.set_type(type_to_perform_key,key) : \
+					CMConstantsAbstarct.set_type(type_to_perform_value,val) \
+					for key, val in value.items()
+					}
+		elif type(value)!=list:
+			value=[value]
+		for kv in value:
+			list_words = kv.split(' ')
+			key = CMConstantsAbstarct.set_type(type_to_perform_key ,
+																list_words[0])
+			val = CMConstantsAbstarct.set_type(type_to_perform_value, 
+												' '.join(list_words[1:]))
+			res[key]=val
+		return res
+
+	@staticmethod
+	def str_to_bool(value):
+		""" if we should create a boolean"""
+		if type(value)==str or type(value)==unicode:
+			if value.lower()=='true':
+				return True
+			elif value.lower()=='false' :
+				return False
+		else :
+			return bool(int(value))			
+	
+	
 		
 if __name__ == '__main__':
 	class CMConstantsTest0 ( CMConstantsAbstarct):
