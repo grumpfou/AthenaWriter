@@ -183,7 +183,9 @@ class TFFormatClassManager:
 			qtCharFormat = cursor.charFormat()
 			qtCharFormat_id = qtCharFormat.property(
 										QtGui.QTextFormat.UserProperty)
-			qtCharFormat_id = qtCharFormat_id.toPyObject()
+			if qtCharFormat_id != None:
+				qtCharFormat_id = qtCharFormat_id.toPyObject()
+			# qtCharFormat_id = qtCharFormat_id.toPyObject()
 			if qtCharFormat_id  in self.dictCharFormat.keys():
 				format = TFFormatManager.dictCharFormat[qtCharFormat_id]
 				format.setStyleToQtFormating(qtCharFormat,cursor.document())

@@ -323,7 +323,6 @@ class TFFormatClassSeparator (TFFormatClassBlock):
 		# Regular expression that will find the corresponding XML element :
 		# regexp = QtCore.QRegExp(r'[\n]?<'+self.xmlMark+r'/>[\n]?')# TODO
 		exp = r'<'+self.xmlMark+r'/>'# TODO
-		print 'exp : ',exp
 		cursor=document.find(exp,cursor)
 		while not cursor.isNull():
 			cursor1 = QtGui.QTextCursor(document)

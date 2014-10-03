@@ -334,10 +334,17 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			metadata = self.metadata
 		else:
 			metadata = None
-		res = FEExportDialog.getFields(metadata=metadata, 
-				dft_opening_saving_site=self.get_default_opening_saving_site(),
-				default_path = self.filepath,
-				)
+		dft_opening_saving_site = self.get_default_opening_saving_site()
+		if self.filepath!=None:
+			res = FEExportDialog.getFields(metadata=metadata, 
+					dft_opening_saving_site=dft_opening_saving_site,
+					default_path = self.filepath,
+					)
+		else:
+			res = FEExportDialog.getFields(metadata=metadata, 
+					dft_opening_saving_site=dft_opening_saving_site,
+					)
+			
 		if res :
 			try :
 				res1 = self.CMD_FileExport(**res)

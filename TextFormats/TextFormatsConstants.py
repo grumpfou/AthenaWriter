@@ -40,8 +40,8 @@ class TFStyleAttributes:
 	
 	def __str__(self):
 		
-		to_join = [' '.join([kk,vv]) for kk,vv in seld.style_attr.items()]
-		res+=' | '.join(to_join)
+		to_join = [' '.join([kk,vv]) for kk,vv in self.style_attr.items()]
+		res =' | '.join(to_join)
 		return res
 	
 	def has_key(self,key):
@@ -51,7 +51,7 @@ class TFStyleAttributes:
 		return self.style_attr.keys()
 	
 	def copy(self):
-		return TFStyleAttributes(attributes = self.style_attr)
+		return TFStyleAttributes(attributes = self.style_attr.copy())
 	
 	def pop(self,key):
 		return self.style_attr.pop(key)
