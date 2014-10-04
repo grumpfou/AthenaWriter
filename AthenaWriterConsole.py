@@ -1,5 +1,6 @@
-from importation import *
+# from importation import *
 from AthenaWriterCore import *
+from AthenaWriterMainWindow import AWWriterText
 from FileExport.FileExportExport import FEList
 from FileImport.FileImport import FIList
 from FileManagement.FileManagement import FMFileManagement
@@ -44,11 +45,31 @@ class AWConsole (AWCore):
 			help="Recheck the typography when opening the file.",
 			action="store_true")
 		
+		self.parser.add_argument("-1", 
+			help="Will load the last files in the LastFile.txt list",
+			action="store_true",
+			dest="last_file"
+			)
 		
 		self.args = self.parser.parse_args()
 		
+		if self.args.last_file:
+			if self.args.file!=None:
+				raise AWConsoleError("Do not use the '-1' argument if a file"+\
+						"is specified.")
+			if len(self.lastFilesList.list_files)==0:
+				raise AWConsoleError("The last files memory is empty can not"+\
+						"open the last of the list.")
+			
+			self.args.file = self.lastFilesList.list_files[0]
+
 		if self.args.importt!=None or self.args.export!=None:
-			self.args.file = sys.argv[-1]
+			if self.args.last_file :
+				raise AWConsoleError("Please specify all the files, do not "+\
+						"use the '-1' argument.")
+				
+			else :
+				self.args.file = sys.argv[-1]
 		# self.print_args()
 		
 	
@@ -60,6 +81,8 @@ class AWConsole (AWCore):
 		print 'self.args.importt',self.args.importt,type(self.args.importt)
 		print 'self.args.export',self.args.export,type(self.args.export)
 		print 'self.args.outdir',self.args.outdir,type(self.args.outdir)
+		print 'self.args.recheck',self.args.recheck,type(self.args.recheck)
+		print 'self.args.last_file',self.args.last_file,type(self.args.last_file)
 		
 		
 

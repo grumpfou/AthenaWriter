@@ -39,9 +39,6 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		self.textEdit = TETextEdit(language_name='French',
 						dict_autocorrection=dict_autocorrection,**kargs_font)
 		
-		self.lastFilesList=LFList(FMLastFilesFile.open())
-		
-
 		self.setCentralWidget (self.textEdit)
 		
 		self.fullScreened=False
@@ -73,7 +70,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		self.actionRecentFilesList = []
 		# dico=self.language.shortcuts_insert
-		for path in self.lastFilesList.list: 
+		for path in self.lastFilesList.list_files: 
 			#create the actions to open the last files
 			act = QtGui.QAction(path,self)
 			self.actionRecentFilesList.append(act)
@@ -120,7 +117,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		# Add last file list
 		mapper = QtCore.QSignalMapper(self)
-		for path,act in zip(self.lastFilesList.list,self.actionRecentFilesList):
+		for path,act in zip(self.lastFilesList.list_files,self.actionRecentFilesList):
 			QtCore.QObject.connect(act,QtCore.SIGNAL("triggered ()"), mapper, QtCore.SLOT("map()"))
 			# short.setContext(QtCore.Qt.WidgetShortcut)
 			mapper.setMapping(act, path)
@@ -471,7 +468,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		"""Check if we have changed something without saving"""
 		res=self.doSaveDialog()
 		if (res == QtGui.QMessageBox.Yes) or (res == QtGui.QMessageBox.No):
-			FMLastFilesFile.save(self.lastFilesList.list)
+			FMLastFilesFile.save(self.lastFilesList.list_files)
 			self.clean_tmp_files()
 			if AWConstants['AUTOSAVE']: #We stop the thread of the autosave
 				self.threading_autosave.cancel()

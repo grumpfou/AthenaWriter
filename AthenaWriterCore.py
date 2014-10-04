@@ -34,6 +34,8 @@ class AWCore:
 		self.textEdit = TETextEdit(language_name='French')
 		self.metadata = MDMetaData()
 		self.filepath=None
+		self.lastFilesList=LFList(FMLastFilesFile.open())
+
 		
 	def CMD_FileSave(self,filepath=None):
 		if filepath==None:
