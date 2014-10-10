@@ -445,3 +445,4 @@ class FEExportEpub(FEExportExternal):
 		
 		
 FEList = [FEExportTxt,FEExportHtml,FEExportLaTeX,FEExportPdf,FEExportEpub]
+FEDict = {format.extension:format for format in FEList} 
