@@ -17,6 +17,9 @@ class FEExportDialog(QtGui.QDialog):
 		self.combo_format = QtGui.QComboBox ( self )
 		self.lineedit_path = QtGui.QLineEdit ()
 		self.widget_options = QtGui.QWidget()
+		self.check_typo = QtGui.QCheckBox()
+		self.check_typo.setToolTip('Recheck typo before exoprt')
+		
 		
 		# self.lineedit_title = QtGui.QLineEdit ()
 		# self.lineedit_author = QtGui.QLineEdit ()
@@ -34,10 +37,13 @@ class FEExportDialog(QtGui.QDialog):
 		layout_button.addWidget( button_export )
 		layout_button.addWidget( button_cancel )
 		
+		
+		
 		self.main_layout=QtGui.QFormLayout()
 		self.main_layout.addRow(u'Format'	,self.combo_format)
 		self.main_layout.addRow(u'Path'		,layout_path)
 		self.main_layout.addRow(self.widget_options)
+		self.main_layout.addRow(u'Recheck Typo',self.check_typo)
 		
 		self.rowWidgetOption = self.main_layout.rowCount()-1
 		self.main_layout.addRow(layout_button)
@@ -127,6 +133,8 @@ class FEExportDialog(QtGui.QDialog):
 			d ={}
 			d['format_name']	= unicode(dialog.combo_format.currentText())
 			d['filepath']		= unicode(dialog.lineedit_path.text())
+			d['check_typo']		= (dialog.check_typo.checkState() == \
+															QtCore.Qt.Checked)
 			dd = dialog.widget_options.getValueDict()
 			d = dict(d.items()+dd.items())
 			return d	

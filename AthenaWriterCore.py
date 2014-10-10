@@ -115,8 +115,10 @@ class AWCore:
 		self.filepath = None
 		
 
-	def CMD_FileExport(self,format_name,filepath=None,**kargs):
-		
+	def CMD_FileExport(self,format_name,filepath=None,check_typo=False,\
+																	**kargs):
+		if check_typo:
+			self.textEdit.SLOT_actionRecheckTypography()
 		list_extentions = [format.extension for format in FEList]
 		if format_name not in list_extentions:
 			raise self.Error('Unknown format to import: choose in '+\
