@@ -93,17 +93,17 @@ class FEExportDialog(QtGui.QDialog):
 		
 		if result == QtGui.QDialog.Accepted:
 
-			def f (r):
-				r = unicode(r)
-				if r=="" : return None
-				return r
+			# def f (r):
+				# r = unicode(r)
+				# if r=="" : return None
+				# return r
 
 			d ={}
-			d['format_name']	= f(dialog.combo_format.currentText())
-			d['filepath']		= f(dialog.lineedit_path.text())
-			d['title'] 			= f(dialog.lineedit_title.text())
-			d['author'] 		= f(dialog.lineedit_author.text())
-			d['version'] 		= f(dialog.lineedit_version.text())
+			d['format_name']	= unicode(dialog.combo_format.currentText())
+			d['filepath']		= unicode(dialog.lineedit_path.text())
+			d['title'] 			= unicode(dialog.lineedit_title.text())
+			d['author'] 		= unicode(dialog.lineedit_author.text())
+			d['version'] 		= unicode(dialog.lineedit_version.text())
 			return d	
 		else:
 			return False

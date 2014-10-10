@@ -12,15 +12,31 @@ except ImportError:
 	import imp
 
 	dir,f	= os.path.split(__file__)
-	dir,f	= os.path.split(dir)
-	dir 	= os.path.join(dir,'FMFileManagement')
-
+	dir	= os.path.join(dir,'..')
+	dir	= os.path.join(dir,'FileManagement')
 	foo = imp.find_module('FileManagement', [dir])
 	foo = imp.load_module('FileManagement',*foo)
-	CMConstantsAbstarct=foo.FMFileManagement
+	FMFileManagement=foo.FMFileManagement
 ############################################################
 
-from TextFormats.TextFormats			import *
+############ IMPORTATION OF TextFormats ############
+try :
+	# We try to see if it is already available
+	from TextFormats.TextFormats import *
+except ImportError:
+	# Otherwise we try to see if it is not in the parent directory (but if is has been loaded before,
+	# it would not be reloaded anymore.
+	import imp,sys
+
+	dir,f	= os.path.split(__file__)
+	dir	= os.path.join(dir,'..')
+	dir	= os.path.join(dir,'TextFormats')
+	sys.path.append(dir)
+	#	from TextFormats.TextFormats import *
+	foo = imp.find_module('TextFormats', [dir])
+	TextFormats = imp.load_module('TextFormats',*foo)
+############################################################
+
 
 
 class FEExportGeneral:
@@ -64,8 +80,6 @@ class FEExportGeneral:
 		
 		op=self.op.copy()
 		for k,v in options.items() : op[k]=v
-		if extension == None :
-			extension = self.extension 
 		if textedit!=None:
 			text = textedit.toXml()	
 		else : 
@@ -106,9 +120,9 @@ class FEExportGeneral:
 		- parent : in case if filepath is None, it will be the parent for the file window.
 		"""
 		assert self.text, 'Yous should run self.export() before'
-		if filepath==None:
-			print "default_saving_site  :  ",default_saving_site
-			res1 = FMFileManagement.save_gui(unicode(self.text),default_saving_site,
+		if filepath==None:#OLD!!!
+			print "default_saving_site  :  ",default_saving_site#OLD!!!
+			res1 = FMFileManagement.save_gui(unicode(self.text),default_saving_site,#OLD!!!
 						extension=self.extension,parent=parent)
 		else:
 			filepath,e = os.path.splitext(filepath)
@@ -118,7 +132,7 @@ class FEExportGeneral:
 		
 		
 		
-class FEExporTxt(FEExportGeneral):
+class FEExportTxt(FEExportGeneral):
 	extension='txt'
 	op=dict(
 		newline 			= '\n'	,
@@ -131,7 +145,7 @@ class FEExporTxt(FEExportGeneral):
 		# separator	 		= '***' ,
 		)
 
-class FEExporHtml(FEExportGeneral):
+class FEExportHtml(FEExportGeneral):
 	extension='html'
 	op=dict(
 		newline 			= '\n'	,
@@ -160,7 +174,7 @@ class FEExporHtml(FEExportGeneral):
 		return FEExportGeneral.export(self,textedit=textedit,xml_string=xml_string,start_file=pre)
 
 
-class FEExporLaTeX(FEExportGeneral):
+class FEExportLaTeX(FEExportGeneral):
 	extension='tex'
 	op=dict(
 		newline 			= '\n\n'	,
@@ -174,30 +188,39 @@ class FEExporLaTeX(FEExportGeneral):
 		)
 		
 	def export(self,textedit=None,xml_string=None,title=None,author=None,head=False,**kargs):
-		pre="\\documentclass[12pt]{article}\n\\usepackage{geometry}\n\\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2.5cm,rmargin=2.5cm}\n\\usepackage{graphicx}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\renewcommand{\\baselinestretch}{1.5} \n "
+		# pre="\\documentclass[12pt]{article}\n\\usepackage{geometry}\n\\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2.5cm,rmargin=2.5cm}\n\\usepackage{graphicx}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\renewcommand{\\baselinestretch}{1.5} \n "
 		# pre=r"\documentclass[12pt]{article}\n\usepackage{geometry}\n\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2cm,rmargin=2cm}\n\usepackage{graphicx}\n\begin{document}\n "
+		pre =  r"\documentclass[12pt]{article}"+"\n"
+		pre += r"\usepackage{geometry}"+"\n"
+		pre += r"\geometry{verbose,tmargin=3cm,bmargin=3cm,"+\
+										r"lmargin=2.5cm,rmargin=2.5cm}"+"\n"
+		pre += r"\usepackage{graphicx}"+"\n"
+		pre += r"\usepackage[utf8]{inputenc}"+"\n"
+		pre += r"\usepackage[T1]{fontenc}"+"\n"
+		pre += r"\renewcommand{\baselinestretch}{1.5} "+"\n"
 		if head :
-			pre +="\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\lhead{\\textsc{"
+			pre += 	"\\usepackage{fancyhdr}"+"\n"+\
+					"\pagestyle{fancy}"+"\n"+\
+					"\lhead{\textsc{"
 			if title!=None:
 				pre +=title
-			pre +=r"}}\cfoot{\thepage}\rhead{\textsc{"
+			pre += r"}}\cfoot{\thepage}\rhead{\textsc{"
 			if author!=None:
 				pre+=author
-			pre+="}}\n"
+			pre += "}}\n"
 		
 		pre+=r"\begin{document}"+"\n"
 		
 		if title!=None:
 			pre += r'\title{'+title+'}\n'
-			pre += r'\date{}\n'
+			pre += r'\date{}'+'\n'
 			
 		if author!=None:
 			  pre+=r'\author{'+author+'}\n'
-		if title!=None or author!=None:
+		# if title!=None or author!=None:
+		if title!=None :
 			pre += r'\maketitle'+'\n'
 		text = FEExportGeneral.export(self,textedit=textedit,xml_string=xml_string,start_file=pre,end_file="",**kargs)
-		
-		print 'text : ',text
 		
 		#emph is a little bit complicated, it has to be done at every line:
 		# it0 = 0
@@ -226,24 +249,16 @@ class FEExportExternal (FEExportGeneral):
 	"""Abstract class used to export via an external software"""
 	extension = None
 	intermediate_export_class = None
-	constants_command = None
 	
 	def export(self,*args,**kargs):
 		intermediate = self.intermediate_export_class(self.format_manager)
-		res = intermediate.export(self,*args,**kargs)
-		return res
-	
-	def export_file(self,filepath=None,default_saving_site=None,parent=None):
-		"""
-		Re-implementation of FEExportGeneral.export_file.
-		- filepath : the math to the destination file (will change the 
-			extension if necessary if None, will ask where to save it.
-		- default_saving_site : in case if filepath is None, it will be the 
-			default place where to put start the file window.
-		- parent : in case if filepath is None, it will be the parent for the 
-			file window.
-		"""
-		assert self.text, 'Yous should run self.export() before'
+		text = intermediate.export(*args,**kargs)
+		self.text = text
+		return text
+		
+	def export_file_intermediate(self,filepath=None,default_saving_site=None,
+															parent=None):
+		"""Returns (filepath_inter,dirpath_inter,filepath_final)"""
 		if filepath==None:
 			filepath_final = FMFileManagement.save_gui(unicode(self.text),
 					default_saving_site,extension=self.extension,parent=parent)
@@ -256,79 +271,65 @@ class FEExportExternal (FEExportGeneral):
 			filepath_final=filepath
 			filepath_inter,e = os.path.splitext(filepath_final)
 			dirpath_inter,e = os.path.split(filepath_inter)
-			filepath_inter = filepath_inter+ '.' + FEExporLaTeX.extension
+			filepath_inter = filepath_inter+ '.' + \
+									self.intermediate_export_class.extension
 			FMFileManagement.save(unicode(self.text),filepath=filepath_inter)
-		# import subprocess
-		# print "FEConstants['PDFLATEX_COMMAND']  :  ",FEConstants['PDFLATEX_COMMAND']
-		# print "os.path.exists(FEConstants['PDFLATEX_COMMAND'])  :  ",os.path.exists(FEConstants['PDFLATEX_COMMAND'])
-
-		# res1 = subprocess.call([FEConstants['PDFLATEX_COMMAND'],filepathtex,'-output-directory',dirpathtex])
-		# commandline = FEConstants['PDFLATEX_COMMAND']+' "'+os.path.abspath(filepathtex)+'" -output-directory "'+os.path.abspath(dirpathtex)+'"'
-		# print "commandline  :  ",commandline
-		# res1 = os.system(commandline)
-		commandline = FEConstants['PDFLATEX_COMMAND']+' -output-directory '+dirpathtex+' '+filepathtex
-		print "commandline", commandline
-		res1 = os.system(commandline)
-		if res1==0:
-			res1=filepathpdf
-		else:
-			raise IOError('Problem during convertion of the file, is the PDFLATEX_COMMAND correct ?')
-		return filepathpdf
+			
+		return filepath_inter,dirpath_inter,filepath_final
+	
+	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
+		""" Its re-implementation should retrun something like :
+			>>> FEConstants['PDFLATEX_COMMAND']+' -output-directory '+\
+			>>> dirpathtex+' '+filepathtex
+		"""
+		raise NotImplementedError()
 		
-	
-	
-	
-		
-class FEExporPdf(FEExporLaTeX):
-	extension='pdf'
-	
-	def export(self,*args,**kargs):
-		self.extension = FEExporLaTeX.extension
-		res = FEExporLaTeX.export(self,*args,**kargs)
-		self.extension = FEExporPdf.extension
-		return res
 	
 	def export_file(self,filepath=None,default_saving_site=None,parent=None):
 		"""
 		Re-implementation of FEExportGeneral.export_file.
-		- filepath : the math to the destination file (will change the extension if necessary
-			if None, will ask where to save it.
-		- default_saving_site : in case if filepath is None, it will be the default place where 
-			to put start the file window.
-		- parent : in case if filepath is None, it will be the parent for the file window.
+		- filepath : the math to the destination file (will change the 
+			extension if necessary if None, will ask where to save it.
+		- default_saving_site : in case if filepath is None, it will be the 
+			default place where to put start the file window.
+		- parent : in case if filepath is None, it will be the parent for the 
+			file window.
 		"""
 		assert self.text, 'Yous should run self.export() before'
-		if filepath==None:
-			filepathpdf = FMFileManagement.save_gui(unicode(self.text),default_saving_site,
-							extension=self.extension,parent=parent)
-			filepathtex,e = os.path.splitext(filepathpdf)
-			dirpathtex,e = os.path.split(filepathpdf)
-			filepathtex = filepathtex+ '.' + FEExporLaTeX.extension
-			os.rename(filepathpdf,filepathtex) # THAT IS DIRTY
-		else:
-			filepathpdf=filepath
-			filepathtex,e = os.path.splitext(filepathpdf)
-			dirpathtex,e = os.path.split(filepathtex)
-			filepathtex = filepathtex+ '.' + FEExporLaTeX.extension
-			FMFileManagement.save(unicode(self.text),filepath=filepathtex)
-		# import subprocess
-		# print "FEConstants['PDFLATEX_COMMAND']  :  ",FEConstants['PDFLATEX_COMMAND']
-		# print "os.path.exists(FEConstants['PDFLATEX_COMMAND'])  :  ",os.path.exists(FEConstants['PDFLATEX_COMMAND'])
-
-		# res1 = subprocess.call([FEConstants['PDFLATEX_COMMAND'],filepathtex,'-output-directory',dirpathtex])
-		# commandline = FEConstants['PDFLATEX_COMMAND']+' "'+os.path.abspath(filepathtex)+'" -output-directory "'+os.path.abspath(dirpathtex)+'"'
-		# print "commandline  :  ",commandline
-		# res1 = os.system(commandline)
-		commandline = FEConstants['PDFLATEX_COMMAND']+' -output-directory '+dirpathtex+' '+filepathtex
+		filepath_inter , filepath_final , dirpath_inter = \
+				self.export_file_intermediate(
+				filepath=filepath,
+				default_saving_site=default_saving_site,
+				parent=parent)
+				
+		commandline = self.get_command_line(filepath_inter , filepath_final , \
+																dirpath_inter)
 		print "commandline", commandline
 		res1 = os.system(commandline)
-		if res1==0:
-			res1=filepathpdf
-		else:
-			raise IOError('Problem during convertion of the file, is the PDFLATEX_COMMAND correct ?')
-		return filepathpdf
+		if res1!=0:
+			raise IOError('Problem during convertion of the file, is the '+\
+				'exportation command correct ?')
+		return filepath_final
 		
 		
-FEList = [FEExporTxt,FEExporHtml,FEExporLaTeX,FEExporPdf]
+class FEExportPdf(FEExportExternal):
+	extension='pdf'
+	intermediate_export_class =  FEExportLaTeX
+	
+	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
+		commandline = FEConstants['PDFLATEX_COMMAND']+' -output-directory '+\
+			dirpath_inter+' '+filepath_inter
+		return commandline
+				
+class FEExportEpub(FEExportExternal):
+	extension='epub'
+	intermediate_export_class =  FEExportHtml
+	
+	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
+		print 'filepath_inter : ',filepath_inter
+		commandline = FEConstants['EBOOKCONVERT_COMMAND']+' '+\
+			filepath_inter+' '+filepath_final
+		return commandline
 		
 		
+FEList = [FEExportTxt,FEExportHtml,FEExportLaTeX,FEExportPdf,FEExportEpub]

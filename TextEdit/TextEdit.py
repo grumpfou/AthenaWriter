@@ -224,11 +224,11 @@ class TETextEdit(QtGui.QTextEdit):
 		block_id = self.textCursor().blockFormat().property(
 												QtGui.QTextFormat.UserProperty)
 		block_id = block_id.toPyObject() 
- 		if block_id!=None and TFFormatManager.dictFormat[block_id].protected :
- 			self.blockSignals (True)
- 			self.undo()
- 			self.blockSignals (False)
- 			self.emit(QtCore.SIGNAL("separatorModification ( PyQt_PyObject)"), 
+		if block_id!=None and TFFormatManager.dictFormat[block_id].protected :
+			self.blockSignals (True)
+			self.undo()
+			self.blockSignals (False)
+			self.emit(QtCore.SIGNAL("separatorModification ( PyQt_PyObject)"), 
 						"Try to modify separator (use Ctrl+K to delete it).")
 		
 	def SLOT_pluggins(self,iterator):

@@ -48,7 +48,6 @@ class TFFormatClassAbstract:
 			self.setQtFormating(cursor,qtFormating)
 			self.setId(cursor,qtFormating)
 			res = True
-			
 		return res	
 
 
@@ -289,20 +288,22 @@ class TFFormatClassSeparator (TFFormatClassBlock):
 	"""Will deal with the separator class"""
 	protected = True
 	def inverseFormat(self,cursor):
-		qtFormating = self.getQtFormating(cursor)
-		id_ = self.getId(cursor)
+		cursor1 = QtGui.QTextCursor(cursor)
+		qtFormating = self.getQtFormating(cursor1)
+		id_ = self.getId(cursor1)
 		if id_ != self.userPropertyId:
-			cursor.insertBlock()
-			res = TFFormatClassBlock.inverseFormat(self,cursor)
-			cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
+			# cursor1.insertBlock()
+			cursor1.insertText('toto\ntoto')
+			# res = TFFormatClassBlock.inverseFormat(self,cursor)
+			# cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
 			
-			id_ = self.getId(cursor)
-			if id_ == self.userPropertyId:
-				res = TFFormatClassBlock.inverseFormat(self,cursor)
-		else:
-			cursor.select(QtGui.QTextCursor.BlockUnderCursor)
-			cursor.deleteChar()
-		
+			# id_ = self.getId(cursor)
+			# if id_ == self.userPropertyId:
+				# res = TFFormatClassBlock.inverseFormat(self,cursor)
+		# else:
+			# cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+			# cursor.deleteChar()
+		pass
 		# if res:
 			# cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
 			

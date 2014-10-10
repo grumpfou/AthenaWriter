@@ -37,7 +37,7 @@ except ImportError:
 	TextFormats = imp.load_module('TextFormats',*foo)
 ############################################################
 
-
+dict_add = lambda A,B : dict(A.items()+B.items())
 
 class FEExportGeneral:
 	""" Class to reimplement for all the exportations
@@ -51,16 +51,23 @@ class FEExportGeneral:
 			- end_emphasize 	= '*'  : the string to put at the end of each an emphasize fragment.
 	"""
 	extension=None
-	op=dict(
+	format_options=dict(
 		newline 			= '\n' ,
-		start_file 			= ''   ,
-		end_file 			= ''   ,
+		# start_file 			= ''   ,
+		# end_file 			= ''   ,
 		start_line 			= '\t' ,
 		end_line 			= ''   ,
 		# start_emphasize 	= '*'  ,
 		# end_emphasize 		= '*'  ,
 		# separator	 		= '***' ,
 		)
+	
+	document_options=dict(
+		title 	= (unicode,"","Title of the story"),
+		author 	= (unicode,"","Author of the story"),
+		version = (unicode,"","Version of the story"),
+		)
+	
 	def __init__(self,format_manager):
 		"""
 		format_manager : the module of TEFormats
@@ -68,18 +75,18 @@ class FEExportGeneral:
 		self.format_manager=format_manager
 		self.text = False
 	
-	def export(self,textedit=None,xml_string=None,**options):
+	
+	def export_text_core(self,textedit=None,xml_string=None,**options):
 		"""
-		textedit : the TETextEdit instance.
-		xml_string : the unicode string representing the xml file
-			Note : either textedit and xml_string should not be None
-		options : dict that overwrite the self.op			
+		This function will export the core of the text, it will return the 
+		text itself (without any header or termination). Usully it should be
+		directly called by the export function.
 		"""
 		assert textedit!=None or xml_string!=None, \
 							"either textedit and xml_string should not be None"
 		
-		op=self.op.copy()
-		for k,v in options.items() : op[k]=v
+		format_options=self.format_options.copy()
+		
 		if textedit!=None:
 			text = textedit.toXml()	
 		else : 
@@ -102,13 +109,39 @@ class FEExportGeneral:
 				else: start_mark , end_mark = marks
 				text=text.replace('<'+format.xmlMark+'>',start_mark)
 				text=text.replace('</'+format.xmlMark+'>',end_mark)
-		# text=text.replace('<'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,op['start_emphasize']	)
-		# text=text.replace('</'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,op['end_emphasize']	)
-		# text=text.replace('<'+self.format_manager.TEFormatSeparator.xmlMark+'/>'	,op['separator']	)
-		text=op['start_line']+text.replace('\n',op['end_line']+op['newline']+op['start_line'])+op['end_line']
-		text=op['start_file']+text+op['end_file']
+		# text=text.replace('<'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['start_emphasize']	)
+		# text=text.replace('</'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['end_emphasize']	)
+		# text=text.replace('<'+self.format_manager.TEFormatSeparator.xmlMark+'/>'	,format_options['separator']	)
+		intreline = format_options['end_line'] + format_options['newline'] +\
+												format_options['start_line']
+		text = text.replace('\n',intreline)
+		text = format_options['start_line']+text+format_options['end_line']
 		
 		self.text=text
+		return self.text
+		
+	
+	def export(self,textedit=None,xml_string=None,**options):
+		"""
+		textedit : the TETextEdit instance.
+		xml_string : the unicode string representing the xml file
+			Note : either textedit and xml_string should not be None
+		options : dict that overwrite the self.format_options			
+		"""
+		assert textedit!=None or xml_string!=None, \
+							"either textedit and xml_string should not be None"
+		doc_op = self.get_doc_opt(**options)
+		
+		start_file = ""
+		if doc_op['title'] != "":
+			start_file += doc_op['title'].upper()+'\n\n'
+		if doc_op['author'] != "":
+			start_file += 'By '+doc_op['author']+'\n\n'
+		if doc_op['version'] != "":
+			start_file += 'version '+doc_op['version']+'\n\n'
+		
+		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
+		self.text=start_file+self.text
 		return self.text
 		
 	def export_file(self,filepath=None,default_saving_site=None,parent=None):
@@ -131,13 +164,29 @@ class FEExportGeneral:
 		return res1
 		
 		
+	
+	def get_doc_opt(self,**options):
+		"""
+		Will return a dictionnary containg the document options with the good 
+		format. 
+		Note: the resulting dictionnary will have the form of
+		{ key : value }  which is not the same as self.document_options.
+		"""
+		doc_op = {k:v[1] for k,v in self.document_options.items()}
+		
+		for k,v in options.items() : 
+			if k in self.document_options.keys() :
+				doc_op[k]=self.document_options[k][0](v)
+		
+		return doc_op
+		
 		
 class FEExportTxt(FEExportGeneral):
 	extension='txt'
-	op=dict(
+	format_options=dict(
 		newline 			= '\n'	,
-		start_file 			= ''   	,
-		end_file 			= ''   	,
+		# start_file 			= ''   	,
+		# end_file 			= ''   	,
 		start_line 			= '\t' 	,
 		end_line 			= ''   	,
 		# start_emphasize 	= '*'  	,
@@ -147,10 +196,10 @@ class FEExportTxt(FEExportGeneral):
 
 class FEExportHtml(FEExportGeneral):
 	extension='html'
-	op=dict(
+	format_options=dict(
 		newline 			= '\n'	,
-		start_file 			= ''   	,
-		end_file 			= '</body>'	,
+		# start_file 			= ''   	,
+		# end_file 			= ''	,
 		start_line 			= '<p>\t' 	,
 		end_line 			= '</p>'   	,
 		# start_emphasize 	= '<i>'  	,
@@ -158,28 +207,76 @@ class FEExportHtml(FEExportGeneral):
 		# separator	 		= '<h2><center>***</center></h2>' ,
 		)
 		
-	def export(self,textedit=None,xml_string=None,title=None,author=None,**kargs):
-		pre='<?xml version="1.0" encoding="UTF-8"?>\n<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr">\n<head>\n'
+	#def export(self,textedit=None,xml_string=None,title=None,author=None,**kargs):
+	#	pre = 	'<?xml version="1.0" encoding="UTF-8"?>\n'+\
+	#			'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'+\
+	#			' "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'+\
+	#			'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr">\n'+\
+	#			'<head>\n'
+	#	
+	#	if title!=None:
+	#		pre += '  <title>'+title+ '</title>  \n'
+	#	pre+='  <style type="text/css">\n'+\
+	#			'p\n{\ntext-indent:50px;\n'+\
+	#			'} </style>\n'+\
+	#			'  <meta http-equiv="Content-Type" content="text/html; '+\
+	#			'charset=UTF-8" />\n'
+	#	
+	#	if author!=None:
+	#		  pre+='  <meta name="Author" content="' +author+'"/>\n'
+	#	pre+='</head>\n<body>\n'
+	#	if title!=None:
+	#		pre += '  <h1>'+title+ '</h1>\n'
+	#	
+	#	res = pre  
+	#	res += FEExportGeneral.export(self,textedit=textedit,
+	#													xml_string=xml_string)  
+	#	res += '</body>'
+	#	return res
 		
-		if title!=None:
-			pre += '  <title>'+title+ '</title>  \n'
-		pre+='  <style type="text/css">\np\n{\ntext-indent:50px;\n} </style>\n  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />\n'
+	def export(self,textedit=None,xml_string=None,**options):
+		"""
+		textedit : the TETextEdit instance.
+		xml_string : the unicode string representing the xml file
+			Note : either textedit and xml_string should not be None
+		options : dict that overwrite the self.format_options			
+		"""
+		assert textedit!=None or xml_string!=None, \
+							"either textedit and xml_string should not be None"
 		
-		if author!=None:
-			  pre+='  <meta name="Author" content="' +author+'"/>\n'
-		pre+='</head>\n<body>\n'
-		if title!=None:
-			pre += '  <h1>'+title+ '</h1>\n'
 		
-		return FEExportGeneral.export(self,textedit=textedit,xml_string=xml_string,start_file=pre)
-
+		doc_op = self.get_doc_opt(**options)
+		
+		head = '<?xml version="1.0" encoding="UTF-8"?>\n'+\
+				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'+\
+				' "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">\n'+\
+				'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr">\n'+\
+				'<head>\n'
+		start = ""		
+		if doc_op['title'] != "":
+			head += '  <title>'+doc_op['title']+ '</title>  \n'
+			start += '<h1>'+doc_op['title']+ '</h1>\n'
+		head +='  <style type="text/css">\n'+\
+				'p\n{\ntext-indent:50px;\n'+\
+				'} </style>\n'+\
+				'  <meta http-equiv="Content-Type" content="text/html; '+\
+				'charset=UTF-8" />\n'
+		if doc_op['author'] != "":
+			head += '  <meta name="Author" content="' +doc_op['author']+\
+																		'"/>\n'
+			start += '<p>'+doc_op['author']+ '</p>\n'
+		head +='</head>\n<body>\n'
+		
+		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
+		self.text=head+start+self.text+'</body>'
+		return self.text
 
 class FEExportLaTeX(FEExportGeneral):
 	extension='tex'
-	op=dict(
+	format_options=dict(
 		newline 			= '\n\n'	,
-		start_file 			= ''   	,
-		end_file 			= r'\end{document}',
+		# start_file 			= ''   	,
+		# end_file 			= r'\end{document}',
 		start_line 			= '' 	,
 		end_line 			= ''   	,
 		# start_emphasize 	= r'\startemph{}'  	,
@@ -187,7 +284,14 @@ class FEExportLaTeX(FEExportGeneral):
 		# separator 			= '\\begin{center}\n***\n\\end{center}'  	,
 		)
 		
-	def export(self,textedit=None,xml_string=None,title=None,author=None,head=False,**kargs):
+	document_options = dict_add(FEExportGeneral.document_options,dict(
+		head 	= (bool,False,"Head on top of each page of the file"),
+		date 	= (bool,False,"Will display the date in the file"),
+		))
+		
+	def export(self,textedit=None,xml_string=None,**options):
+		doc_op = self.get_doc_opt(**options)
+		
 		# pre="\\documentclass[12pt]{article}\n\\usepackage{geometry}\n\\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2.5cm,rmargin=2.5cm}\n\\usepackage{graphicx}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\renewcommand{\\baselinestretch}{1.5} \n "
 		# pre=r"\documentclass[12pt]{article}\n\usepackage{geometry}\n\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2cm,rmargin=2cm}\n\usepackage{graphicx}\n\begin{document}\n "
 		pre =  r"\documentclass[12pt]{article}"+"\n"
@@ -198,51 +302,53 @@ class FEExportLaTeX(FEExportGeneral):
 		pre += r"\usepackage[utf8]{inputenc}"+"\n"
 		pre += r"\usepackage[T1]{fontenc}"+"\n"
 		pre += r"\renewcommand{\baselinestretch}{1.5} "+"\n"
-		if head :
-			pre += 	"\\usepackage{fancyhdr}"+"\n"+\
-					"\pagestyle{fancy}"+"\n"+\
-					"\lhead{\textsc{"
-			if title!=None:
-				pre +=title
+		if doc_op['head'] :
+			pre += 	r"\usepackage{fancyhdr}"+"\n"+\
+					r"\pagestyle{fancy}"+"\n"+\
+					r"\lhead{\textsc{"
+			if doc_op['title']!=None:
+				pre +=doc_op['title']
 			pre += r"}}\cfoot{\thepage}\rhead{\textsc{"
-			if author!=None:
-				pre+=author
+			if doc_op['author']!=None:
+				pre+=doc_op['author']
 			pre += "}}\n"
 		
 		pre+=r"\begin{document}"+"\n"
 		
-		if title!=None:
-			pre += r'\title{'+title+'}\n'
-			pre += r'\date{}'+'\n'
+		if doc_op['title']!="":
+			pre += r'\title{'+doc_op['title']+'}\n'
+			if not doc_op['date']:
+				pre += r'\date{}'+'\n'
 			
-		if author!=None:
-			  pre+=r'\author{'+author+'}\n'
+		if doc_op['author']!="":
+			  pre+=r'\author{'+doc_op['author']+'}\n'
 		# if title!=None or author!=None:
-		if title!=None :
+		if doc_op['title']!="" :
 			pre += r'\maketitle'+'\n'
-		text = FEExportGeneral.export(self,textedit=textedit,xml_string=xml_string,start_file=pre,end_file="",**kargs)
 		
+		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
+		
+		# replace the unbreakable spaces
+		self.text = self.text.replace(u'\u00A0','~')
+		
+		self.text = pre+self.text+r'\end{document}'
+		return self.text
 		#emph is a little bit complicated, it has to be done at every line:
 		# it0 = 0
-		# it1 = text.find(self.op['start_emphasize'])
+		# it1 = text.find(self.format_options['start_emphasize'])
 		# newtext=""
 		# while it1>=0:
 		# 	newtext+=text[it0:it1]
-		# 	it0 = text.find(self.op['end_emphasize'],it1)
+		# 	it0 = text.find(self.format_options['end_emphasize'],it1)
 		# 	to_replace = text[it1:it0]
 		# 	to_replace=to_replace.replace('\n\n','}\n\n\\emph{')
 		# 	newtext+=to_replace
-		# 	it1 = text.find(self.op['start_emphasize'],it0)
+		# 	it1 = text.find(self.format_options['start_emphasize'],it0)
 		# 	
 		# text=newtext+text[it0:]
 		# 	
-		# text=text.replace(self.op['start_emphasize'],r'\emph{'	)
-		# text=text.replace(self.op['end_emphasize'],'}'	)
-		text+=self.op['end_file']
-		text = text.replace(u'\u00A0','~')
-		
-		self.text=text
-		return self.text
+		# text=text.replace(self.format_options['start_emphasize'],r'\emph{'	)
+		# text=text.replace(self.format_options['end_emphasize'],'}'	)
 
 
 class FEExportExternal (FEExportGeneral):
@@ -315,18 +421,24 @@ class FEExportExternal (FEExportGeneral):
 class FEExportPdf(FEExportExternal):
 	extension='pdf'
 	intermediate_export_class =  FEExportLaTeX
+	document_options = intermediate_export_class.document_options
 	
 	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
-		commandline = FEConstants['PDFLATEX_COMMAND']+' -output-directory '+\
-			dirpath_inter+' '+filepath_inter
+		commandline = FEConstants['PDFLATEX_COMMAND']+' -halt-on-error '+\
+			' -output-directory '+dirpath_inter+' '+filepath_inter
 		return commandline
 				
 class FEExportEpub(FEExportExternal):
 	extension='epub'
 	intermediate_export_class =  FEExportHtml
+	document_options = dict_add(intermediate_export_class.document_options,
+		dict( cover_file = (unicode,"","The image that should represent "+\
+			"cover of the file, if None, Calibre will generate its own")))
 	
 	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
 		print 'filepath_inter : ',filepath_inter
+		# commandline = FEConstants['EBOOKCONVERT_COMMAND']+' -halt-on-error '+\
+			# filepath_inter+' '+filepath_final
 		commandline = FEConstants['EBOOKCONVERT_COMMAND']+' '+\
 			filepath_inter+' '+filepath_final
 		return commandline
