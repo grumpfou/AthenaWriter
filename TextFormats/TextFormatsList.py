@@ -4,8 +4,8 @@ from TextFormatsConstants import TFConstants,TFError
 
 class TFFormatClassAbstract:
 	protected = False
-	def __init__(self,constant_name,xmlMark,userPropertyId,shortcut=None,
-		exportDict=None):
+	def __init__(self,constant_name,xmlMark,userPropertyId,name=None,
+		shortcut=None,exportDict=None):
 		"""
 		- constant_name : the name of the constant style to consider 
 			It will be a dictionary with the following key-value :
@@ -14,16 +14,21 @@ class TFFormatClassAbstract:
 				Qt
 			- font_name : 'times' or 'courrier' or all other font name
 			- font_size : "10" or all other string that represent an int
+			- font_color : a color in Qt.GlobalColor
 		- xmlMark : the name to put into the xml sign
 		- userPropertyId : the number that will represent the style
+		- name : the name of the format, if by default ""
 		- shortcut: the shortcut to apply to set the style
 		- exportDict: the dictionnary to apply to make the exportation under 
 			the form: {"html":("<h1>","</h1>"),"txt":("==","==")}
 		"""
+		if name==None:
+			name=""
 		self.constant_name 	= constant_name
 		self.constant	 	= TFConstants[constant_name]
 		self.xmlMark 		= xmlMark
 		self.userPropertyId = userPropertyId
+		self.name			= name
 		self.shortcut		= shortcut
 		if exportDict==None: self.exportDict={}
 		else: self.exportDict     = exportDict
@@ -37,7 +42,6 @@ class TFFormatClassAbstract:
 		- False if we remove the userPropertyId"""
 		qtFormating = self.getQtFormating(cursor)
 		id_ = self.getId(cursor)
-		
 		if id_ == self.userPropertyId:
 			self.setInverseStyleToQtFormating (qtFormating,cursor.document())
 			self.setQtFormating(cursor,qtFormating)
@@ -131,7 +135,15 @@ class TFFormatClassChar (TFFormatClassAbstract):
 				qtFormating.setProperty(QtGui.QTextFormat.FontPointSize,v)		
 				
 			elif k == 'font_name':
-				qtFormating.setProperty(QtGui.QTextFormat.FontFamily,v)		
+				qtFormating.setProperty(QtGui.QTextFormat.FontFamily,v)
+
+			elif k == 'font_color':
+				try :
+					color= QtGui.QColor(QtCore.Qt.__dict__[v])
+				except KeyError,e:
+					raise KeyError('Unknown color in QtCore.Qt.GlobalColor: '+\
+							"'"+v+"'.")
+				qtFormating.setForeground(color)
 				
 			else:
 				raise ValueError("Unknown parameter for char formating :",k)
@@ -161,6 +173,8 @@ class TFFormatClassChar (TFFormatClassAbstract):
 				fontName = 	document.defaultFont () .family ()
 				qtFormating.setProperty(QtGui.QTextFormat.FontFamily,
 																	fontName)
+			elif k == 'font_color':
+				qtFormating.setForeground(QtGui.QColor())
 			
 			else:
 				raise ValueError("Unknown parameter for char formating :",k)
@@ -292,22 +306,22 @@ class TFFormatClassSeparator (TFFormatClassBlock):
 		qtFormating = self.getQtFormating(cursor1)
 		id_ = self.getId(cursor1)
 		if id_ != self.userPropertyId:
-			# cursor1.insertBlock()
-			cursor1.insertText('toto\ntoto')
-			# res = TFFormatClassBlock.inverseFormat(self,cursor)
-			# cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
+			cursor1.insertBlock()
+			# cursor1.insertText('toto\ntoto')
+			res = TFFormatClassBlock.inverseFormat(self,cursor)
+			cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
 			
-			# id_ = self.getId(cursor)
-			# if id_ == self.userPropertyId:
-				# res = TFFormatClassBlock.inverseFormat(self,cursor)
-		# else:
-			# cursor.select(QtGui.QTextCursor.BlockUnderCursor)
-			# cursor.deleteChar()
-		pass
-		# if res:
-			# cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
+			id_ = self.getId(cursor)
+			if id_ == self.userPropertyId:
+				res = TFFormatClassBlock.inverseFormat(self,cursor)
+		else:
+			cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+			cursor.deleteChar()
+		# pass
+		if res:
+			cursor.insertText(TFConstants['SEPARATOR_MOTIF']+'\n')
 			
-		# return res
+		return res
 	
 	# def setQtFormating(self,cursor,qtFormating):
 		# assert type(qtFormating)==list
@@ -351,6 +365,7 @@ TFFormatEmphasize = TFFormatClassChar(
 	constant_name	=  'EMPHASIZE_STYLE',
 	xmlMark			=  'e',
 	userPropertyId	=  1,
+	name			=  'Emphasize',
 	shortcut		=  'Ctrl+E',
 	exportDict		=  {	'txt'  :('*','*'),
 							'html' :('<i>', '</i>') ,
@@ -363,6 +378,7 @@ TFFormatSeparator = TFFormatClassSeparator(
 	constant_name	=  'SEPARATOR_STYLE',
 	xmlMark			=  'sep',
 	userPropertyId	=  2,
+	name			=  'Separator',
 	shortcut		=  'Ctrl+K',
 	exportDict		=  {	'txt'  :('***',''),
 							'html' :('<h4><center>***</center></h4>',''),
@@ -374,6 +390,7 @@ TFFormatHeader1 = TFFormatClassBlock(
 	constant_name	=  'HEADER1_STYLE',
 	xmlMark			=  'h1',
 	userPropertyId	=  3,
+	name			=  'Header 1',
 	shortcut		=  'Ctrl+1',
 	exportDict		=  {	'txt'  :('==','=='),
 							'html' :('<h1>','</h1>'),
@@ -385,6 +402,7 @@ TFFormatHeader2 = TFFormatClassBlock(
 	constant_name	=  'HEADER2_STYLE',
 	xmlMark			=  'h2',
 	userPropertyId	=  4,
+	name			=  'Header 2',
 	shortcut		=  'Ctrl+2',
 	exportDict		=  {	'txt'  :('===','==='),
 							'html' :('<h2>','</h2>'),
@@ -396,6 +414,7 @@ TFFormatHeader3 = TFFormatClassBlock(
 	constant_name	=  'HEADER3_STYLE',
 	xmlMark			=  'h3',
 	userPropertyId	=  5,
+	name			=  'Header 3',
 	shortcut		=  'Ctrl+3',
 	exportDict		=  {	'txt'  :('====','===='),
 							'html' :('<h3>','</h3>'),
@@ -406,11 +425,25 @@ TFFormatHeader3 = TFFormatClassBlock(
 TFFormatCode = TFFormatClassBlock(
 	constant_name	=  'CODE_STYLE',
 	xmlMark			=  'code',
-	userPropertyId	=  6,
-	shortcut		=  'Ctrl+R',
+	userPropertyId	=  6,	
+	name			=  'Code',
+	# shortcut		=  'Ctrl+R',
+	shortcut		=  '',
 	exportDict		=  {	'txt'  :('>>> ',''),
 							'html' :('>>> ',''),
 							'tex'  :('>>> ',''),
+						}
+	)
+	
+TFFormatPhantom = TFFormatClassBlock(
+	constant_name	=  'PHANTOM_STYLE',
+	xmlMark			=  'phantom',
+	userPropertyId	=  7,
+	name			=  'Phantom',
+	shortcut		=  'Ctrl+R',
+	exportDict		=  {	'txt'  :('[[[',']]]'),
+							'html' :(' <font color="gray">','</font>'),
+							'tex'  :(r'{\tiny ','}'),
 						}
 	)
 	

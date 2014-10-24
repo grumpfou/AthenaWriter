@@ -4,6 +4,7 @@ from AthenaWriterConstants import *
 from AthenaWriterCore import AWCore
 from TextEdit.TextEdit import TETextEdit
 from TextEdit.TextEditLanguages import TELanguageDico
+from TextFormats.TextFormats import TFFormatManager
 from TextStatistics.TextStatistics import TSDialogManager
 from FileManagement.FileManagement import FMFileManagement
 from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
@@ -123,8 +124,6 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			mapper.setMapping(act, path)
 		self.connect(mapper, QtCore.SIGNAL("mapped(const QString &)"), self.SLOT_actionFileOpen )
 		
-		
-		
 		self.connect(self.actionViewFullScreen	,QtCore.SIGNAL("triggered()"),
 				self.SLOT_actionViewFullScreen)
 		
@@ -172,6 +171,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuFile.addSeparator ()
 		menuFile.addAction(self.actionFileQuit)		
 		
+		menuFormat = self.menuBar().addMenu ( "Format" )
+		for id in TFFormatManager.dictCharFormat.keys():
+			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+		menuFormat.addSeparator ()
+		for id in TFFormatManager.dictBlockFormat.keys():
+			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+		
+		
 		menuView = self.menuBar().addMenu ( "View" )
 		menuView.addAction(self.actionViewFullScreen)
 		
@@ -182,8 +189,6 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuEdit.addAction(self.textEdit.actionCopy)
 		menuEdit.addAction(self.textEdit.actionCut)
 		menuEdit.addAction(self.textEdit.actionPaste)
-		menuEdit.addAction(self.textEdit.actionEmphasize)
-		menuEdit.addAction(self.textEdit.actionSeparator)
 		menuEdit.addSeparator ()		
 		menuEdit.addAction(self.textEdit.actionLaunchFindDialog)		
 		menuEdit.addAction(self.textEdit.actionFindNext)		
@@ -208,14 +213,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.actionFileQuit,self.actionViewFullScreen,
 			self.textEdit.actionUndo,self.textEdit.actionRedo,
 			self.textEdit.actionCopy,self.textEdit.actionCut,
-			self.textEdit.actionPaste,self.textEdit.actionEmphasize,
-			self.textEdit.actionSeparator,self.textEdit.actionLaunchFindDialog,
+			self.textEdit.actionPaste, self.textEdit.actionLaunchFindDialog,
 			self.textEdit.actionFindNext,self.textEdit.actionFindPrevious,
 			self.textEdit.actionLaunchCharWidgetTable,
 			self.textEdit.actionChangeLanguage,
 			self.textEdit.actionRecheckTypography,
 			self.textEdit.actionEnableTypo,self.actionSendToExternalSoftware,
-			self.actionAboutHelp,self.actionAboutAbout]
+			self.actionAboutHelp,self.actionAboutAbout] + \
+			self.textEdit.actionFormatsDict.values()
 		for act in list_actions:
 			self.addAction(act)
 			

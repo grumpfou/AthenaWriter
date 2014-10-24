@@ -64,8 +64,8 @@ class TETextEdit(QtGui.QTextEdit):
 		self.actionLaunchFindDialog 		= Act("&Find",self)
 		self.actionFindNext			 		= Act("FindNext",self)
 		self.actionFindPrevious		 		= Act("FindPrevious",self)
-		self.actionEmphasize			 	= Act("&Emphasize",self)
-		self.actionSeparator			 	= Act("Add/Remove Separator",self)
+		# self.actionEmphasize			 	= Act("&Emphasize",self)
+		# self.actionSeparator			 	= Act("Add/Remove Separator",self)
 		self.actionRecheckTypography	 	= Act("&Recheck typography",self)
 		
 		KS = QtGui.QKeySequence
@@ -84,6 +84,19 @@ class TETextEdit(QtGui.QTextEdit):
 		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )	
 		
 		
+		self.actionFormatsDict = {}
+		for format in TFFormatManager.listCharFormat +\
+											TFFormatManager.listBlockFormat :
+			if format.name!="":
+				act = QtGui.QAction(format.name,self)
+			else:
+				act = QtGui.QAction(format.xmlMark,self)
+			if format.shortcut!=None:
+				act.setShortcuts(QtGui.QKeySequence(format.shortcut))
+			self.actionFormatsDict[format.userPropertyId] = act
+		
+		
+		
 	def setup_connections(self):
 		
 		trig = QtCore.SIGNAL("triggered()")
@@ -100,25 +113,18 @@ class TETextEdit(QtGui.QTextEdit):
 		c(self.actionLaunchFindDialog, trig, self.SLOT_actionLaunchFindDialog)
 		c(self.actionFindNext, trig,self.SLOT_actionFindNext)
 		c(self.actionFindPrevious, trig,self.SLOT_actionFindPrevious)
-		c(self.actionEmphasize, trig,self.SLOT_actionEmphasize)
-		c(self.actionSeparator, trig,self.SLOT_actionSeparator)
+		# c(self.actionEmphasize, trig,self.SLOT_actionEmphasize)
+		# c(self.actionSeparator, trig,self.SLOT_actionSeparator)
 		c(self.actionRecheckTypography, trig,self.SLOT_actionRecheckTypography)
 		
 		
 		# add the formatting (emphasize, set tot tile etc.) shortcuts to the 
-		# class 
-		l = TFFormatManager.listCharFormat+TFFormatManager.listBlockFormat
-		
-		dico = {f.shortcut:f for f in l if f.shortcut!=None }
 		mapper = QtCore.QSignalMapper(self)
-		for k in dico.keys():
-			short=QtGui.QShortcut(QtGui.QKeySequence(k),self)
-			self.connect(short,QtCore.SIGNAL("activated ()"), 
-												mapper, QtCore.SLOT("map()"))
-			short.setContext(QtCore.Qt.WidgetShortcut)
-			mapper.setMapping(short, dico[k].userPropertyId)
-		self.connect(mapper, QtCore.SIGNAL("mapped(const int &)"), 
-													self.SLOT_setFormating )
+		for userPropertyId,act in self.actionFormatsDict.items():
+			c(act,trig, mapper, QtCore.SLOT("map()"))
+			mapper.setMapping(act, userPropertyId)
+			
+		c(mapper, QtCore.SIGNAL("mapped(const int &)"), self.SLOT_setFormating)
 		
 		
 	def setText(self,text=None,new_language=None,type='plain'):
@@ -264,19 +270,19 @@ class TETextEdit(QtGui.QTextEdit):
 		cursor.setPosition(0)
 		self.language.cheak_after_paste(cursor)
 		
-	def SLOT_actionEmphasize(self):
-		cursor=self.textCursor()
-		# TFFormatEmphasize.inverseFormat(cursor)
-		TFFormatHeader1.inverseFormat(cursor)
-		# TFFormatManager.setFormatsToBloc(cursor.block())
-		self.setTextCursor(cursor)
+	# def SLOT_actionEmphasize(self):
+	# 	cursor=self.textCursor()
+	# 	# TFFormatEmphasize.inverseFormat(cursor)
+	# 	TFFormatHeader1.inverseFormat(cursor)
+	# 	# TFFormatManager.setFormatsToBloc(cursor.block())
+	# 	self.setTextCursor(cursor)
 		
-	def SLOT_actionSeparator(self):
-		print "Sould not pass here, OLD" #TODO
-		cursor=self.textCursor()
-		self.isInsertingSeparator=True
-		TFFormatSeparator.inverseFormat(cursor)
-		self.isInsertingSeparator=False
+	# def SLOT_actionSeparator(self):
+	# 	print "Sould not pass here, OLD" #TODO
+	# 	cursor=self.textCursor()
+	# 	self.isInsertingSeparator=True
+	# 	TFFormatSeparator.inverseFormat(cursor)
+	# 	self.isInsertingSeparator=False
 		
 	def SLOT_actionChangeLanguage(self):
 		"""Method that will display a QDialog that will enable to change the

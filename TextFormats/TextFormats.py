@@ -185,7 +185,8 @@ class TFFormatClassManager:
 										QtGui.QTextFormat.UserProperty)
 			if qtCharFormat_id != None:
 				qtCharFormat_id = qtCharFormat_id.toPyObject()
-			qtCharFormat_id = qtCharFormat_id.toPyObject()
+			if type(qtCharFormat_id)!=int:
+				qtCharFormat_id = qtCharFormat_id.toPyObject()
 			if qtCharFormat_id  in self.dictCharFormat.keys():
 				format = TFFormatManager.dictCharFormat[qtCharFormat_id]
 				format.setStyleToQtFormating(qtCharFormat,cursor.document())
@@ -307,7 +308,8 @@ class TFFormatClassManager:
 # TFFormatHeader3 = TFFormatClassBlock('HEADER3_STYLE','h3',5,'Ctrl+3')
 TFFormatManager = TFFormatClassManager(
 	listBlockFormat = [	TFFormatSeparator,TFFormatHeader1,
-						TFFormatHeader2,TFFormatHeader3,TFFormatCode],
+						TFFormatHeader2,TFFormatHeader3,TFFormatCode,
+						TFFormatPhantom],
 	listCharFormat = [TFFormatEmphasize])
 #TFFormatsList=[TFFormatEmphasize,TFFormatSeparator]		
 	

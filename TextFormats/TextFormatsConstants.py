@@ -29,11 +29,12 @@ class TFStyleAttributes:
 		else:
 			self.style_attr = CMConstantsAbstarct.str_to_dict(attributes,{unicode:unicode})
 		
-		possible_attr = ["char_style","font_size","font_name","alignment"]
+		possible_attr = ["char_style","font_size","font_name","alignment",
+				"font_color"]
 		for k in self.style_attr.keys():
 			if not k in possible_attr:
 				raise KeyError('The style attribute should be in ' + \
-						possible_attr + '; get '+k+' instead')
+						str(possible_attr) + '; get "'+k+'" instead')
 						
 	def __getitem__(self,key):
 		return self.style_attr[key]
@@ -104,6 +105,14 @@ class TFConstantsAbstract (CMConstantsAbstarct):
 				CODE_STYLE = (TFStyleAttributes,
 						TFStyleAttributes({	"font_name":"Courier",
 											"font_size":"20"
+											}),
+						'The style of the code block'
+						),
+
+				PHANTOM_STYLE = (TFStyleAttributes,
+						TFStyleAttributes({	#"font_name":"Courier",
+											"font_color":"gray",
+											# "font_size":"10"
 											}),
 						'The style of the code block'
 						),
