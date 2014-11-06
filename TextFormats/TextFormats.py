@@ -217,10 +217,33 @@ class TFFormatClassManager:
 				self.setCharFormatsToBlock(cursor.block())
 		elif format_id in self.dictCharFormat.keys():
 			res = self.dictCharFormat[format_id].inverseFormat(cursor)
-			if not res:
+			if not res: ## ?????
 				self.setBlockFormatsToChar(cursor)
 		else:
 			raise ValueError('Format id '+str(format_id)+' unknown !')
+			
+	def resetFormat(self,cursor):
+		"""Will reset all the formating of the cursor, that is to say:
+		- the char format of the selection
+		- the block format of the whole block
+		"""
+		qtCharFormat = cursor.charFormat()
+		qtBlockFormat = cursor.blockFormat()
+		qtCharFormat_id = qtCharFormat.property(QtGui.QTextFormat.UserProperty)
+		qtBlockFormat_id = qtBlockFormat.property(
+												QtGui.QTextFormat.UserProperty)
+		
+		qtCharFormat_id  = qtCharFormat_id.toPyObject()
+		qtBlockFormat_id = qtBlockFormat_id.toPyObject()
+		res1 = False									
+		res2 = False									
+		if qtCharFormat_id in self.dictCharFormat.keys():
+			res1 = self.dictCharFormat[qtCharFormat_id].inverseFormat(cursor)
+			
+		if qtBlockFormat_id in self.dictBlockFormat.keys():
+			res2 = self.dictBlockFormat[qtBlockFormat_id].inverseFormat(cursor)
+		
+		return res1,res2
 			
 		
 # 	def setFormatsToBlocOLD(self,block):

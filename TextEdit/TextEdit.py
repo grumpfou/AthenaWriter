@@ -67,6 +67,7 @@ class TETextEdit(QtGui.QTextEdit):
 		# self.actionEmphasize			 	= Act("&Emphasize",self)
 		# self.actionSeparator			 	= Act("Add/Remove Separator",self)
 		self.actionRecheckTypography	 	= Act("&Recheck typography",self)
+		self.actionResetFormat				= Act("&Reset format",self)
 		
 		KS = QtGui.QKeySequence
 		self.actionCopy				 		.setShortcuts(KS.Copy		)
@@ -82,6 +83,7 @@ class TETextEdit(QtGui.QTextEdit):
 		self.actionLaunchFindDialog	 	    .setShortcuts(KS.Find )	
 		self.actionFindNext			 	    .setShortcuts(KS.FindNext )	
 		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )	
+		# self.actionResetFormat		 	    .setShortcuts(KS.FindPrevious )	
 		
 		
 		self.actionFormatsDict = {}
@@ -116,6 +118,7 @@ class TETextEdit(QtGui.QTextEdit):
 		# c(self.actionEmphasize, trig,self.SLOT_actionEmphasize)
 		# c(self.actionSeparator, trig,self.SLOT_actionSeparator)
 		c(self.actionRecheckTypography, trig,self.SLOT_actionRecheckTypography)
+		c(self.actionResetFormat, trig,self.SLOT_actionResetFormat)
 		
 		
 		# add the formatting (emphasize, set tot tile etc.) shortcuts to the 
@@ -351,7 +354,15 @@ class TETextEdit(QtGui.QTextEdit):
 		self.blockSignals (False)
 		cursor.endEditBlock()
 
-		
+	def SLOT_actionResetFormat(self):
+		cursor=self.textCursor()
+		cursor.beginEditBlock()
+		self.blockSignals (True)
+		TFFormatManager.resetFormat(cursor)
+		# self.setTextCursor(cursor)
+		self.blockSignals (False)
+		cursor.endEditBlock()
+
 
 	def insertFromMimeData(self,source ):
 		"""A re-implementation of insertFromMimeData. We have to check the 
@@ -463,8 +474,8 @@ class TETextEdit(QtGui.QTextEdit):
 					# the cursor position
 		else:
 			QtGui.QTextEdit.undo(self)
+	
 		
-
 	def keyPressEvent(self,event):
 		"""
 		This action grab the Undo KeySequence to execute the special function 
@@ -472,6 +483,8 @@ class TETextEdit(QtGui.QTextEdit):
 		"""
 		if (event.matches(QtGui.QKeySequence.Undo)):
 			self.undo()
+		elif (event.matches(QtGui.QKeySequence.Redo)):
+			self.redo()
 		elif (event.matches(QtGui.QKeySequence.Copy)):
 			self.copy()
 		elif (event.matches(QtGui.QKeySequence.Cut)):

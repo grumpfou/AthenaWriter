@@ -51,8 +51,8 @@ TEConstants= TEConstantsAbstract()
 	
 def yieldBlockInSelection_WW(self,direction=1):
 	"""
-	-direction : if positive, then will go forward
-		otherwise, it will go backward.
+	- direction : if positive, then will go forward otherwise, it will go 
+			backward.
 	"""
 	pos1=self.selectionStart()
 	pos2=self.selectionEnd ()
@@ -72,7 +72,8 @@ def yieldBlockInSelection_WW(self,direction=1):
 	yield bl
 	while bl!=bl_end:
 		if direction>=0:bl=bl.next()
-		if direction>=0:bl=bl.previous()
+		# if direction>=0:bl=bl.previous()
+		else:bl=bl.previous()
 		yield bl
 QtGui.QTextCursor.yieldBlockInSelection=yieldBlockInSelection_WW
 

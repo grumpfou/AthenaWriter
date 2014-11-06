@@ -66,6 +66,7 @@ class FEExportGeneral:
 		title 	= (unicode,"","Title of the story"),
 		author 	= (unicode,"","Author of the story"),
 		version = (unicode,"","Version of the story"),
+		phantom = (bool,True,"Export with phantom text"),
 		)
 	
 	def __init__(self,format_manager):
@@ -86,6 +87,7 @@ class FEExportGeneral:
 							"either textedit and xml_string should not be None"
 		
 		format_options=self.format_options.copy()
+		doc_op = self.get_doc_opt(**options)
 		
 		if textedit!=None:
 			text = textedit.toXml()	
@@ -100,6 +102,17 @@ class FEExportGeneral:
 				else:start_mark=marks[0]
 				text=text.replace('<'+format.xmlMark+'/>',start_mark
 					)
+			elif format==TFFormatPhantom and not doc_op['phantom']:
+				print "PHANTOM"
+				start_mark = '<'+format.xmlMark+'>'
+				end_mark = '</'+format.xmlMark+'>\n'
+				i = text.find(start_mark)
+				while i>=0:
+					j = text.find(end_mark,i)
+					assert j>=0, 'Error : a xml balise is not closed'
+					j += len(end_mark)
+					text = text[:i]+text[j:]
+					i=text.find(start_mark,j)
 			else:
 				marks = format.exportDict.get(self.extension,None)
 				print 'marks : ',marks

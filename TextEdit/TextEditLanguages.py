@@ -1,36 +1,37 @@
 """
 Part of the  project AthenaWriter. Written by Renaud Dessalles
 Contains the class that deal with the typograpgy.
-The TELanguageAbstract class is the model class of all the language class below.
-It must not be used directly, only subclass should be used.
+The TELanguageAbstract class is the model class of all the language class 
+below. It must not be used directly, only subclass should be used.
 
 There is two ways of correcting the typography of the user :
-- by cheaking during the editing : every time the cursor moves (a char is inserted or
-a the user moves the cursor), the software is cheking if the chars around the place 
-leaved by the cursor are correct, and correct them if necessary. The method used to do
-so is correct_between_chars.
-- after a word is written : to correct the previous word etc. The method used to do
-so is wordCorrection.
+- by cheaking during the editing : every time the cursor moves (a char is 
+inserted or a the user moves the cursor), the software is cheking if the chars 
+around the place leaved by the cursor are correct, and correct them if 
+necessary. The method used to do so is correct_between_chars.
+- after a word is written : to correct the previous word etc. The method used 
+to do so is wordCorrection.
 The class can also contain some pluggin usefull in the language :
 - the shortcuts_insert dict allow to insert specific text after a shortcut
-- the shortcuts_correction_plugins dict allow to do a more complex modification of the 
-text.
+- the shortcuts_correction_plugins dict allow to do a more complex modification 
+of the text.
 
 When creating a new Language class, it must contain :
 - the encoding
 - the name of the language (in the language)
-- possibly the shortcuts_insert (a dictionary where the key is a tuple containing 
-the sequence of the shortcut and the value is the string to insert.
+- possibly the shortcuts_insert (a dictionary where the key is a tuple 
+containing the sequence of the shortcut and the value is the string to insert.
 _ a __init__ method with :
 	a dictionary shortcuts_correction_plugins dict : 
 		key : shortcuts_correction_plugins 
 		value : the name of the pluggin method
 	self.rules : the list of the rules (contained in the file 
-		WolfWriterLanguagesRules.py) that will be check by the correct_between_chars
-		method. Note that the order of the list is the same in which the rule will be 
-		checked.
+		WolfWriterLanguagesRules.py) that will be check by the 
+		correct_between_chars method. Note that the order of the list is the 
+		same in which the rule will be checked.
 - a possibly reimplementation of the wordCorrection method
-- the possibly method mentioned in the values of the shortcuts_correction_plugins
+- the possibly method mentioned in the values of the 
+	shortcuts_correction_plugins
 """
 from PyQt4 import QtGui, QtCore
 
@@ -55,9 +56,9 @@ class TELanguageAbstract:
 		
 	
 	def correct_between_chars(self,cursor):
-		#Function that will be called everytime the cursor moves. It check the respect
-		#of all the typography rules of the two char of both sides of the position that
-		#the cursor has just left.
+		# Function that will be called everytime the cursor moves. It check the 
+		# respect of all the typography rules of the two char of both sides of 
+		# the position that the cursor has just left.
 
 		last_char=self.lastChar(cursor)
 		next_char=self.nextChar(cursor)
@@ -71,39 +72,43 @@ class TELanguageAbstract:
 		return False
 		
 	def lastChar(self,cursor,n=1):
-		# Return the left char at the distance n from the cursor (n=1 means the one
-		# just on the left).
+		# Return the left char at the distance n from the cursor (n=1 means 
+		# the one just on the left).
 		if cursor.atBlockStart():
 			return u'\n'		
 		else :
 			cur_tmp=QtGui.QTextCursor(cursor)
 			cur_tmp.clearSelection()
 			for i in range(n-1):
-				cur_tmp.movePosition(QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor)
+				cur_tmp.movePosition(QtGui.QTextCursor.Left,
+												QtGui.QTextCursor.MoveAnchor)
 				if cur_tmp.atBlockStart():
 					return '\n'		
-			cur_tmp.movePosition (QtGui.QTextCursor.Left,QtGui.QTextCursor.KeepAnchor)
+			cur_tmp.movePosition (QtGui.QTextCursor.Left,
+												QtGui.QTextCursor.KeepAnchor)
 			return cur_tmp.selectedText ()
 
 	def nextChar(self,cursor,n=1):
-		# Return the right char at the distance n from the cursor (n=1 means the one
-		# just on the right).		
+		# Return the right char at the distance n from the cursor (n=1 means 
+		# the one just on the right).		
 		if cursor.atBlockEnd():
 			return u'\n'		
 		else :
 			cur_tmp=QtGui.QTextCursor(cursor)
 			cur_tmp.clearSelection()
 			for i in range(n-1):
-				cur_tmp.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor)
+				cur_tmp.movePosition(QtGui.QTextCursor.Right,
+												QtGui.QTextCursor.MoveAnchor)
 				if cur_tmp.atBlockEnd():
 					return u'\n'				
-			cur_tmp.movePosition (QtGui.QTextCursor.Right,QtGui.QTextCursor.KeepAnchor,n=n)
+			cur_tmp.movePosition (QtGui.QTextCursor.Right,
+											QtGui.QTextCursor.KeepAnchor,n=n)
 			return cur_tmp.selectedText ()
 			
 	def getWordUnderCursor(self,cursor,char_exception=None):
-		# Return the word under the cursor. char_exception in entry should be the list
-		# of the chars that should not be considered as word breack (usfull to take 
-		# words like "I'am" or "re-invented").
+		# Return the word under the cursor. char_exception in entry should be 
+		# the list of the chars that should not be considered as word break 
+		# (usfull to take  words like "I'am" or "re-invented").
 		if char_exception==None : char_exception=[]
 		cur_start=QtGui.QTextCursor(cursor)
 		cur_start.clearSelection()
@@ -112,17 +117,22 @@ class TELanguageAbstract:
 		
 		regexp=QtCore.QRegExp("\\b")
 		
-		cur_start=cur_start.document().find(regexp,cur_start,QtGui.QTextDocument.FindBackward)
+		cur_start=cur_start.document().find(regexp,cur_start,
+											QtGui.QTextDocument.FindBackward)
 		while self.lastChar( cur_start ) in char_exception:
-			cur_start.movePosition(QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor)
-			cur_start=cur_start.document().find(regexp,cur_start,QtGui.QTextDocument.FindBackward)
+			cur_start.movePosition(QtGui.QTextCursor.Left,
+												QtGui.QTextCursor.MoveAnchor)
+			cur_start=cur_start.document().find(regexp,cur_start,
+											QtGui.QTextDocument.FindBackward)
 		cur_end=cur_end.document().find(regexp,cur_end)
 		while self.nextChar( cur_end ) in char_exception:
-			cur_end.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor,n=2)
+			cur_end.movePosition(QtGui.QTextCursor.Right,
+											QtGui.QTextCursor.MoveAnchor,n=2)
 			cur_end=cur_end.document().find(regexp,cur_end)
 		
 		n=cur_end.position()-cur_start.position()
-		cur_start.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.KeepAnchor,n=n)
+		cur_start.movePosition(QtGui.QTextCursor.Right,
+											QtGui.QTextCursor.KeepAnchor,n=n)
 		return cur_start.selectedText(),cur_start
 		
 

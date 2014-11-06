@@ -1,0 +1,8 @@
+SciTE: Fatal IO error 11 (Ressource temporairement non disponible) on X server :0.
+
+(SciTE:6035): GVFS-RemoteVolumeMonitor-WARNING **: Owner of volume monitor org.gtk.Private.AfcVolumeMonitor disconnected from the bus; removing drives/volumes/mounts
+
+(SciTE:6035): GVFS-RemoteVolumeMonitor-WARNING **: Owner of volume monitor org.gtk.Private.UDisks2VolumeMonitor disconnected from the bus; removing drives/volumes/mounts
+
+(SciTE:6035): GVFS-RemoteVolumeMonitor-WARNING **: Owner of volume monitor org.gtk.Private.MTPVolumeMonitor disconnected from the bus; removing drives/volumes/mounts
+SciTE: Fatal IO error 11 (Ressource temporairement non disponible) on X server :0.

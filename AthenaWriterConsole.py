@@ -261,6 +261,9 @@ if __name__ == '__main__':
 	cons = AWConsole()
 	writerText = cons.perfom_command()
 	if writerText!=None:
+		dir,f = os.path.split(__file__)
+		iconpath = os.path.join(dir,'./Images/LogoTmp.png')
+		app.setWindowIcon(QtGui.QIcon(iconpath))			
 		writerText.show()
 		sys.exit(app.exec_())
 	else:

@@ -142,7 +142,9 @@ if __name__ == '__main__':
 	from AthenaWriterMainWindow import AWWriterText
 
 	app = QtGui.QApplication(sys.argv)
-
+	dir,f = os.path.split(__file__)
+	iconpath = os.path.join(dir,'./Images/LogoTmp.png')
+	app.setWindowIcon(QtGui.QIcon(iconpath))	
 		
 	writerText = AWWriterText(parent=None)
 	writerText.show()

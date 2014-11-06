@@ -285,13 +285,32 @@ class TFFormatClassBlock (TFFormatClassAbstract):
 		cursor.setBlockFormat(qtFormating)
 
 	def getQtFormating(self,cursor):
+		""" Will return the formating of the format. It will be under the form 
+		of [blockFormat,charFormat].
+		"""
 		return  [cursor.blockCharFormat(),cursor.blockFormat()]
 
 	def setQtFormating(self,cursor,qtFormating):
+		"""Will put the corresponding formating to the cursor's selection:
+		- cursor: the cursor on which the format should be applied
+		- qtFormating: the formats to applied. It should be under the form of
+			[blockFormat,charFormat]
+		"""
 		assert type(qtFormating)==list
 		cursor.setBlockFormat(qtFormating[1])
 		cursor = QtGui.QTextCursor(cursor)
-		cursor.select(QtGui.QTextCursor.BlockUnderCursor)
+		start_sel = cursor.selectionStart ()
+
+		end_sel = cursor.selectionEnd ()
+		doc = cursor.document()
+		
+		first_block = doc.	findBlock ( start_sel)
+		last_block = doc.	findBlock ( end_sel)
+		
+		# Select all the block of cursor's selection
+		cursor.setPosition(first_block.position(),QtGui.QTextCursor.MoveAnchor)
+		cursor.setPosition(last_block.position()+last_block.length()-1,
+												QtGui.QTextCursor.KeepAnchor)
 		cursor.setBlockCharFormat(qtFormating[0])
 		cursor.mergeCharFormat(qtFormating[0])
 

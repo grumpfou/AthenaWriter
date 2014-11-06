@@ -177,6 +177,8 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuFormat.addSeparator ()
 		for id in TFFormatManager.dictBlockFormat.keys():
 			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+		menuFormat.addSeparator ()
+		menuFormat.addAction (self.textEdit.actionResetFormat)
 		
 		
 		menuView = self.menuBar().addMenu ( "View" )
