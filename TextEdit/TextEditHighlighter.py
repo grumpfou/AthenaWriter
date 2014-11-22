@@ -23,10 +23,13 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 	
 	WORDS = u'(?iu)[\w\'\u2019]+'	
 	
-	def __init__(self,parent,texteditlanguage):
+	def __init__(self,parent,texteditlanguage,list_spelling=None):
 		QtGui.QSyntaxHighlighter.__init__(self,parent)
 		self.lang = TELanguageEnchantDico[texteditlanguage.name]
 		self.dict = enchant.Dict(self.lang)
+		if list_spelling!=None:
+			for w in list_spelling:
+				self.dict.add(w)
 	
 	def highlightBlock(self, text):
 		if TEConstants['SPELL_CHECK'] :

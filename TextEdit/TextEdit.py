@@ -10,18 +10,25 @@ from TextEditFindReplace 				import *
 from TextEditHighlighter				import *
 from TextFormats.TextFormats			import *
 from TextFormats.TextFormatsConstants	import TFConstants
+from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
+
+
+
 
 class TETextEdit(QtGui.QTextEdit):
-	def __init__(self, parent=None,language_name=None,dict_autocorrection=None,
+	def __init__(self, parent=None,language_name=None,local_dir=None,
 					font_indent=False,font_line_height=False,doc_margin=False):
 		"""
 		- parent : the parent widget
+		- local_dir : a local directory where to find some config files
+			(spelling, autcor).
 		"""
 		QtGui.QTextEdit.__init__(self,parent=None)
 
 		self.font_indent        = font_indent
 		self.font_line_height   = font_line_height
 		self.doc_margin			= doc_margin
+		self.local_dir			= local_dir #usefull to save the file
 		
 		QtCore.QObject.connect(self,QtCore.SIGNAL("cursorPositionChanged()"),self.SLOT_cursorPositionChanged)
 		QtCore.QObject.connect(self,QtCore.SIGNAL("textChanged ()"),self.SLOT_textChanged)
@@ -29,7 +36,10 @@ class TETextEdit(QtGui.QTextEdit):
 		self.old_cursor_position=self.textCursor().position() #we will remember 
 				# the old position of the cursor in order to make typography 
 				# corrections when it will move
-		self.dict_autocorrection=dict_autocorrection
+		
+		 
+		self.dict_autocorrection = CLAutoCorrection.get_values(
+														local_dir=local_dir)
 		self.changeLanguage(language_name)
 		
 		self.findDialog 		= TEFindDialog(textedit=self)
@@ -47,7 +57,9 @@ class TETextEdit(QtGui.QTextEdit):
 		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
 		
 		if TEConstants['SPELL_CHECK'] and TEHasEnchant :
-			self.highlighter = TEHighlighter(self.document(),self.language)
+			list_spelling = CLSpelling.get_values(local_dir=local_dir)
+			self.highlighter = TEHighlighter(self.document(),self.language,
+												list_spelling=list_spelling)
 			
 		
 		
@@ -130,7 +142,8 @@ class TETextEdit(QtGui.QTextEdit):
 		c(mapper, QtCore.SIGNAL("mapped(const int &)"), self.SLOT_setFormating)
 		
 		
-	def setText(self,text=None,new_language=None,type='plain'):
+	def setText(self,text=None,new_language=None,type='plain',
+														local_dir=None):
 		"""This method will set the text contained in text (when changing the 
 		active scene for instance.
 		- text : the text to insert (if None then it will insert u"")
@@ -138,6 +151,7 @@ class TETextEdit(QtGui.QTextEdit):
 				previous one
 		- type : 'plain' if raw text ; 'xml' if the personal format ; 'html' if 
 				html
+		- local_dir : local_dir of the file
 		"""
 		if text==None: text=""
 		# We change the language if necessary
@@ -150,8 +164,13 @@ class TETextEdit(QtGui.QTextEdit):
 		document=QtGui.QTextDocument(self)
 		cursor , document= self.setDocumentFormat(document)
 		
+		self.local_dir = local_dir
+		self.dict_autocorrection = CLAutoCorrection.get_values(
+														local_dir=local_dir)
 		if TEConstants['SPELL_CHECK'] and TEHasEnchant :
-			self.highlighter = TEHighlighter(document,self.language)
+			list_spelling = CLSpelling.get_values(local_dir=local_dir)
+			self.highlighter = TEHighlighter(document,self.language,
+												list_spelling=list_spelling)
 
 			
 		if type=='plain' 	: cursor.insertText(text)
@@ -564,10 +583,15 @@ class TETextEdit(QtGui.QTextEdit):
 						QtCore.SIGNAL("mapped(const QString &)"), 
 						self.SLOT_correctWord 
 						)
-						
+					
 					# Only add the spelling suggests to the menu if there are
 					# suggestions.
 					if len(spell_menu.actions()) != 0:
+						spell_menu.insertSeparator(popup_menu.actions()[0])
+						act = QtGui.QAction('Add word (not working)',
+																	spell_menu)
+						spell_menu.addAction(act)
+						# TODO
 						popup_menu.insertSeparator(popup_menu.actions()[0])
 						popup_menu.insertMenu(popup_menu.actions()[0], 
 																	spell_menu)

@@ -15,6 +15,7 @@ from MetaData.MetaData import MDMetaDataDialog,MDMetaData
 from ConstantsManagement.ConstantsManagementDialog import CMDialog
 
 
+
 import sys
 import os
 import threading
@@ -74,8 +75,11 @@ class AWCore:
 		else:
 			self.filepath=filepath
 		
+		
+		# Get the text:
+		local_dir,tmp = os.path.split(self.filepath)
 		text = FMFileManagement.open(filepath)
-		self.textEdit.setText(text,type='xml')
+		self.textEdit.setText(text,type='xml',local_dir=local_dir)
 		if AWConstants['DO_METADATA'] :
 			# we will open the file .athw_meta as well
 			meta_filepath,tmp = os.path.splitext(self.filepath)

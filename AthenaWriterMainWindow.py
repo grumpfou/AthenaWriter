@@ -7,7 +7,7 @@ from TextEdit.TextEditLanguages import TELanguageDico
 from TextFormats.TextFormats import TFFormatManager
 from TextStatistics.TextStatistics import TSDialogManager
 from FileManagement.FileManagement import FMFileManagement
-from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
+# from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from FileManagement.FileManagementFileConstants	 import FMFileConstants
 from FileExport.FileExportExportDialog import FEExportDialog
@@ -30,15 +30,15 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		QtGui.QMainWindow.__init__(self,*args,**kargs)
 		AWCore.__init__(self)
-		dict_autocorrection = FMAutoCorrectionFile.open()
+		# dict_autocorrection = FMAutoCorrectionFile.open()
 		
 		kargs_font = dict(
 				font_indent      = AWConstants['TEXT_INDENT']		,
 				font_line_height = AWConstants['TEXT_LINE_HEIGHT']	,
 				doc_margin	 	 = AWConstants['TEXT_MARGIN']	,
 				)
-		self.textEdit = TETextEdit(language_name='French',
-						dict_autocorrection=dict_autocorrection,**kargs_font)
+		self.textEdit = TETextEdit(language_name='French',**kargs_font)
+						# dict_autocorrection=dict_autocorrection,**kargs_font)
 		
 		self.setCentralWidget (self.textEdit)
 		
