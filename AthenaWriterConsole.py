@@ -45,13 +45,28 @@ class AWConsole (AWCore):
 			help="Recheck the typography when opening the file.",
 			action="store_true")
 		
-		self.parser.add_argument("-1", 
-			help="Will load the last files in the LastFile.txt list",
-			action="store_true",
-			dest="last_file"
-			)
+		for i in range(1,10):
+			self.parser.add_argument("-"+str(i),
+				help="Will load the "+str(i)+"-th last files in the "+\
+														"LastFile.txt list",
+				action="store_true",
+				dest="last_file_"+str(i)
+				)
+
+		self.parser.add_argument("-l","--list_last_files", 
+			help="Will list the last files of LastFile.txt",
+			dest='list_last_files',action="store_true")
 		
 		self.args = self.parser.parse_args()
+		
+		l = [i for i in range(1,10) if self.args.__dict__["last_file_"+str(i)]]
+		if len(l)>1:
+			raise AWConsoleError("Several last files oppening option "+\
+											"specified; please use only one.")
+		elif len(l)==1 : 
+			self.args.last_file = l[0]
+		else : self.args.last_file = False
+		
 		
 		if self.args.last_file:
 			if self.args.file!=None:
@@ -61,7 +76,7 @@ class AWConsole (AWCore):
 				raise AWConsoleError("The last files memory is empty can not"+\
 						"open the last of the list.")
 			
-			self.args.file = self.lastFilesList.list_files[0]
+			self.args.file=self.lastFilesList.list_files[self.args.last_file-1]
 
 		if self.args.importt!=None or self.args.export!=None:
 			if self.args.last_file :
@@ -83,6 +98,7 @@ class AWConsole (AWCore):
 		print 'self.args.outdir',self.args.outdir,type(self.args.outdir)
 		print 'self.args.recheck',self.args.recheck,type(self.args.recheck)
 		print 'self.args.last_file',self.args.last_file,type(self.args.last_file)
+		print 'self.args.l',self.args.l,type(self.args.l)
 		
 		
 
@@ -143,6 +159,18 @@ class AWConsole (AWCore):
 		if self.args.export: # if we export the file, the console mode is 
 							# automatic
 			self.args.console=True
+			
+		########################### list last files ###########################
+		if self.args.list_last_files:# if we export the file, the console mode 
+							# is disabled
+			self.args.console = True
+			print 'self.lastFilesList : ',self.lastFilesList
+			
+			lf = self.lastFilesList.list_files
+			if len(lf)>9: lf = lf[:9]
+			print "=== Last files list ==="
+			print '\n'.join([str(i+1)+'- '+v for i,v in enumerate(lf)])
+			
 		self.filepath = self.args.file
 		############# importation #############
 		if self.args.importt :
