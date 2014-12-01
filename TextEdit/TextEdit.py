@@ -12,9 +12,6 @@ from TextFormats.TextFormats			import *
 from TextFormats.TextFormatsConstants	import TFConstants
 from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
 
-
-
-
 class TETextEdit(QtGui.QTextEdit):
 	def __init__(self, parent=None,language_name=None,local_dir=None,
 					font_indent=False,font_line_height=False,doc_margin=False):
@@ -360,6 +357,31 @@ class TETextEdit(QtGui.QTextEdit):
 		self.language.cheak_after_paste(cursor,len(word) )
 
 		cursor.endEditBlock()
+		
+	def SLOT_addWordSpelling(self,word,where='local'):
+		"""
+		Add the word into the configuration file of the spelling
+		"""
+		# to replace curved apostroph by stright ones
+		word = self.highlighter.toRawWord(word)
+		
+		# word = tuple_word_where[0]
+		# if len(tuple_word_where)==1:
+			# where='local'
+		# else:
+			# where = tuple_word_where[1]
+		if self.parent().filepath==None:
+			local_dir = None
+		else:
+			local_dir,tmp = os.path.split(self.parent().filepath)
+		
+		try :
+			CLSpelling.add_words(words=[word],where=where,local_dir=local_dir)
+			self.highlighter.dict.add(word)
+			self.highlighter.rehighlight ()
+			
+		except IOError,e:
+			QtGui.QMessageBox.critical(self,'Input error',e)
 	
 	def SLOT_setFormating(self,format_id):
 		cursor=self.textCursor()
@@ -539,7 +561,13 @@ class TETextEdit(QtGui.QTextEdit):
 		return newText
 		
 	def contextMenuEvent(self, event):
-		popup_menu = self.createStandardContextMenu()
+		cursor = QtGui.QTextCursor(self.document())
+		cursor = self.cursorForPosition(event.pos())
+		self.setTextCursor(cursor)		
+		
+		# popup_menu = self.createStandardContextMenu()
+		popup_menu = QtGui.QMenu(self)
+		
 		
 		if TEConstants['SPELL_CHECK'] and TEHasEnchant:
 			# Select the word under the cursor.
@@ -587,14 +615,58 @@ class TETextEdit(QtGui.QTextEdit):
 					# Only add the spelling suggests to the menu if there are
 					# suggestions.
 					if len(spell_menu.actions()) != 0:
-						spell_menu.insertSeparator(popup_menu.actions()[0])
-						act = QtGui.QAction('Add word (not working)',
+						spell_menu.addSeparator()
+						act_loc = QtGui.QAction('Add word to local dict',
 																	spell_menu)
-						spell_menu.addAction(act)
-						# TODO
-						popup_menu.insertSeparator(popup_menu.actions()[0])
-						popup_menu.insertMenu(popup_menu.actions()[0], 
+						act_usr = QtGui.QAction('Add word to user dict',
 																	spell_menu)
+						act_glo = QtGui.QAction('Add word to global dict',
+																	spell_menu)
+						
+						spell_menu.addAction(act_loc)
+						spell_menu.addAction(act_usr)
+						spell_menu.addAction(act_glo)
+						
+						if self.parent()==None or self.parent().filepath==None:
+							act_loc.setEnabled(False)
+						
+						# Add word dictionary add to the mapper
+						mapper = QtCore.QSignalMapper(self)
+						c = QtCore.QObject.connect
+						trig = QtCore.SIGNAL("triggered ()")
+						
+						slot_loc = lambda : self.SLOT_addWordSpelling(text,'local')
+						slot_usr = lambda : self.SLOT_addWordSpelling(text,'user')
+						slot_glo = lambda : self.SLOT_addWordSpelling(text,'global')
+						
+						c(act_loc,trig, slot_loc)
+						c(act_usr,trig, slot_usr)
+						c(act_glo,trig, slot_glo)
+						
+						# map = QtCore.SLOT("map()")
+						# c(act_loc,trig, mapper, map)
+						# mapper.setMapping(act, text,'local'))
+						# c(act_usr,trig, mapper, map)
+						# mapper.setMapping(act, text))
+						# c(act_glo,trig, mapper, map)
+						# mapper.setMapping(act, text))
+						
+						
+						# self.connect(
+							# mapper, 
+							# QtCore.SIGNAL("mapped(const QString &)"), 
+							# self.SLOT_addWordSpelling
+							# )
+						
+						popup_menu.addSeparator()
+						popup_menu.addMenu(spell_menu)
+						
+		popup_menu.addAction(self.actionUndo)
+		popup_menu.addAction(self.actionRedo)
+		popup_menu.addSeparator()
+		popup_menu.addAction(self.actionCut)
+		popup_menu.addAction(self.actionCopy)
+		popup_menu.addAction(self.actionPaste)
 
 		popup_menu.exec_(event.globalPos())
 		
