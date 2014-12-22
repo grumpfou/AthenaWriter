@@ -48,13 +48,23 @@ class TSTextStatistics:
 		lines =[]
 		line =[]
 		for i,v in enumerate(li_words):
-			if counter+li_len_words[i]> TSConstants['NB_CHAR_PER_LINE']: #if it ovetakes the line then
+			if counter+len(v)> TSConstants['NB_CHAR_PER_LINE']: 
+				# if it ovetakes the line then
 				if counter==0: #if the word is bigger than the line
-					# Not it overtakes inly one line
-					line = [v[:TSConstants['NB_CHAR_PER_LINE'-1]]+'-'] # -1 for the size of the breakline
-					lines.append(line)
-					line = [v[TSConstants['NB_CHAR_PER_LINE']-1:]]
-					counter=len(line[0])
+					lines_to_add = []
+					for i in range(len(v)/(TSConstants['NB_CHAR_PER_LINE']-1)+1):
+						# We count -1 for the size of the breakline
+						ii = i*(TSConstants['NB_CHAR_PER_LINE']-1) 
+						jj = min(len(v),
+									(i+1)*(TSConstants['NB_CHAR_PER_LINE']-1))
+						w = v[ii:jj]
+						if jj<len(v):
+							w+='-'
+							
+						lines_to_add.append([w])
+						
+					lines += lines_to_add
+					counter=len(lines_to_add[-1])
 				else:
 					lines.append(line)
 					line = [v]
@@ -100,8 +110,19 @@ class TSTextStatistics:
 				book = TSTextStatistics.shape_book(text)
 				results.append(len(book))
 			elif ask=='nb_words':
-				word_flat = [item for bloc in lines for line in bloc for item in line]
-				results.append(len(word_flat))
+				word_flat1 = [item for bloc in lines for line in bloc \
+															for item in line]
+				word_flat2 = [word_flat1[0]]
+				# we detect the cutted words
+				for i in range(1,len(word_flat1)):
+					w = word_flat2[-1]
+					if len(w)>1 and w[-1]=='-':
+						word_flat2[-1]+= word_flat1[i]
+					else:
+						word_flat2.append(word_flat1[i])
+				print 'word_flat1 : ',word_flat1
+				print 'word_flat2 : ',word_flat2
+				results.append(len(word_flat2))
 				
 			else:
 				raise ValueError(str(ask) + " should be in ['nb_pages', 'nb_blocs', 'nb_lines', 'nb_chars_with_spaces', 'nb_chars_without_spaces','nb_words'].")
