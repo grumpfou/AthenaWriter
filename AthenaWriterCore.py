@@ -48,13 +48,10 @@ class AWCore:
 		res = FMFileManagement.save(unicode(self.textEdit.toXml()),filepath)
 		
 		if res :
-			print 'self.metadata.isEmpty() : ',self.metadata.isEmpty()
-			print 'AWConstants[DO_METADATA] : ',AWConstants['DO_METADATA']
 			if AWConstants['DO_METADATA'] and not self.metadata.isEmpty(): 
 				# we will save the file .athw_meta as well
 				cur = self.textEdit.textCursor()
 				self.metadata.lastpos = int(cur.position())
-				print 'coucou'
 				
 				to_save = self.metadata.toxml()
 				meta_filepath,tmp = os.path.splitext(self.filepath)

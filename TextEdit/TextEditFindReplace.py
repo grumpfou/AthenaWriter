@@ -1,7 +1,7 @@
 from PyQt4 import QtGui,QtCore
 
-from TextEditConstants 				import *
-
+from TextEditConstants 	import *
+from TextEditWord 		import TEWordTools
 
 
 # add a simple function to the QCheckBox that return the checked state of the CheckBox
@@ -23,7 +23,8 @@ class TEFindDialog(QtGui.QDialog):
 		QtGui.QDialog.__init__(self,parent=textedit,*args,**kargs)
 		self.textedit = textedit
 		
-		self.find_line	= QtGui.QLineEdit ()
+		self.find_line		= QtGui.QLineEdit ()
+		self.replace_line	= QtGui.QLineEdit ()
 		
 		# Options check boxes:
 		self.casse_checkbox = QtGui.QCheckBox()
@@ -31,6 +32,8 @@ class TEFindDialog(QtGui.QDialog):
 		self.entireword_checkbox = QtGui.QCheckBox()
 		
 		find_button = QtGui.QPushButton("&Find")
+		replace_button = QtGui.QPushButton("&Replace")
+		replaceall_button = QtGui.QPushButton("&Replace All")
 		# find_button.setIcon(QtGui.QIcon(os.path.join(abs_path_icon,"find.png")))
 		
 		# The table were the results are displayed
@@ -42,6 +45,8 @@ class TEFindDialog(QtGui.QDialog):
 		
 		main_layout=QtGui.QFormLayout()
 		main_layout.addRow(self.find_line,find_button)
+		main_layout.addRow(self.replace_line ,replace_button)
+		main_layout.addRow(None ,replaceall_button)
 		main_layout.addRow(u"Casse sensitive",self.casse_checkbox)
 		main_layout.addRow(u"Regular expression",self.regexp_checkbox)
 		main_layout.addRow(u"Entire word",self.entireword_checkbox)
@@ -52,6 +57,8 @@ class TEFindDialog(QtGui.QDialog):
 		# Connections:
 		self.connect(find_button, QtCore.SIGNAL("clicked()"), self.SLOT_find)
 		self.connect(self.find_line, QtCore.SIGNAL('returnPressed  ()'), self.SLOT_find)
+		self.connect(replace_button, QtCore.SIGNAL("clicked()"), self.SLOT_replace)
+		self.connect(replaceall_button, QtCore.SIGNAL("clicked()"), self.SLOT_replaceall)
 		self.connect(self.tableResults,QtCore.SIGNAL('itemActivated   ( QTableWidgetItem * )'), self.SLOT_activated)
 		
 		self.results_list=[]
@@ -85,10 +92,12 @@ class TEFindDialog(QtGui.QDialog):
 			selection_lenght = cursor.selectionEnd () - cursor.selectionStart ()
 			cursor_context.setPosition(cursor.selectionStart ())
 			cursor_context.clearSelection()
-			cursor_context.movePosition (QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor,
-							TEConstants["FIND_LEN_CONTEXT"])
-			cursor_context.movePosition (QtGui.QTextCursor.Right,QtGui.QTextCursor.KeepAnchor,
-							2*TEConstants["FIND_LEN_CONTEXT"]+selection_lenght)
+			cursor_context.movePosition (QtGui.QTextCursor.Left,
+					QtGui.QTextCursor.MoveAnchor,
+					TEConstants["FIND_LEN_CONTEXT"])
+			cursor_context.movePosition (QtGui.QTextCursor.Right,
+					QtGui.QTextCursor.KeepAnchor,
+					2*TEConstants["FIND_LEN_CONTEXT"]+selection_lenght)
 			
 			context = cursor_context.selectedText ()
 			
@@ -106,6 +115,54 @@ class TEFindDialog(QtGui.QDialog):
 	def SLOT_activated(self,item):
 		cursor = self.results_list[self.tableResults.row(item)][0]
 		self.textedit.setTextCursor (cursor)
+	
+	def SLOT_replace(self,count=1):
+		if self.tableResults.rowCount()==0:
+			return False
+		selectedItems = self.tableResults.selectedItems ()
+		if len(selectedItems) == 0:
+			item = self.tableResults.item (0,0)
+			self.tableResults.setCurrentItem ( item )
+			self.SLOT_activated(item)
+		else:
+			item = self.tableResults.currentItem()
+			cursor = self.results_list[self.tableResults.row(item)][0]
+			if cursor.hasSelection():
+				next_text = unicode(self.replace_line.text())
+				if not self.casse_checkbox.isChecked():
+					previous_text = unicode(cursor.selection().toPlainText())
+					id = TEWordTools.whatID(previous_text)
+					next_text = TEWordTools.toID(next_text,id)				
+				cursor.insertText(next_text)
+			self.activate_next()
+				
+		
+		
+	def SLOT_replaceall(self):
+		self.SLOT_find()
+		if self.tableResults.rowCount()==0:
+			msg= 'No occurance of "'+unicode(self.find_line.text())+'" found.'
+			dia = QtGui.QMessageBox.information ( 
+							self, 
+							"Exportation" , 
+							msg)
+			return False
+			
+		item = self.tableResults.item (0,0)
+		self.tableResults.setCurrentItem ( item )
+		self.SLOT_activated(item)
+		rcount = self.tableResults.rowCount()
+		for i in range(rcount):
+			self.SLOT_replace()
+	
+		msg= '"'+unicode(self.find_line.text())+'" has been replaced '+\
+				str(rcount)+' times in the document.'
+		dia = QtGui.QMessageBox.information ( 
+						self, 
+						"Exportation" , 
+						msg)
+		
+		
 	
 	def display_results_list(self):
 		"""

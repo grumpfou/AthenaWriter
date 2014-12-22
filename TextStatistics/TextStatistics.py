@@ -120,8 +120,6 @@ class TSTextStatistics:
 						word_flat2[-1]+= word_flat1[i]
 					else:
 						word_flat2.append(word_flat1[i])
-				print 'word_flat1 : ',word_flat1
-				print 'word_flat2 : ',word_flat2
 				results.append(len(word_flat2))
 				
 			else:
