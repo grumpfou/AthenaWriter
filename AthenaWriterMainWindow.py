@@ -239,13 +239,48 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			filepath = self.filepath
 		if filepath :
 			filepath=unicode(filepath)
-			self.CMD_FileSave(filepath=filepath)
-			self.actionFileSave.setEnabled(False)
-			self.setWindowTitle("AthenaWriter : "+self.filepath)
-			tmp,filename = os.path.split(self.filepath)
-			self.changeMessageStatusBar("Has saved "+filename)
-			self.lastFilesList.addFile(self.filepath)
 			
+			
+			progressBar = QtGui.QProgressBar(parent=self)
+			progressBar.setMaximum(0)
+			progressBar.setValue(0)
+			# center the widget
+			point = self.geometry().center()
+			point1 = progressBar.geometry().center()
+			progressBar.move(point-point1)
+			# set the window to the correct flag
+			progressBar.setWindowFlags(QtCore.Qt.SplashScreen)
+			progressBar.setWindowModality(QtCore.Qt.WindowModal)
+			
+			progressBar.show()
+			
+			# this class is a very classic thread just to save the file while
+			# displaying the progressBar:
+			class TaskThread(QtCore.QThread):
+				taskFinished = QtCore.pyqtSignal()
+				def run(self1):
+					self.CMD_FileSave(filepath=filepath)
+					self1.taskFinished.emit()
+					
+			# What we have to do at the end of the saving
+			def finishing():
+				progressBar.close()
+				self.actionFileSave.setEnabled(False)
+				self.setWindowTitle("AthenaWriter : "+self.filepath)
+				tmp,filename = os.path.split(self.filepath)
+				self.changeMessageStatusBar("Has saved "+filename)
+				self.lastFilesList.addFile(self.filepath)
+			
+			self.myLongTask = TaskThread()
+			self.connect(self.myLongTask,QtCore.SIGNAL("taskFinished()"),
+																	finishing)
+					
+			# self.myLongTask.taskFinished.connect(finishing)
+			self.myLongTask.start()
+			
+			
+			
+
 	def SLOT_actionFileSaveAs(self):
 		"""
 		Slot used when saving as the current file.
