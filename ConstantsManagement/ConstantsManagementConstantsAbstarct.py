@@ -253,7 +253,11 @@ class CMConstantsAbstarct:
 				self.file_to_read = file_to_read
 				result_dictionary = file_manager.open(self.file_to_read)
 				for k,v in result_dictionary.items():
-					self.__setitem__(k,v)
+					try:
+						self.__setitem__(k,v)
+					except KeyError,e:
+						print "Config error",e
+						
 			else:
 				print (file_to_read+' not found, taking the default options!')
 				CMConstantsAbstarct.__init__(self)

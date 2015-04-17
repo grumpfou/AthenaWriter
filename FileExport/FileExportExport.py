@@ -30,11 +30,11 @@ except ImportError:
 
 	dir,f	= os.path.split(__file__)
 	dir	= os.path.join(dir,'..')
-	dir	= os.path.join(dir,'TextFormats')
+	dir	= os.path.join(dir,'TextStyles')
 	sys.path.append(dir)
 	#	from TextFormats.TextFormats import *
-	foo = imp.find_module('TextFormats', [dir])
-	TextFormats = imp.load_module('TextFormats',*foo)
+	foo = imp.find_module('TextStyles', [dir])
+	TextStyles = imp.load_module('TextStyles',*foo)
 ############################################################
 
 dict_add = lambda A,B : dict(A.items()+B.items())
@@ -62,7 +62,7 @@ class FEExportGeneral:
 		# separator	 		= '***' ,
 		)
 	
-	document_options=dict(
+	doc_opt_dft=dict(
 		title 	= (unicode,"","Title of the story"),
 		author 	= (unicode,"","Author of the story"),
 		version = (unicode,"","Version of the story"),
@@ -87,7 +87,7 @@ class FEExportGeneral:
 							"either textedit and xml_string should not be None"
 		
 		format_options=self.format_options.copy()
-		doc_op = self.get_doc_opt(**options)
+		self.get_doc_opt(**options)
 		
 		if textedit!=None:
 			text = textedit.toXml()	
@@ -96,13 +96,13 @@ class FEExportGeneral:
 			
 		for format in self.format_manager.listCharFormat + \
 										self.format_manager.listBlockFormat:
-			if isinstance(format,TFFormatClassSeparator):
+			if isinstance(format,TSStyleClassSeparator):
 				marks = format.exportDict.get(self.extension,None)
 				if marks==None : start_mark=''
 				else:start_mark=marks[0]
 				text=text.replace('<'+format.xmlMark+'/>',start_mark
 					)
-			elif format==TFFormatPhantom and not doc_op['phantom']:
+			elif format==TSFormatPhantom and not self.doc_op['phantom']:
 				print "PHANTOM"
 				start_mark = '<'+format.xmlMark+'>'
 				end_mark = '</'+format.xmlMark+'>\n'
@@ -143,15 +143,15 @@ class FEExportGeneral:
 		"""
 		assert textedit!=None or xml_string!=None, \
 							"either textedit and xml_string should not be None"
-		doc_op = self.get_doc_opt(**options)
+		self.get_doc_opt(**options)
 		
 		start_file = ""
-		if doc_op['title'] != "":
-			start_file += doc_op['title'].upper()+'\n\n'
-		if doc_op['author'] != "":
-			start_file += 'By '+doc_op['author']+'\n\n'
-		if doc_op['version'] != "":
-			start_file += 'version '+doc_op['version']+'\n\n'
+		if self.doc_op['title'] != "":
+			start_file += self.doc_op['title'].upper()+'\n\n'
+		if self.doc_op['author'] != "":
+			start_file += 'By '+self.doc_op['author']+'\n\n'
+		if self.doc_op['version'] != "":
+			start_file += 'version '+self.doc_op['version']+'\n\n'
 		
 		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
 		self.text=start_file+self.text
@@ -183,15 +183,16 @@ class FEExportGeneral:
 		Will return a dictionnary containg the document options with the good 
 		format. 
 		Note: the resulting dictionnary will have the form of
-		{ key : value }  which is not the same as self.document_options.
+		{ key : value }  which is not the same as self.doc_opt_dft.
 		"""
-		doc_op = {k:v[1] for k,v in self.document_options.items()}
+		if not self.__dict__.has_key('doc_opt'):
+			self.doc_op = {k:v[1] for k,v in self.doc_opt_dft.items()}
 		
 		for k,v in options.items() : 
-			if k in self.document_options.keys() :
-				doc_op[k]=self.document_options[k][0](v)
+			if k in self.doc_opt_dft.keys() :
+				self.doc_op[k]=self.doc_opt_dft[k][0](v)
 		
-		return doc_op
+		return self.doc_op
 		
 		
 class FEExportTxt(FEExportGeneral):
@@ -258,7 +259,7 @@ class FEExportHtml(FEExportGeneral):
 							"either textedit and xml_string should not be None"
 		
 		
-		doc_op = self.get_doc_opt(**options)
+		self.get_doc_opt(**options)
 		
 		head = '<?xml version="1.0" encoding="UTF-8"?>\n'+\
 				'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"'+\
@@ -266,18 +267,18 @@ class FEExportHtml(FEExportGeneral):
 				'<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="fr">\n'+\
 				'<head>\n'
 		start = ""		
-		if doc_op['title'] != "":
-			head += '  <title>'+doc_op['title']+ '</title>  \n'
-			start += '<h1>'+doc_op['title']+ '</h1>\n'
+		if self.doc_op['title'] != "":
+			head += '  <title>'+self.doc_op['title']+ '</title>  \n'
+			start += '<h1>'+self.doc_op['title']+ '</h1>\n'
 		head +='  <style type="text/css">\n'+\
 				'p\n{\ntext-indent:50px;\n'+\
 				'} </style>\n'+\
 				'  <meta http-equiv="Content-Type" content="text/html; '+\
 				'charset=UTF-8" />\n'
-		if doc_op['author'] != "":
-			head += '  <meta name="Author" content="' +doc_op['author']+\
+		if self.doc_op['author'] != "":
+			head += '  <meta name="Author" content="' +self.doc_op['author']+\
 																		'"/>\n'
-			start += '<p>'+doc_op['author']+ '</p>\n'
+			start += '<p>'+self.doc_op['author']+ '</p>\n'
 		head +='</head>\n<body>\n'
 		
 		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
@@ -297,13 +298,13 @@ class FEExportLaTeX(FEExportGeneral):
 		# separator 			= '\\begin{center}\n***\n\\end{center}'  	,
 		)
 		
-	document_options = dict_add(FEExportGeneral.document_options,dict(
+	doc_opt_dft = dict_add(FEExportGeneral.doc_opt_dft,dict(
 		head 	= (bool,False,"Head on top of each page of the file"),
 		date 	= (bool,False,"Will display the date in the file"),
 		))
 		
 	def export(self,textedit=None,xml_string=None,**options):
-		doc_op = self.get_doc_opt(**options)
+		self.get_doc_opt(**options)
 		
 		# pre="\\documentclass[12pt]{article}\n\\usepackage{geometry}\n\\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2.5cm,rmargin=2.5cm}\n\\usepackage{graphicx}\n\\usepackage[utf8]{inputenc}\n\\usepackage[T1]{fontenc}\n\\renewcommand{\\baselinestretch}{1.5} \n "
 		# pre=r"\documentclass[12pt]{article}\n\usepackage{geometry}\n\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2cm,rmargin=2cm}\n\usepackage{graphicx}\n\begin{document}\n "
@@ -315,28 +316,35 @@ class FEExportLaTeX(FEExportGeneral):
 		pre += r"\usepackage[utf8]{inputenc}"+"\n"
 		pre += r"\usepackage[T1]{fontenc}"+"\n"
 		pre += r"\renewcommand{\baselinestretch}{1.5} "+"\n"
-		if doc_op['head'] :
+		if self.doc_op['head'] :
 			pre += 	r"\usepackage{fancyhdr}"+"\n"+\
 					r"\pagestyle{fancy}"+"\n"+\
 					r"\lhead{\textsc{"
-			if doc_op['title']!=None:
-				pre +=doc_op['title']
+			if self.doc_op['title']!=None:
+				pre +=self.doc_op['title']
 			pre += r"}}\cfoot{\thepage}\rhead{\textsc{"
-			if doc_op['author']!=None:
-				pre+=doc_op['author']
+			if self.doc_op['author']!=None:
+				pre+=self.doc_op['author']
 			pre += "}}\n"
 		
 		pre+=r"\begin{document}"+"\n"
-		
-		if doc_op['title']!="":
-			pre += r'\title{'+doc_op['title']+'}\n'
-			if not doc_op['date']:
+		if self.doc_op['title']!="" or self.doc_op['version'] != "":
+			pre += r'\title{'
+			if self.doc_op['title']!="":
+				pre += self.doc_op['title']
+				if self.doc_op['version'] != "":
+					pre += r'\\ \tiny{Version '+self.doc_op['version'] +'}'
+			else:
+				pre += 'tiny{Version '+self.doc_op['version'] +'}'
+			pre += '}\n'
+			
+			if not self.doc_op['date']:
 				pre += r'\date{}'+'\n'
 			
-		if doc_op['author']!="":
-			  pre+=r'\author{'+doc_op['author']+'}\n'
+		if self.doc_op['author']!="":
+			  pre+=r'\author{'+self.doc_op['author']+'}\n'
 		# if title!=None or author!=None:
-		if doc_op['title']!="" :
+		if self.doc_op['title']!="" :
 			pre += r'\maketitle'+'\n'
 		
 		self.export_text_core(textedit=textedit,xml_string=xml_string,**options)
@@ -369,9 +377,11 @@ class FEExportExternal (FEExportGeneral):
 	extension = None
 	intermediate_export_class = None
 	
-	def export(self,*args,**kargs):
+	def export(self,textedit=None,xml_string=None,**options):
 		intermediate = self.intermediate_export_class(self.format_manager)
-		text = intermediate.export(*args,**kargs)
+		text = intermediate.export(textedit=textedit,xml_string=xml_string,
+																	**options)
+		self.get_doc_opt(**options)
 		self.text = text
 		return text
 		
@@ -434,17 +444,37 @@ class FEExportExternal (FEExportGeneral):
 class FEExportPdf(FEExportExternal):
 	extension='pdf'
 	intermediate_export_class =  FEExportLaTeX
-	document_options = intermediate_export_class.document_options
+	doc_opt_dft = dict_add(intermediate_export_class.doc_opt_dft,dict(
+		clean 	= (bool,False,"Clean intermediate files files at the end"),
+		))
+		
 	
 	def get_command_line(self,filepath_inter,dirpath_inter,filepath_final):
 		commandline = FEConstants['PDFLATEX_COMMAND']+' -halt-on-error '+\
 			' -output-directory '+dirpath_inter+' '+filepath_inter
 		return commandline
+	
+	def export_file(self,filepath=None,*args,**kargs):
+		res = FEExportExternal.export_file(self,filepath=filepath,*args,
+																	**kargs)
+		if self.doc_op['clean']:
+			ext_to_clean = ['tex','aux','log','dvi']
+			f,tmp = os.path.splitext(filepath)
+			for e in ext_to_clean:
+				ff = f +'.'+e
+				if os.path.exists(ff):
+					os.remove(ff)
+					print 'Remove ',ff
+		return res
+			
+		
+# IDEE : crer un self.opt qui survivra a tout en debut de creation de classe
+# ensuite on n'y qu'appel ce qui permet de se rappeller des anciennes choses
 				
 class FEExportEpub(FEExportExternal):
 	extension='epub'
 	intermediate_export_class =  FEExportHtml
-	document_options = dict_add(intermediate_export_class.document_options,
+	doc_opt_dft = dict_add(intermediate_export_class.doc_opt_dft,
 		dict( cover_file = (unicode,"","The image that should represent "+\
 			"cover of the file, if None, Calibre will generate its own")))
 	

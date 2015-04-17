@@ -3,8 +3,8 @@ from PyQt4 import QtGui, QtCore
 from AthenaWriterConstants import *
 from TextEdit.TextEdit import TETextEdit
 from TextEdit.TextEditLanguages import TELanguageDico
-from TextFormats.TextFormats import TFFormatManager
-from TextStatistics.TextStatistics import TSDialogManager
+from TextStyles.TextStyles import TSManager
+from DocStatistics.DocStatistics import DSDialogManager
 from FileManagement.FileManagement import FMFileManagement
 from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
@@ -75,6 +75,7 @@ class AWCore:
 		
 		# Get the text:
 		local_dir,tmp = os.path.split(self.filepath)
+		print 'filepath : ',filepath
 		text = FMFileManagement.open(filepath)
 		self.textEdit.setText(text,type='xml',local_dir=local_dir)
 		if AWConstants['DO_METADATA'] :
@@ -125,7 +126,7 @@ class AWCore:
 			raise self.Error('Unknown format to import: choose in '+\
 														str(list_extentions))
 		index = list_extentions.index(format_name)
-		format = FEList[index](TFFormatManager)
+		format = FEList[index](TSManager)
 		# if len(kargs)==0 and AWConstants['DO_METADATA']:
 			# kargs=self.metadata.getDict()
 		

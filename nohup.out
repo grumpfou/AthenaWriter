@@ -11,3 +11,4 @@ SciTE: Fatal IO error 11 (Ressource temporairement non disponible) on X server :
 python: Fatal IO error 11 (Ressource temporairement non disponible) on X server :0.
 python: Fatal IO error 11 (Ressource temporairement non disponible) on X server :0.
 g_dbus_connection_real_closed: Remote peer vanished with error: Underlying GIOStream returned 0 bytes on an async read (g-io-error-quark, 0). Exiting.
+python: Fatal IO error 11 (Ressource temporairement non disponible) on X server :0.

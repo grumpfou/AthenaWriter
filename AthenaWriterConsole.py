@@ -218,7 +218,7 @@ class AWConsole (AWCore):
 			
 		############### exportation ###############
 		if self.args.export :
-			import TextEdit.TextEditFormats
+			# import TextEdit.TextEditFormats
 			
 			if self.args.file==None : 
 				raise AWConsoleError('Please specify the file to export.')

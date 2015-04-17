@@ -4,8 +4,8 @@ from AthenaWriterConstants import *
 from AthenaWriterCore import AWCore
 from TextEdit.TextEdit import TETextEdit
 from TextEdit.TextEditLanguages import TELanguageDico
-from TextFormats.TextFormats import TFFormatManager
-from TextStatistics.TextStatistics import TSDialogManager
+from TextStyles.TextStyles import TSManager
+from DocStatistics.DocStatistics import DSDialogManager
 from FileManagement.FileManagement import FMFileManagement
 # from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
@@ -172,10 +172,10 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuFile.addAction(self.actionFileQuit)		
 		
 		menuFormat = self.menuBar().addMenu ( "Format" )
-		for id in TFFormatManager.dictCharFormat.keys():
+		for id in TSManager.dictCharStyle.keys():
 			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
 		menuFormat.addSeparator ()
-		for id in TFFormatManager.dictBlockFormat.keys():
+		for id in TSManager.dictBlockStyle.keys():
 			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
 		menuFormat.addSeparator ()
 		menuFormat.addAction (self.textEdit.actionResetFormat)
@@ -418,7 +418,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				
 			
 	def SLOT_actionFileStats(self):
-		dialog = TSDialogManager(textedit=self.textEdit,parent=self)
+		dialog = DSDialogManager(textedit=self.textEdit,parent=self)
 		dialog.show()
 	def SLOT_actionFileMetaData(self):
 		dialog = MDMetaDataDialog(metadata=self.metadata,parent=self)

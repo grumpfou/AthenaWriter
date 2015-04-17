@@ -106,15 +106,15 @@ class FEExportDialog(QtGui.QDialog):
 		# TODO: problem when delete
 		self.widget_options.hide()
 		
-		# replace the same filed of the new document_options by the old ones
-		document_options = FEDict[unicode(text)].document_options.copy()
+		# replace the same filed of the new doc_opt_dft by the old ones
+		doc_opt_dft = FEDict[unicode(text)].doc_opt_dft.copy()
 		if isinstance(self.widget_options,FEWidget):
 			d = self.widget_options.getValueDict()
 			for k, v in d.items():
-				if k in document_options.keys():
-					document_options[k] = (document_options[k][0],v,
-												document_options[k][2]) 
-		self.widget_options = FEWidget(document_options,key_list=self.key_list)
+				if k in doc_opt_dft.keys():
+					doc_opt_dft[k] = (doc_opt_dft[k][0],v,
+												doc_opt_dft[k][2]) 
+		self.widget_options = FEWidget(doc_opt_dft,key_list=self.key_list)
 		self.main_layout.insertRow(self.rowWidgetOption,self.widget_options)
 	###########################################################################
 		

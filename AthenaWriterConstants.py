@@ -2,12 +2,12 @@ from ConstantsManagement.ConstantsManagementConstantsAbstarct import *
 
 
 from TextEdit.TextEditConstants 			import TEConstants
-from TextStatistics.TextStatisticsConstants	import TSConstants
+from DocStatistics.DocStatisticsConstants	import DSConstants
 from FileManagement.FileManagementConstants import FMConstants
 from LastFiles.LastFilesConstants 			import LFConstants
 from FileImport.FileImportConstants 		import FIConstants
 from FileExport.FileExportConstants 		import FEConstants
-from TextFormats.TextFormatsConstants 		import TFConstants
+from TextStyles.TextStylesConstants 		import TSConstants
 from MetaData.MetaDataConstants 			import MDConstants
 
 
@@ -57,12 +57,12 @@ class AWAllConstants (CMConstantsAbstarct):
 			}
 	all_sub_constants = {
 						'TextEdit'			: TEConstants	,
-						'TextStatistics' 	: TSConstants	,
+						'DocStatistics' 	: DSConstants	,
 						'FileManagement' 	: FMConstants 	,
 						'LastFiles'		 	: LFConstants 	,
 						'FileImport'	 	: FIConstants 	,
 						'FileExport'	 	: FEConstants 	,
-						'TextFormats'	 	: TFConstants 	,
+						'TextStyles'	 	: TSConstants 	,
 						'MetaData'		 	: MDConstants 	,
 						}
 						

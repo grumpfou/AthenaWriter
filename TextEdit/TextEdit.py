@@ -8,8 +8,8 @@ from TextEditCharTable 					import *
 from TextEditConstants 					import *
 from TextEditFindReplace 				import *
 from TextEditHighlighter				import *
-from TextFormats.TextFormats			import *
-from TextFormats.TextFormatsConstants	import TFConstants
+from TextStyles.TextStyles			import *
+from TextStyles.TextStylesConstants	import TSConstants
 from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
 
 class TETextEdit(QtGui.QTextEdit):
@@ -27,8 +27,10 @@ class TETextEdit(QtGui.QTextEdit):
 		self.doc_margin			= doc_margin
 		self.local_dir			= local_dir #usefull to save the file
 		
-		QtCore.QObject.connect(self,QtCore.SIGNAL("cursorPositionChanged()"),self.SLOT_cursorPositionChanged)
-		QtCore.QObject.connect(self,QtCore.SIGNAL("textChanged ()"),self.SLOT_textChanged)
+		QtCore.QObject.connect(self,QtCore.SIGNAL("cursorPositionChanged()"),
+											self.SLOT_cursorPositionChanged)
+		QtCore.QObject.connect(self,QtCore.SIGNAL("textChanged ()"),
+											self.SLOT_textChanged)
 		
 		self.old_cursor_position=self.textCursor().position() #we will remember 
 				# the old position of the cursor in order to make typography 
@@ -49,7 +51,7 @@ class TETextEdit(QtGui.QTextEdit):
 		self.setText()
 		
 		# UGLY !!!!
-		TFFormatManager.textedit=self
+		TSManager.textedit=self
 		
 		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
 		
@@ -96,8 +98,7 @@ class TETextEdit(QtGui.QTextEdit):
 		
 		
 		self.actionFormatsDict = {}
-		for format in TFFormatManager.listCharFormat +\
-											TFFormatManager.listBlockFormat :
+		for format in TSManager.listCharStyle + TSManager.listBlockStyle :
 			if format.name!="":
 				act = QtGui.QAction(format.name,self)
 			else:
@@ -174,7 +175,7 @@ class TETextEdit(QtGui.QTextEdit):
 		elif type=='html' 	: cursor.insertHtml (text)
 		elif type=='xml' 	: 
 			cursor.insertText(text)
-			TFFormatManager.fromXml(document)
+			TSManager.fromXml(document)
 		cursor.setPosition(0)
 		
 		# Recheck the document typography if necessary
@@ -249,7 +250,7 @@ class TETextEdit(QtGui.QTextEdit):
 		block_id = self.textCursor().blockFormat().property(
 												QtGui.QTextFormat.UserProperty)
 		block_id = block_id.toPyObject() 
-		if block_id!=None and TFFormatManager.dictFormat[block_id].protected :
+		if block_id!=None and TSManager.dictStyle[block_id].protected :
 			self.blockSignals (True)
 			self.undo()
 			self.blockSignals (False)
@@ -291,8 +292,8 @@ class TETextEdit(QtGui.QTextEdit):
 		
 	# def SLOT_actionEmphasize(self):
 	# 	cursor=self.textCursor()
-	# 	# TFFormatEmphasize.inverseFormat(cursor)
-	# 	TFFormatHeader1.inverseFormat(cursor)
+	# 	# TFFormatEmphasize.inverseStyle(cursor)
+	# 	TFFormatHeader1.inverseStyle(cursor)
 	# 	# TFFormatManager.setFormatsToBloc(cursor.block())
 	# 	self.setTextCursor(cursor)
 		
@@ -300,7 +301,7 @@ class TETextEdit(QtGui.QTextEdit):
 	# 	print "Sould not pass here, OLD" #TODO
 	# 	cursor=self.textCursor()
 	# 	self.isInsertingSeparator=True
-	# 	TFFormatSeparator.inverseFormat(cursor)
+	# 	TFFormatSeparator.inverseStyle(cursor)
 	# 	self.isInsertingSeparator=False
 		
 	def SLOT_actionChangeLanguage(self):
@@ -387,19 +388,19 @@ class TETextEdit(QtGui.QTextEdit):
 		cursor=self.textCursor()
 		cursor.beginEditBlock()
 		self.blockSignals (True)
-		TFFormatManager.inverseFormat(cursor,format_id)
-		# TFFormatEmphasize.inverseFormat(cursor)
-		# TFFormatManager.dictFormat[format_id].inverseFormat(cursor)
+		TSManager.inverseStyle(cursor,format_id)
+		# TFFormatEmphasize.inverseStyle(cursor)
+		# TFFormatManager.dictFormat[format_id].inverseStyle(cursor)
 		# TFFormatManager.setFormatsToBloc(cursor.block())
 		self.setTextCursor(cursor)
-		self.blockSignals (False)
 		cursor.endEditBlock()
+		self.blockSignals (False)
 
 	def SLOT_actionResetFormat(self):
 		cursor=self.textCursor()
 		cursor.beginEditBlock()
 		self.blockSignals (True)
-		TFFormatManager.resetFormat(cursor)
+		TSManager.resetFormat(cursor)
 		# self.setTextCursor(cursor)
 		self.blockSignals (False)
 		cursor.endEditBlock()
@@ -557,7 +558,7 @@ class TETextEdit(QtGui.QTextEdit):
 		
 	def toXml(self):
 		newText=self.toPlainText()
-		newText=TFFormatManager.toXml(newText,self.document())
+		newText=TSManager.toXml(newText,self.document())
 		return newText
 		
 	def contextMenuEvent(self, event):
@@ -671,25 +672,20 @@ class TETextEdit(QtGui.QTextEdit):
 		popup_menu.exec_(event.globalPos())
 		
 	def setDocumentFormat(self,document):
-		if TFConstants['DEFAULT_STYLE'].has_key("alignment"):
-			dict_alignement = {
-				'justify':QtGui.QTextOption(QtCore.Qt.AlignJustify),
-				'left':QtGui.QTextOption(QtCore.Qt.AlignLeft),
-				'right':QtGui.QTextOption(QtCore.Qt.AlignRight),
-				'center':QtGui.QTextOption(QtCore.Qt.AlignCenter),
-				}
+		if TSConstants['DEFAULT_STYLE'].has_key("alignment"):
 				
-			align_name = TFConstants['DEFAULT_STYLE']["alignment"]
-			if dict_alignement.has_key(align_name):
-				document.setDefaultTextOption(dict_alignement[align_name])
+			align_name = TSConstants['DEFAULT_STYLE']["alignment"]
+			if TSStyleClassBlock.dict_align.has_key(align_name):
+				obt=QtGui.QTextOption(TSStyleClassBlock.dict_align[align_name])
+				document.setDefaultTextOption(obt)
 			else :
 				KeyError('Unknown key for the alignement : '+align_name)
 				
 		font = document.defaultFont()
-		if TFConstants['DEFAULT_STYLE'].has_key("font_name"):
-			font.setFamily(TFConstants['DEFAULT_STYLE']["font_name"])
-		if TFConstants['DEFAULT_STYLE'].has_key("font_size"):
-			font.setPointSize(int(TFConstants['DEFAULT_STYLE']["font_size"]))
+		if TSConstants['DEFAULT_STYLE'].has_key("font_name"):
+			font.setFamily(TSConstants['DEFAULT_STYLE']["font_name"])
+		if TSConstants['DEFAULT_STYLE'].has_key("font_size"):
+			font.setPointSize(int(TSConstants['DEFAULT_STYLE']["font_size"]))
 		document.setDefaultFont(font)
 		
 		cursor=QtGui.QTextCursor(document)
@@ -713,6 +709,7 @@ class TETextEdit(QtGui.QTextEdit):
 
 		self.defaultBlockFormat = format_block
 		self.defaultCharFormat = cursor.charFormat()
+		self.defaultCharFormat.setFont(font)
 		
 		return cursor,document
 					
