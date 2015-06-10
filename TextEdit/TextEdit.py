@@ -543,18 +543,22 @@ class TETextEdit(QtGui.QTextEdit):
 		function).
 		"""
 		cursor = QtGui.QTextCursor(self.document())
-		res=u""
-		while not cursor.atEnd ():
-			cursor.movePosition(
-					QtGui.QTextCursor.Right,
-					QtGui.QTextCursor.KeepAnchor
-					)
-			if cursor.atBlockStart():
-				res+='\n'
-			else:
-				res+=unicode(cursor.selectedText())
-			cursor.clearSelection()
-		return res
+		cursor.select(QtGui.QTextCursor.Document)
+		s = unicode(cursor.selectedText())
+		s = s.replace(u'\u2029','\n')
+		# res=u""
+		# while not cursor.atEnd ():
+			# cursor.movePosition(
+					# QtGui.QTextCursor.Right,
+					# QtGui.QTextCursor.KeepAnchor
+					# )
+			# if cursor.atBlockStart():
+				# res+='\n'
+			# else:
+				# res+=unicode(cursor.selectedText())
+			# cursor.clearSelection()
+		return s
+		
 		
 	def toXml(self):
 		newText=self.toPlainText()
