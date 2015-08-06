@@ -137,6 +137,11 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				QtCore.SIGNAL('textChanged ()'), 
 				self.SLOT_somethingChanged
 				)
+		self.connect(
+				self.textEdit,
+				QtCore.SIGNAL('somethingChanged ()'), 
+				self.SLOT_somethingChanged
+				)
 				
 		self.connect(
 				self.textEdit,
@@ -146,8 +151,8 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				
 		self.connect(
 				self.textEdit,
-				QtCore.SIGNAL('separatorModification (PyQt_PyObject)'), 
-				self.SLOT_separatorModification
+				QtCore.SIGNAL('protectedStyleModification (PyQt_PyObject)'), 
+				self.SLOT_protectedStyleModification
 				)
 		
 		
@@ -173,10 +178,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		menuFormat = self.menuBar().addMenu ( "Format" )
 		for id in TSManager.dictCharStyle.keys():
-			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+			if id in self.textEdit.actionFormatsDict.keys():
+				menuFormat.addAction(self.textEdit.actionFormatsDict[id])
 		menuFormat.addSeparator ()
 		for id in TSManager.dictBlockStyle.keys():
-			menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+			if id in self.textEdit.actionFormatsDict.keys():
+				menuFormat.addAction(self.textEdit.actionFormatsDict[id])
+		menuFormat.addSeparator ()
+		menuFormat.addAction(self.textEdit.actionInsertImage)
 		menuFormat.addSeparator ()
 		menuFormat.addAction (self.textEdit.actionResetFormat)
 		
@@ -461,7 +470,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 	
 	def SLOT_typographyModification(self,modification):
 		self.changeMessageStatusBar(modification[0].title)
-	def SLOT_separatorModification(self,mess):
+	def SLOT_protectedStyleModification(self,mess):
 		self.changeMessageStatusBar(mess)
 		
 	def SLOT_autosave(self):
