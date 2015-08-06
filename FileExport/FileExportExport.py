@@ -1,6 +1,7 @@
 import os.path
 import os
 from FileExportConstants import FEConstants
+from TextStyles.TextStylesList import TSStyleClassSeparator,TSStylePhantom 
 
 ############ IMPORTATION OF FMFileManagement ############
 try :
@@ -69,11 +70,11 @@ class FEExportGeneral:
 		phantom = (bool,True,"Export with phantom text"),
 		)
 	
-	def __init__(self,format_manager):
+	def __init__(self,style_manager):
 		"""
-		format_manager : the module of TEFormats
+		style_manager : the module of TEFormats
 		"""
-		self.format_manager=format_manager
+		self.style_manager=style_manager
 		self.text = False
 	
 	
@@ -93,19 +94,19 @@ class FEExportGeneral:
 			text = textedit.toXml()	
 		else : 
 			text = xml_string
-			
-		for format in self.format_manager.listCharFormat + \
-										self.format_manager.listBlockFormat:
-			if isinstance(format,TSStyleClassSeparator):
-				marks = format.exportDict.get(self.extension,None)
+		
+		for style in self.style_manager.listCharStyle + \
+										self.style_manager.listBlockStyle:
+			if isinstance(style,TSStyleClassSeparator):
+				marks = style.exportDict.get(self.extension,None)
 				if marks==None : start_mark=''
 				else:start_mark=marks[0]
-				text=text.replace('<'+format.xmlMark+'/>',start_mark
+				text=text.replace('<'+style.xmlMark+'/>',start_mark
 					)
-			elif format==TSFormatPhantom and not self.doc_op['phantom']:
+			elif style==TSStylePhantom and not self.doc_op['phantom']:
 				print "PHANTOM"
-				start_mark = '<'+format.xmlMark+'>'
-				end_mark = '</'+format.xmlMark+'>\n'
+				start_mark = '<'+style.xmlMark+'>'
+				end_mark = '</'+style.xmlMark+'>\n'
 				i = text.find(start_mark)
 				while i>=0:
 					j = text.find(end_mark,i)
@@ -114,17 +115,17 @@ class FEExportGeneral:
 					text = text[:i]+text[j:]
 					i=text.find(start_mark,j)
 			else:
-				marks = format.exportDict.get(self.extension,None)
+				marks = style.exportDict.get(self.extension,None)
 				print 'marks : ',marks
 				if marks==None : 
 					start_mark=''
 					end_mark=''
 				else: start_mark , end_mark = marks
-				text=text.replace('<'+format.xmlMark+'>',start_mark)
-				text=text.replace('</'+format.xmlMark+'>',end_mark)
-		# text=text.replace('<'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['start_emphasize']	)
-		# text=text.replace('</'+self.format_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['end_emphasize']	)
-		# text=text.replace('<'+self.format_manager.TEFormatSeparator.xmlMark+'/>'	,format_options['separator']	)
+				text=text.replace('<'+style.xmlMark+'>',start_mark)
+				text=text.replace('</'+style.xmlMark+'>',end_mark)
+		# text=text.replace('<'+self.style_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['start_emphasize']	)
+		# text=text.replace('</'+self.style_manager.TEFormatEmphasize.xmlMark+'>'	,format_options['end_emphasize']	)
+		# text=text.replace('<'+self.style_manager.TEFormatSeparator.xmlMark+'/>'	,format_options['separator']	)
 		intreline = format_options['end_line'] + format_options['newline'] +\
 												format_options['start_line']
 		text = text.replace('\n',intreline)
@@ -159,11 +160,12 @@ class FEExportGeneral:
 		
 	def export_file(self,filepath=None,default_saving_site=None,parent=None):
 		"""
-		- filepath : the path to the destination file (will change the extension if necessary
-			if None, will ask where to save it.
-		- default_saving_site : in case if filepath is None, it will be the default place where 
-			to put start the file window.
-		- parent : in case if filepath is None, it will be the parent for the file window.
+		- filepath : the path to the destination file (will change the 
+			extension if necessary if None, will ask where to save it.
+		- default_saving_site : in case if filepath is None, it will be the 
+			default place where  to put start the file window.
+		- parent : in case if filepath is None, it will be the parent for the 
+			file window.
 		"""
 		assert self.text, 'Yous should run self.export() before'
 		if filepath==None:#OLD!!!
@@ -378,7 +380,7 @@ class FEExportExternal (FEExportGeneral):
 	intermediate_export_class = None
 	
 	def export(self,textedit=None,xml_string=None,**options):
-		intermediate = self.intermediate_export_class(self.format_manager)
+		intermediate = self.intermediate_export_class(self.style_manager)
 		text = intermediate.export(textedit=textedit,xml_string=xml_string,
 																	**options)
 		self.get_doc_opt(**options)
@@ -425,16 +427,24 @@ class FEExportExternal (FEExportGeneral):
 			file window.
 		"""
 		assert self.text, 'Yous should run self.export() before'
-		filepath_inter , filepath_final , dirpath_inter = \
+		filepath_inter , dirpath_inter, filepath_final   = \
 				self.export_file_intermediate(
 				filepath=filepath,
 				default_saving_site=default_saving_site,
 				parent=parent)
-				
-		commandline = self.get_command_line(filepath_inter , filepath_final , \
-																dirpath_inter)
+		
+		print 'filepath_inter : ',filepath_inter
+		print 'dirpath_inter : ',dirpath_inter
+		print 'filepath_final : ',filepath_final
+		commandline = self.get_command_line(filepath_inter , dirpath_inter,\
+									filepath_final )
 		print "commandline", commandline
+		old_d = os.getcwd()
+		print 'dirpath_inter : ',dirpath_inter
+		os.chdir(dirpath_inter) # change_dir for the local files
 		res1 = os.system(commandline)
+		os.chdir(old_d)
+		
 		if res1!=0:
 			raise IOError('Problem during convertion of the file, is the '+\
 				'exportation command correct ?')

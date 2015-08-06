@@ -26,5 +26,11 @@ class FMConstantsAbstarct (CMConstantsAbstarct):
 			LAST_FILES_FILE_PATH		= (unicode	,
 					"~/.athena/last_files.txt",
 					"The path to the last-opened-files file"),
+			MAX_FILES_NUMBER		= (int	,
+					1000,
+					"When saving a file, to avoid a erase another file, it "+\
+					"adds a number at the end of the name bewteen 0 and "+\
+					"MAX_FILES_NUMBER"),
+			
 			)
 FMConstants=FMConstantsAbstarct()

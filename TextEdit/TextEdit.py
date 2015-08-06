@@ -2,15 +2,17 @@ from PyQt4 import QtGui, QtCore
 
 import sys
 import string
+import shutil
 
 from TextEditLanguages 					import *
 from TextEditCharTable 					import *
 from TextEditConstants 					import *
 from TextEditFindReplace 				import *
 from TextEditHighlighter				import *
-from TextStyles.TextStyles			import *
-from TextStyles.TextStylesConstants	import TSConstants
+from TextStyles.TextStyles				import *
+from TextStyles.TextStylesConstants		import TSConstants
 from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
+from FileManagement.FileManagement 		import FMFileManagement
 
 class TETextEdit(QtGui.QTextEdit):
 	def __init__(self, parent=None,language_name=None,local_dir=None,
@@ -79,6 +81,7 @@ class TETextEdit(QtGui.QTextEdit):
 		# self.actionSeparator			 	= Act("Add/Remove Separator",self)
 		self.actionRecheckTypography	 	= Act("&Recheck typography",self)
 		self.actionResetFormat				= Act("&Reset format",self)
+		self.actionInsertImage				= Act("&InsertImage",self)
 		
 		KS = QtGui.QKeySequence
 		self.actionCopy				 		.setShortcuts(KS.Copy		)
@@ -99,13 +102,15 @@ class TETextEdit(QtGui.QTextEdit):
 		
 		self.actionFormatsDict = {}
 		for format in TSManager.listCharStyle + TSManager.listBlockStyle :
-			if format.name!="":
-				act = QtGui.QAction(format.name,self)
-			else:
-				act = QtGui.QAction(format.xmlMark,self)
-			if format.shortcut!=None:
-				act.setShortcuts(QtGui.QKeySequence(format.shortcut))
-			self.actionFormatsDict[format.userPropertyId] = act
+			if not isinstance(format,TSStyleClassImage):
+				if format.name!="":
+					act = QtGui.QAction(format.name,self)
+				else:
+					act = QtGui.QAction(format.xmlMark,self)
+				if format.shortcut!=None:
+					act.setShortcuts(QtGui.QKeySequence(format.shortcut))
+				
+				self.actionFormatsDict[format.userPropertyId] = act
 		
 		
 		
@@ -129,6 +134,7 @@ class TETextEdit(QtGui.QTextEdit):
 		# c(self.actionSeparator, trig,self.SLOT_actionSeparator)
 		c(self.actionRecheckTypography, trig,self.SLOT_actionRecheckTypography)
 		c(self.actionResetFormat, trig,self.SLOT_actionResetFormat)
+		c(self.actionInsertImage, trig,self.SLOT_actionInsertImage)
 		
 		
 		# add the formatting (emphasize, set tot tile etc.) shortcuts to the 
@@ -199,7 +205,6 @@ class TETextEdit(QtGui.QTextEdit):
 		self.blockSignals (True) #allow the method to move the cursor in the 
 									# method without calling itself one again.
 									
-		
 		if self.old_cursor_position>=self.document().characterCount():
 			# If we were at the end of the document and suppress the end, it 
 			# does then nothing.
@@ -254,8 +259,8 @@ class TETextEdit(QtGui.QTextEdit):
 			self.blockSignals (True)
 			self.undo()
 			self.blockSignals (False)
-			self.emit(QtCore.SIGNAL("separatorModification ( PyQt_PyObject)"), 
-						"Try to modify separator (use Ctrl+K to delete it).")
+			self.emit(QtCore.SIGNAL("protectedStyleModification ( PyQt_PyObject)"), 
+				"Try to modify a protected block (use Ctrl+L to delete it).")
 		
 	def SLOT_pluggins(self,iterator):
 		"""Launch the pluggin corresponding to the iterator"""
@@ -290,19 +295,6 @@ class TETextEdit(QtGui.QTextEdit):
 		cursor.setPosition(0)
 		self.language.cheak_after_paste(cursor)
 		
-	# def SLOT_actionEmphasize(self):
-	# 	cursor=self.textCursor()
-	# 	# TFFormatEmphasize.inverseStyle(cursor)
-	# 	TFFormatHeader1.inverseStyle(cursor)
-	# 	# TFFormatManager.setFormatsToBloc(cursor.block())
-	# 	self.setTextCursor(cursor)
-		
-	# def SLOT_actionSeparator(self):
-	# 	print "Sould not pass here, OLD" #TODO
-	# 	cursor=self.textCursor()
-	# 	self.isInsertingSeparator=True
-	# 	TFFormatSeparator.inverseStyle(cursor)
-	# 	self.isInsertingSeparator=False
 		
 	def SLOT_actionChangeLanguage(self):
 		"""Method that will display a QDialog that will enable to change the
@@ -340,7 +332,7 @@ class TETextEdit(QtGui.QTextEdit):
 		
 		# If the dialog is accepted, then it changes the language
 		if dia.result () == QtGui.QDialog.Accepted:
-			lang_name = list_languages [comboBox. currentIndex()]
+			lang_name = list_languages [comboBox.currentIndex()]
 			self.changeLanguage(language_name = unicode(lang_name))
 			if checkBox.checkState () == QtCore.Qt.Checked:
 				self.SLOT_actionRecheckTypography()
@@ -358,7 +350,8 @@ class TETextEdit(QtGui.QTextEdit):
 		self.language.cheak_after_paste(cursor,len(word) )
 
 		cursor.endEditBlock()
-		
+	
+	
 	def SLOT_addWordSpelling(self,word,where='local'):
 		"""
 		Add the word into the configuration file of the spelling
@@ -385,16 +378,16 @@ class TETextEdit(QtGui.QTextEdit):
 			QtGui.QMessageBox.critical(self,'Input error',e)
 	
 	def SLOT_setFormating(self,format_id):
+		print 'format_id : ',format_id
 		cursor=self.textCursor()
 		cursor.beginEditBlock()
 		self.blockSignals (True)
 		TSManager.inverseStyle(cursor,format_id)
-		# TFFormatEmphasize.inverseStyle(cursor)
-		# TFFormatManager.dictFormat[format_id].inverseStyle(cursor)
-		# TFFormatManager.setFormatsToBloc(cursor.block())
-		self.setTextCursor(cursor)
 		cursor.endEditBlock()
+		self.setTextCursor(cursor)
 		self.blockSignals (False)
+		QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
+		# QtCore.QObject.emit(self,QtCore.SIGNAL("textChanged ()"))
 
 	def SLOT_actionResetFormat(self):
 		cursor=self.textCursor()
@@ -404,6 +397,71 @@ class TETextEdit(QtGui.QTextEdit):
 		# self.setTextCursor(cursor)
 		self.blockSignals (False)
 		cursor.endEditBlock()
+		QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
+		
+	def SLOT_actionInsertImage(self):
+		if self.parent()!=None:
+			dft_opening_site = self.parent().get_default_opening_saving_site()
+			if self.parent().filepath!= None:
+				local_dir,tmp = os.path.split(self.parent().filepath)
+				local_dir = os.path.abspath(local_dir)
+			else:
+				local_dir = False
+		else:
+			dft_opening_site ='.'
+			local_dir = False
+		filepath = FMFileManagement.open_gui_filepath(
+					dft_opening_site ,
+					self,filter="Image Files (*.png *.jpg *.bmp *.gif)")
+		
+		if filepath:
+			d,f = os.path.split(filepath)
+			assert os.path.isabs(d) 
+			
+			if local_dir and d!=local_dir:
+				assert os.path.isabs(local_dir)
+				r = QtGui.QMessageBox.question(self, "Local importation", 
+					"Do you want to import the file locally ?",
+					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
+				if r== QtGui.QMessageBox.Yes:
+					newfilepath = os.path.join(local_dir,f)
+					newfilepath = FMFileManagement.exists(newfilepath)
+					if not newfilepath:
+						return False
+					shutil.copyfile(filepath,newfilepath)
+					tmp,newfilepath = os.path.split(newfilepath) #local path
+			elif not local_dir:
+				newfilepath = filepath
+				r = QtGui.QMessageBox.question(self, "Local importation", 
+					"Since you did not saved the file, the absolute path "+\
+					"will be displayed. For import the file localy, save "+\
+					"first",
+					QtGui.QMessageBox.Yes|QtGui.QMessageBox.Cancel)
+				if r== QtGui.QMessageBox.Cancel:
+					return False
+			else :
+				tmp,newfilepath = os.path.split(filepath)	#local path		
+			
+			# self.SLOT_setFormating(TSStyleImage.userPropertyId)
+			self.blockSignals(True)
+			
+			cursor=self.textCursor()
+			cursor.clearSelection()
+			block_id = cursor.blockFormat().property(
+												QtGui.QTextFormat.UserProperty)
+			block_id = block_id.toPyObject() 
+			if block_id==TSStyleImage.userPropertyId :
+				# if there is an image, we remove the previous one
+				TSManager.inverseStyle(cursor,block_id)
+			TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)				
+			cursor.beginEditBlock()
+			cursor.insertText(newfilepath)
+			cursor.endEditBlock()
+			self.blockSignals(False)
+			QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
+			
+			return filepath
+		return False
 
 
 	def insertFromMimeData(self,source ):

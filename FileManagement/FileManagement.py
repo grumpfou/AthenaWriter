@@ -1,6 +1,7 @@
 from PyQt4 import QtGui, QtCore
 import codecs
 import os.path
+import math
 
 class FMFileManagement:
 	
@@ -89,7 +90,7 @@ class FMFileManagement:
 		return res
 		
 	@staticmethod
-	def open_gui(dft_opening_saving_site=None,parent=None,*args,**kargs):
+	def open_gui(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to open a file.
 		- dft_opening_saving_site : the path where to put the window at first
 			(default : current path)
@@ -100,7 +101,8 @@ class FMFileManagement:
 		"""		
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
-		filepath = dialog.	getOpenFileName(parent,"Select the file to open",dft_opening_saving_site)
+		filepath = dialog.getOpenFileName(parent,"Select the file to open",
+										dft_opening_saving_site,filter=filter)
 		if filepath:
 			filepath=unicode(filepath)
 			res = FMFileManagement.open(filepath,*args,**kargs)
@@ -108,7 +110,7 @@ class FMFileManagement:
 		return False
 		
 	@staticmethod
-	def open_gui_filepath(dft_opening_saving_site=None,parent=None,*args,**kargs):
+	def open_gui_filepath(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to get a filepath to open.
 		- dft_opening_saving_site : the path where to put the window at first
 			(default : current path)
@@ -118,10 +120,40 @@ class FMFileManagement:
 		"""		
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
-		filepath = dialog.	getOpenFileName(parent,"Select the file to open",dft_opening_saving_site)
+		filepath = dialog.	getOpenFileName(parent,"Select the file to open",
+										dft_opening_saving_site,filter=filter)
 		if filepath:
 			filepath=unicode(filepath)
 			return filepath
 		return False
 		
+	@staticmethod
+	def exists(filepath):
+		"""Look if the file exists, and if do propose to rename it.
+		Return the new filepath (False is canceled)"""
+		
+		if not os.path.exists(filepath):
+			return filepath
 
+		filepath_start = filepath[:]
+		max_ite = 1000 # NOT A CONSTANT FOR DIFFICULTIES TO DEFINE A CONSTANT
+													# BEFORE IMPORTING THEM
+		i = 0
+		while os.path.exists(filepath) and i<max_ite:
+			f,ext = os.path.splitex(filepath)
+			filepath = f+str(i).zfill(int(math.log10(max_ite)))+'.'+ext
+		tmp, ffs = os.path.split(filepath_start)
+		tmp, ff  = os.path.split(filepath)
+		
+		r = QtGui.QMessageBox.question(self, "Rename files ?", 
+					"The file "+ ffs+" already exists. Change its name in "+\
+					ff+"?",
+					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No|\
+					QtGui.QMessageBox.Cancel)
+		
+		if r== QtGui.QMessageBox.Yes:
+			return filepath
+		elif r== QtGui.QMessageBox.No:
+			return filepath_start
+		else:
+			return False

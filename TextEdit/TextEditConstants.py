@@ -7,7 +7,7 @@ Contains the class that deal with the configuration of the core program.
 
 from PyQt4 import QtGui, QtCore
 
-import os
+import os,sys
 
 
 ############ IMPORTATION OF CMConstantsAbstarct ############
