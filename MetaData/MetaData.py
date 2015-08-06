@@ -128,6 +128,9 @@ class MDMetaData:
 		return res
 		
 		
+
+
+
 class MDMetaDataDialog (MDMetaData,QtGui.QDialog):
 	def __init__(self,metadata=None,*args,**kargs):
 		QtGui.QDialog.__init__(self,*args,**kargs)

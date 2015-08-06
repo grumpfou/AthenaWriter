@@ -52,6 +52,7 @@ class AWCore:
 				# we will save the file .athw_meta as well
 				cur = self.textEdit.textCursor()
 				self.metadata.lastpos = int(cur.position())
+				self.metadata.language = self.textEdit.language.name
 				
 				to_save = self.metadata.toxml()
 				meta_filepath,tmp = os.path.splitext(self.filepath)
@@ -77,9 +78,8 @@ class AWCore:
 		local_dir,tmp = os.path.split(self.filepath)
 		print 'filepath : ',filepath
 		text = FMFileManagement.open(filepath)
-		self.textEdit.setText(text,type='xml',local_dir=local_dir)
+		
 		if AWConstants['DO_METADATA'] :
-			# we will open the file .athw_meta as well
 			meta_filepath,tmp = os.path.splitext(self.filepath)
 			meta_filepath += '.athw_meta'
 			if os.path.exists(meta_filepath):
@@ -87,10 +87,18 @@ class AWCore:
 									FMFileManagement.open(meta_filepath))
 			else:
 				self.metadata=MDMetaData()
-			if self.metadata.lastpos != None:
+			print 'self.metadata.__dict__ : ',self.metadata.__dict__
+			language = self.metadata.language
+			lastpos = self.metadata.lastpos
+			
+			self.textEdit.setText(text,type='xml',local_dir=local_dir,new_language=language)
+			if lastpos != None:
 				cur = self.textEdit.textCursor()
-				cur.setPosition(self.metadata.lastpos)
+				cur.setPosition(lastpos)
 				self.textEdit.setTextCursor(cur)
+		else:
+			self.textEdit.setText(text,type='xml',local_dir=local_dir)
+			
 		return True
 	
 	def CMD_FileImport(self,filepath,format_name,to_skip=None):

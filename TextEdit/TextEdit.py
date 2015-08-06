@@ -41,7 +41,7 @@ class TETextEdit(QtGui.QTextEdit):
 		 
 		self.dict_autocorrection = CLAutoCorrection.get_values(
 														local_dir=local_dir)
-		self.changeLanguage(language_name)
+		self.changeLanguage(language_name,local_dir=local_dir) # redo a version where we do not need to send local_dir
 		
 		self.findDialog 		= TEFindDialog(textedit=self)
 		self.charWidgetTable	= TECharWidgetTable(linked_text_widget=self)
@@ -57,10 +57,7 @@ class TETextEdit(QtGui.QTextEdit):
 		
 		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
 		
-		if TEConstants['SPELL_CHECK'] and TEHasEnchant :
-			list_spelling = CLSpelling.get_values(local_dir=local_dir)
-			self.highlighter = TEHighlighter(self.document(),self.language,
-												list_spelling=list_spelling)
+		
 			
 		
 		
@@ -503,7 +500,7 @@ class TETextEdit(QtGui.QTextEdit):
 						self.textCursor().selection() )
 		QtGui.QTextEdit.cut(self)
 		
-	def changeLanguage(self,language_name=None):
+	def changeLanguage(self,language_name=None,local_dir=None):
 		# fill self.language according to the language in entry
 		if language_name==None:
 			lang = TELanguageDico[TEConstants["DFT_WRITING_LANGUAGE"]]
@@ -516,11 +513,11 @@ class TETextEdit(QtGui.QTextEdit):
 																language_name)
 			else:
 				lang = TELanguageDico[language_name]
-				self.language=lang(self.dict_autocorrection)		
+				self.language = lang(self.dict_autocorrection)		
 				
-				
+		## PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS		
 		# add the language insert shortcuts to the class 
-		dico=self.language.shortcuts_insert
+		dico = self.language.shortcuts_insert
 		mapper = QtCore.QSignalMapper(self)
 		for k in dico.keys():
 			short=QtGui.QShortcut(QtGui.QKeySequence(*k),self)
@@ -544,6 +541,16 @@ class TETextEdit(QtGui.QTextEdit):
 			self.dico_pluggins[i]=dico[k]
 			mapper.setMapping(short, i)		
 		self.connect(mapper, QtCore.SIGNAL("mapped(int)"), self.SLOT_pluggins )
+		
+		# Change the Highlighter for the new language
+		if TEConstants['SPELL_CHECK'] and TEHasEnchant :
+			if local_dir!=None:
+				list_spelling = CLSpelling.get_values(local_dir=local_dir)
+			else:
+				list_spelling=None
+			self.highlighter = TEHighlighter(self.document(),self.language,
+												list_spelling=list_spelling)
+			self.highlighter.rehighlight ()
 	
 	def undo(self):
 		"""
