@@ -442,7 +442,7 @@ class FEExportExternal (FEExportGeneral):
 		old_d = os.getcwd()
 		print 'dirpath_inter : ',dirpath_inter
 		os.chdir(dirpath_inter) # change_dir for the local files
-		res1 = os.system(commandline)
+		res1 = os.system(commandline.encode('utf-8'))
 		os.chdir(old_d)
 		
 		if res1!=0:

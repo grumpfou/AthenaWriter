@@ -396,7 +396,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		if res :
 			try :
 				res1 = self.CMD_FileExport(**res)
-			except BaseException,e:
+			except IOError,e:
 				print e
 				res1 = False
 			if res1:
