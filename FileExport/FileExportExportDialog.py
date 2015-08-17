@@ -1,5 +1,6 @@
 from PyQt4 import QtGui, QtCore
 from FileExportExport import FEList,FEDict
+from DialogValues.DialogValues import DVWidget
 import os
 
 
@@ -18,7 +19,7 @@ class FEExportDialog(QtGui.QDialog):
 		self.lineedit_path = QtGui.QLineEdit ()
 		self.widget_options = QtGui.QWidget()
 		self.check_typo = QtGui.QCheckBox()
-		self.check_typo.setToolTip('Recheck typo before exoprt')
+		self.check_typo.setToolTip('Recheck typo before export')
 		
 		
 		# self.lineedit_title = QtGui.QLineEdit ()
@@ -108,13 +109,13 @@ class FEExportDialog(QtGui.QDialog):
 		
 		# replace the same filed of the new doc_opt_dft by the old ones
 		doc_opt_dft = FEDict[unicode(text)].doc_opt_dft.copy()
-		if isinstance(self.widget_options,FEWidget):
+		if isinstance(self.widget_options,DVWidget):
 			d = self.widget_options.getValueDict()
 			for k, v in d.items():
 				if k in doc_opt_dft.keys():
 					doc_opt_dft[k] = (doc_opt_dft[k][0],v,
 												doc_opt_dft[k][2]) 
-		self.widget_options = FEWidget(doc_opt_dft,key_list=self.key_list)
+		self.widget_options = DVWidget(doc_opt_dft,key_list=self.key_list)
 		self.main_layout.insertRow(self.rowWidgetOption,self.widget_options)
 	###########################################################################
 		
@@ -146,144 +147,144 @@ class FEExportDialog(QtGui.QDialog):
 		
 		
 
-doubleSpinBoxStep = .1
-
-class FEWidget (QtGui.QWidget):
-	def __init__(self,constants_dict,widget_dict=None,key_list=None,
-			constraints_dict=None,overwrite_dict=None,*args,**kargs):
-		""" This class will manage the constants with a gui interface. Each
-		constant is caracterized by its name (called key), its type, its 
-		initial value and its description. These information are given in 
-		constants_dict.
-		
-		- constants_dict under the form:
-			{key : ( type, current_value ,decr) ,...}
-		- widget_dict under the form:
-			{key :  widget_to_display ,...}
-		- key_list : list of key in the order to be displayed
-		- constraints : for each type its constraint
-			int : (min,max,interval)
-			float : (min,max,interval)
-			
-			Should be under the form:
-			{key :  (constraints1, constraints2, ...) ,...}
-		
-		"""
-		QtGui.QDialog.__init__(self,*args,**kargs)
-		
-		if key_list == None : key_list =[]
-		if widget_dict == None : widget_dict ={}
-		if constraints_dict == None : constraints_dict ={}
-		
-		self.keys = key_list[:]
-		print 'self.keys : ',self.keys
-		self.constants_dict = constants_dict
-		self.constraints_dict = constraints_dict
-		self.widget_dict = {}
-		self.initial_dict = {k : v[1] for k,v in self.constants_dict.items()}
-		
-		keys_of_constants_dict = self.constants_dict.keys()
-		for k in self.keys:
-			print 'k : ',k
-			try :
-				keys_of_constants_dict.pop(keys_of_constants_dict.index(k))
-			except ValueError:
-				raise ValueError('The key ',k,' of key_list should be a key '+\
-						'of contants_dict')
-		keys_of_constants_dict.sort()
-		self.keys += keys_of_constants_dict
-		print 'self.keys : ',self.keys
-		layout  = QtGui.QFormLayout ()
-		for k in self.keys:
-			if widget_dict.has_key(k):
-				wid = widget_dict[k]
-			else:
-				wid = self.getCstWidget(k)
-			layout.addRow(k.title(),wid)
-			self.widget_dict[k] = wid
-		self.setLayout(layout)
-		
-	
-	def getCstWidget(self,key):
-		"""Will give the widget correponding to a certain type of constant:
-		- key : the key of the constant.
-			will work for basic constant type, there is
-		
-		"""
-		type_ = self.constants_dict[key][0]
-		value = self.constants_dict[key][1]
-		descr = self.constants_dict[key][2]
-		if type_ == bool :
-			wid = QtGui.QCheckBox ( parent = self )
-			if value:
-				wid.setCheckState(QtCore.Qt.Checked)
-			else:
-				wid.setCheckState(QtCore.Qt.Unchecked)
-		elif type_ == int or type_ == float :
-			if type_ == int:
-				wid = QtGui.QSpinBox ( parent = self )
-			else:
-				wid = QtGui.QDoubleSpinBox ( parent = self )
-				
-			if self.constraints_dict.has_key(key):
-				c = self.constraints_dict[k]
-				if c[0]!=None:
-					wid.setMinimum ( c[0] )
-				if c[1]!=None:
-					wid.setMaximum ( c[1] )
-				if c[2]!=None:
-					wid.setSingleStep ( c[2] )
-				elif type_ == float:
-					wid.setSingleStep ( doubleSpinBoxStep )
-			elif type_ == float:
-					wid.setSingleStep ( doubleSpinBoxStep )
-			wid.setValue(value)
-			
-		elif type_ in [str,unicode]:
-			wid = QtGui.QLineEdit ( parent = self )
-			wid.setText(value)
-		else:
-			import textwrap
-			msg = textwrap.fill(\
-				'The type of the constant '+key+' is not convertible into a '+\
-				'widget, use the widget_dict to set your own.')
-			raise TypeError(msg)
-		wid.setToolTip(descr)
-		return wid
-			
-		
-	def getValue(self,key):
-		"""Will return the value of the constant of the correponding key"""
-		type_ = self.constants_dict[key][0]
-		value = self.constants_dict[key][1]
-		descr = self.constants_dict[key][2]
-		wid = self.widget_dict[key]
-		if type_ == bool :
-			wid = self.widget_dict[key]
-			if wid.checkState () == QtCore.Qt.Checked:
-				return True
-			else :
-				return False
-		elif type_ == int or type_ == float :
-			return	type_(wid.value())
-			
-		elif type_ in [str,unicode]:
-			return type_(wid.text())
-	
-	def getValueDict(self,skip_same_as_init=False):
-		"""Will return the dictionary of the values
-		- skip_same_as_init : if True, will return only the one that have 
-				changed since the begining.
-		"""
-		res = {}
-		print 'coucou'
-		for k in self.keys:
-			v = self.getValue(k)
-			if (not skip_same_as_init) or v!=self.initial_dict[k]:
-				print 'k,v : ',k,v
-				res[k]=v
-		
-		return res
+# doubleSpinBoxStep = .1
+# 
+# class FEWidget (QtGui.QWidget):
+# 	def __init__(self,constants_dict,widget_dict=None,key_list=None,
+# 			constraints_dict=None,overwrite_dict=None,*args,**kargs):
+# 		""" This class will manage the constants with a gui interface. Each
+# 		constant is caracterized by its name (called key), its type, its 
+# 		initial value and its description. These information are given in 
+# 		constants_dict.
+# 		
+# 		- constants_dict under the form:
+# 			{key : ( type, current_value ,decr) ,...}
+# 		- widget_dict under the form:
+# 			{key :  widget_to_display ,...}
+# 		- key_list : list of key in the order to be displayed
+# 		- constraints : for each type its constraint
+# 			int : (min,max,interval)
+# 			float : (min,max,interval)
+# 			
+# 			Should be under the form:
+# 			{key :  (constraints1, constraints2, ...) ,...}
+# 		
+# 		"""
+# 		QtGui.QDialog.__init__(self,*args,**kargs)
+# 		
+# 		if key_list == None : key_list =[]
+# 		if widget_dict == None : widget_dict ={}
+# 		if constraints_dict == None : constraints_dict ={}
+# 		
+# 		self.keys = key_list[:]
+# 		print 'self.keys : ',self.keys
+# 		self.constants_dict = constants_dict
+# 		self.constraints_dict = constraints_dict
+# 		self.widget_dict = {}
+# 		self.initial_dict = {k : v[1] for k,v in self.constants_dict.items()}
+# 		
+# 		keys_of_constants_dict = self.constants_dict.keys()
+# 		for k in self.keys:
+# 			print 'k : ',k
+# 			try :
+# 				keys_of_constants_dict.pop(keys_of_constants_dict.index(k))
+# 			except ValueError:
+# 				raise ValueError('The key ',k,' of key_list should be a key '+\
+# 						'of contants_dict')
+# 		keys_of_constants_dict.sort()
+# 		self.keys += keys_of_constants_dict
+# 		print 'self.keys : ',self.keys
+# 		layout  = QtGui.QFormLayout ()
+# 		for k in self.keys:
+# 			if widget_dict.has_key(k):
+# 				wid = widget_dict[k]
+# 			else:
+# 				wid = self.getCstWidget(k)
+# 			layout.addRow(k.title(),wid)
+# 			self.widget_dict[k] = wid
+# 		self.setLayout(layout)
+# 		
+# 	
+# 	def getCstWidget(self,key):
+# 		"""Will give the widget correponding to a certain type of constant:
+# 		- key : the key of the constant.
+# 			will work for basic constant type
+# 		
+# 		"""
+# 		type_ = self.constants_dict[key][0]
+# 		value = self.constants_dict[key][1]
+# 		descr = self.constants_dict[key][2]
+# 		if type_ == bool :
+# 			wid = QtGui.QCheckBox ( parent = self )
+# 			if value:
+# 				wid.setCheckState(QtCore.Qt.Checked)
+# 			else:
+# 				wid.setCheckState(QtCore.Qt.Unchecked)
+# 		elif type_ == int or type_ == float :
+# 			if type_ == int:
+# 				wid = QtGui.QSpinBox ( parent = self )
+# 			else:
+# 				wid = QtGui.QDoubleSpinBox ( parent = self )
+# 				
+# 			if self.constraints_dict.has_key(key):
+# 				c = self.constraints_dict[k]
+# 				if c[0]!=None:
+# 					wid.setMinimum ( c[0] )
+# 				if c[1]!=None:
+# 					wid.setMaximum ( c[1] )
+# 				if c[2]!=None:
+# 					wid.setSingleStep ( c[2] )
+# 				elif type_ == float:
+# 					wid.setSingleStep ( doubleSpinBoxStep )
+# 			elif type_ == float:
+# 					wid.setSingleStep ( doubleSpinBoxStep )
+# 			wid.setValue(value)
+# 			
+# 		elif type_ in [str,unicode]:
+# 			wid = QtGui.QLineEdit ( parent = self )
+# 			wid.setText(value)
+# 		else:
+# 			import textwrap
+# 			msg = textwrap.fill(\
+# 				'The type of the constant '+key+' is not convertible into a '+\
+# 				'widget, use the widget_dict to set your own.')
+# 			raise TypeError(msg)
+# 		wid.setToolTip(descr)
+# 		return wid
+# 			
+# 		
+# 	def getValue(self,key):
+# 		"""Will return the value of the constant of the correponding key"""
+# 		type_ = self.constants_dict[key][0]
+# 		value = self.constants_dict[key][1]
+# 		descr = self.constants_dict[key][2]
+# 		wid = self.widget_dict[key]
+# 		if type_ == bool :
+# 			wid = self.widget_dict[key]
+# 			if wid.checkState () == QtCore.Qt.Checked:
+# 				return True
+# 			else :
+# 				return False
+# 		elif type_ == int or type_ == float :
+# 			return	type_(wid.value())
+# 			
+# 		elif type_ in [str,unicode]:
+# 			return type_(wid.text())
+# 	
+# 	def getValueDict(self,skip_same_as_init=False):
+# 		"""Will return the dictionary of the values
+# 		- skip_same_as_init : if True, will return only the one that have 
+# 				changed since the begining.
+# 		"""
+# 		res = {}
+# 		print 'coucou'
+# 		for k in self.keys:
+# 			v = self.getValue(k)
+# 			if (not skip_same_as_init) or v!=self.initial_dict[k]:
+# 				print 'k,v : ',k,v
+# 				res[k]=v
+# 		
+# 		return res
 		
 		
 if __name__ == '__main__':

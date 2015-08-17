@@ -13,7 +13,7 @@ from FileManagement.FileManagementFileConstants	 import FMFileConstants
 from FileExport.FileExportExportDialog import FEExportDialog
 from LastFiles.LastFiles import LFList
 from ConstantsManagement.ConstantsManagementDialog import CMDialog
-from MetaData.MetaData import MDMetaDataDialog,MDMetaData
+from DialogValues.DialogValues import DVDialog
 
 
 import sys
@@ -206,7 +206,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuEdit.addAction(self.textEdit.actionFindPrevious)		
 		menuEdit.addAction(self.textEdit.actionLaunchCharWidgetTable)		
 		menuEdit.addSeparator ()		
-		menuEdit.addAction(self.textEdit.actionChangeLanguage)
+		# menuEdit.addAction(self.textEdit.actionChangeLanguage)
 		menuEdit.addAction(self.textEdit.actionRecheckTypography)
 		menuEdit.addAction(self.textEdit.actionEnableTypo)
 		menuEdit.addAction(self.actionSendToExternalSoftware)
@@ -227,7 +227,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.actionPaste, self.textEdit.actionLaunchFindDialog,
 			self.textEdit.actionFindNext,self.textEdit.actionFindPrevious,
 			self.textEdit.actionLaunchCharWidgetTable,
-			self.textEdit.actionChangeLanguage,
+			# self.textEdit.actionChangeLanguage,
 			self.textEdit.actionRecheckTypography,
 			self.textEdit.actionEnableTypo,self.actionSendToExternalSoftware,
 			self.actionAboutHelp,self.actionAboutAbout] + \
@@ -430,8 +430,44 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		dialog = DSDialogManager(textedit=self.textEdit,parent=self)
 		dialog.show()
 	def SLOT_actionFileMetaData(self):
-		dialog = MDMetaDataDialog(metadata=self.metadata,parent=self)
-		dialog.show()
+		
+		values_dict ={}
+		key_list =[]
+		for k,t,m in zip(	self.metadata.element_list,
+							self.metadata.element_type,
+							self.metadata.element_modif):
+			if m:
+				if self.metadata[k] == None:
+					if t == unicode or t==str:
+						v = ""
+					elif t==float or t==int:
+						v = t(0)
+					else:
+						v = t(None)
+				else:
+					v = self.metadata[k]
+				values_dict[k] = (t,v,None) 
+				key_list.append(k)
+		# constraints_dict = {'language': [TELanguageDico.keys()] }
+		d = DVDialog.getValueDict(parent=self,
+				values_dict = values_dict,
+				# constraints_dict=constraints_dict,
+				key_list = key_list,
+				skip_same_as_init = True
+				)
+		if d and len(d)>0 :
+			self.metadata.update(d)
+			if 'language' in d.keys():
+				self.textEdit.changeLanguage(language_name = unicode(d['language']))
+				r = QtGui.QMessageBox.question(self, "Recheck Typography", 
+					"Do you want to import the recheck the typography ?",
+					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
+				if r== QtGui.QMessageBox.Yes:
+					self.textEdit.SLOT_actionRecheckTypography()
+			self.SLOT_somethingChanged()
+					
+		# dialog = MDMetaDataDialog(metadata=self.metadata,parent=self)
+		# dialog.show()
 	def SLOT_actionViewFullScreen(self):
 		if not self.fullScreened:
 			self.showFullScreen()

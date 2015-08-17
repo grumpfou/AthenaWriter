@@ -38,8 +38,7 @@ from PyQt4 import QtGui, QtCore
 from TextEditLanguagesRules import *
 from TextEditConstants import *
 from TextEditWord import *
-
-
+from DialogValues.DialogValuesAdditionalTypes import DVChoice
 
 
 class TELanguageAbstract:
@@ -284,8 +283,12 @@ class TELanguageFrench (TELanguageAbstract):
 		cur_tmp.setPosition(endCursor.position(), QtGui.QTextCursor.KeepAnchor);
 		cur_tmp.deleteChar()
 	
-TELanguageDico={"French":TELanguageFrench,"English":TELanguageEnglish}			
-TELanguageEnchantDico={"French":'fr_FR',"English":'en_UK'}			
+TELanguageDico = {"French":TELanguageFrench,"English":TELanguageEnglish}			
+TELanguageEnchantDico={"French":'fr_FR',"English":'en_UK'}
+
+class TELanguageChoice(DVChoice):					# bofff
+	elements_list = TELanguageDico.keys()	# bofff
+
 
 
 	

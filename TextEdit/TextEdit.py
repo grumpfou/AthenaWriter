@@ -68,7 +68,7 @@ class TETextEdit(QtGui.QTextEdit):
 		self.actionPaste			 		= Act("Paste",self)
 		self.actionUndo				 		= Act("Undo",self)
 		self.actionRedo				 		= Act("Redo",self)
-		self.actionChangeLanguage	 		= Act("Change language",self)
+		# self.actionChangeLanguage	 		= Act("Change language",self)
 		self.actionEnableTypo		 		= Act("Enable typography",self)
 		self.actionLaunchCharWidgetTable 	= Act("&Special Characters",self)
 		self.actionLaunchFindDialog 		= Act("&Find",self)
@@ -120,7 +120,6 @@ class TETextEdit(QtGui.QTextEdit):
 		c(self.actionPaste, trig,self.paste)
 		c(self.actionUndo, trig,self.undo)
 		c(self.actionRedo, trig,self.redo)
-		c(self.actionChangeLanguage, trig,self.SLOT_actionChangeLanguage	)
 		# c(self.actionEnableTypo, trig,self.SLOT_actionEnableTypo	)
 		c(self.actionLaunchCharWidgetTable, trig,
 										self.SLOT_actionLaunchCharWidgetTable)
@@ -293,46 +292,46 @@ class TETextEdit(QtGui.QTextEdit):
 		self.language.cheak_after_paste(cursor)
 		
 		
-	def SLOT_actionChangeLanguage(self):
-		"""Method that will display a QDialog that will enable to change the
-		language. It will also propose to recheck all the typography with a 
-		QCheckBox.		
-		"""
-		list_languages = TELanguageDico.keys() #list of the available languages
-		assert self.language.name in list_languages , self.language.name + \
-										" should be in te list of languages"
-		
-		# Create the dialog window
-		dia = QtGui.QDialog (self)
-		dia.setWindowTitle("New language")
-		
-		current_lge_index = list_languages.index(self.language.name)
-
-		comboBox = QtGui.QComboBox()
-		comboBox.addItems(TELanguageDico.keys())
-		comboBox.setCurrentIndex(current_lge_index)
-		
-		checkBox = QtGui.QCheckBox("Re-check the typography")
-		button_ok 		= QtGui.QPushButton('Ok')
-		button_cancel 	= QtGui.QPushButton('Cancel')
-		dia.connect(button_ok 		, QtCore.SIGNAL('clicked()'), dia.accept)
-		dia.connect(button_cancel 	, QtCore.SIGNAL('clicked()'), dia.reject)
-		
-		layout=QtGui.QGridLayout()
-		layout.addWidget(comboBox,0,0,1,1)
-		layout.addWidget(checkBox,1,0,1,2)
-		layout.addWidget(button_ok,2,0)
-		layout.addWidget(button_cancel,2,1)
-		
-		dia.setLayout(layout)
-		dia.exec_()
-		
-		# If the dialog is accepted, then it changes the language
-		if dia.result () == QtGui.QDialog.Accepted:
-			lang_name = list_languages [comboBox.currentIndex()]
-			self.changeLanguage(language_name = unicode(lang_name))
-			if checkBox.checkState () == QtCore.Qt.Checked:
-				self.SLOT_actionRecheckTypography()
+	# def SLOT_actionChangeLanguage(self):
+	# 	"""Method that will display a QDialog that will enable to change the
+	# 	language. It will also propose to recheck all the typography with a 
+	# 	QCheckBox.		
+	# 	"""
+	# 	list_languages = TELanguageDico.keys() #list of the available languages
+	# 	assert self.language.name in list_languages , self.language.name + \
+	# 									" should be in te list of languages"
+	# 	
+	# 	# Create the dialog window
+	# 	dia = QtGui.QDialog (self)
+	# 	dia.setWindowTitle("New language")
+	# 	
+	# 	current_lge_index = list_languages.index(self.language.name)
+# 
+	# 	comboBox = QtGui.QComboBox()
+	# 	comboBox.addItems(TELanguageDico.keys())
+	# 	comboBox.setCurrentIndex(current_lge_index)
+	# 	
+	# 	checkBox = QtGui.QCheckBox("Re-check the typography")
+	# 	button_ok 		= QtGui.QPushButton('Ok')
+	# 	button_cancel 	= QtGui.QPushButton('Cancel')
+	# 	dia.connect(button_ok 		, QtCore.SIGNAL('clicked()'), dia.accept)
+	# 	dia.connect(button_cancel 	, QtCore.SIGNAL('clicked()'), dia.reject)
+	# 	
+	# 	layout=QtGui.QGridLayout()
+	# 	layout.addWidget(comboBox,0,0,1,1)
+	# 	layout.addWidget(checkBox,1,0,1,2)
+	# 	layout.addWidget(button_ok,2,0)
+	# 	layout.addWidget(button_cancel,2,1)
+	# 	
+	# 	dia.setLayout(layout)
+	# 	dia.exec_()
+	# 	
+	# 	# If the dialog is accepted, then it changes the language
+	# 	if dia.result () == QtGui.QDialog.Accepted:
+	# 		lang_name = list_languages [comboBox.currentIndex()]
+	# 		self.changeLanguage(language_name = unicode(lang_name))
+	# 		if checkBox.checkState () == QtCore.Qt.Checked:
+	# 			self.SLOT_actionRecheckTypography()
 
 	def SLOT_correctWord(self,word):
 		"""
@@ -506,7 +505,8 @@ class TETextEdit(QtGui.QTextEdit):
 			lang = TELanguageDico[TEConstants["DFT_WRITING_LANGUAGE"]]
 			self.language=lang(self.dict_autocorrection)
 		else :
-			if not TELanguageDico.has_key(language_name):
+			# FUTURE to change  merge TELanguageDico and choice
+			if not TELanguageDico.has_key(unicode(language_name)):
 				lang = TELanguageDico[TEConstants["DFT_WRITING_LANGUAGE"]]
 				self.language=lang(self.dict_autocorrection)
 				raise WWError("Do not have the typography for the language "+\

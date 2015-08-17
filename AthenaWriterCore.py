@@ -11,7 +11,7 @@ from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from FileExport.FileExportExport import FEList
 from FileImport.FileImport import FIList
 from LastFiles.LastFiles import LFList
-from MetaData.MetaData import MDMetaDataDialog,MDMetaData
+from MetaData.MetaData import MDMetaData
 from ConstantsManagement.ConstantsManagementDialog import CMDialog
 
 
@@ -51,8 +51,8 @@ class AWCore:
 			if AWConstants['DO_METADATA'] and not self.metadata.isEmpty(): 
 				# we will save the file .athw_meta as well
 				cur = self.textEdit.textCursor()
-				self.metadata.lastpos = int(cur.position())
-				self.metadata.language = self.textEdit.language.name
+				self.metadata['lastpos'] = int(cur.position())
+				self.metadata['language'] = self.textEdit.language.name
 				
 				to_save = self.metadata.toxml()
 				meta_filepath,tmp = os.path.splitext(self.filepath)
@@ -76,7 +76,6 @@ class AWCore:
 		
 		# Get the text:
 		local_dir,tmp = os.path.split(self.filepath)
-		print 'filepath : ',filepath
 		text = FMFileManagement.open(filepath)
 		
 		if AWConstants['DO_METADATA'] :
@@ -87,9 +86,8 @@ class AWCore:
 									FMFileManagement.open(meta_filepath))
 			else:
 				self.metadata=MDMetaData()
-			print 'self.metadata.__dict__ : ',self.metadata.__dict__
-			language = self.metadata.language
-			lastpos = self.metadata.lastpos
+			language = self.metadata['language']
+			lastpos = self.metadata['lastpos']
 			
 			self.textEdit.setText(text,type='xml',local_dir=local_dir,new_language=language)
 			if lastpos != None:
@@ -136,7 +134,7 @@ class AWCore:
 		index = list_extentions.index(format_name)
 		format = FEList[index](TSManager)
 		# if len(kargs)==0 and AWConstants['DO_METADATA']:
-			# kargs=self.metadata.getDict()
+		# kargs=self.metadata.getDict()
 		
 	
 		format.export(self.textEdit,**kargs)

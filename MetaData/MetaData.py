@@ -9,6 +9,8 @@ from PyQt4 import QtGui, QtCore
 
 import xml.dom.minidom as XML
 from MetaDataConstants import MDConstants
+from DialogValues.DialogValues import DVWidget
+from TextEdit.TextEditLanguages import TELanguageChoice
 
 # These functions are added to the XML.Node structure :
 def getFirstElementsByTagName(node,name):
@@ -21,10 +23,11 @@ def getFirstElementsByTagName(node,name):
 	return None
 
 
-class MDMetaData:
+class MDMetaData (dict):
 	element_list  = ['author','title','date' ,'language','version','lastpos']
-	element_type  = [unicode ,unicode,unicode,unicode   ,float    ,int      ]
+	element_type  = [unicode ,unicode,unicode,TELanguageChoice,float    ,int]
 	element_modif = [True    ,True   ,True   ,True      ,True     ,False    ]
+	
 	@staticmethod
 	def init_from_xml_string(xml_string=None):
 		"""Class that will interpret the text in order to get the informations"""
@@ -44,30 +47,29 @@ class MDMetaData:
 					print "Warning, metadata <"+element+\
 							"> do not fit the format"
 			element_dict[element]=information
-		
 		return MDMetaData(element_dict=element_dict)
-		
-		
+	
 	def __init__(self,element_dict=None):
+		dict.__init__(self)
 		if element_dict==None: 
 			element_dict={}
-			if MDConstants["DEFAULT_AUTHOR"]!="":
-				element_dict["author"]=MDConstants["DEFAULT_AUTHOR"]
-			
+			# if MDConstants["DEFAULT_AUTHOR"]!="":
+				# element_dict["author"]=MDConstants["DEFAULT_AUTHOR"]
+			# TODO in MainWindow when creating new file, put "DEFAULT_AUTHOR"
 		for k in self.element_list:
+			self[k]=None
+			
 			if element_dict.has_key(k):
-				self.__dict__[k]=element_dict[k]
-			else:
-				self.__dict__[k]=None
+				self[k]=element_dict[k]
 		
 	def toxml(self):
 		doc = XML.Document()
 		structure_node=doc.createElement('structure')
 		
 		for k in self.element_list:
-			if self.__dict__[k]!=None:
+			if self[k]!=None:
 				node=doc.createElement(k)
-				text_node = doc.createTextNode(unicode(self.__dict__[k]))
+				text_node = doc.createTextNode(unicode(self[k]))
 				node.appendChild(text_node)
 				structure_node.appendChild(node)				
 
@@ -116,74 +118,110 @@ class MDMetaData:
 		
 	def isEmpty(self):
 		for k in self.element_list:
-			if self.__dict__[k]!=None:
+			if self[k]!=None:
 				return False
 		return True
 		
-	def getDict(self):
-		res={}
-		for k in self.element_list:
-			if self.__dict__[k] !=None:
-				res[k]=self.__dict__[k]
-		return res
+	
+# class MDMetaDataDialog (DialogValues.DVDialog):
+	# def __init__(self,parent=None,metadata=None):
+		# if metadata==None:
+			# metadata=MDMetaData()
+		# self.metadata = metadata
+		
+		# t,v,None for t,v in 
+					# zip(	self.metadata.element_list,
+							# self.metadata.element_type,
+							# self.metadata.element_modif)}
+		# values_dict ={}
+		# for k,t,m in zip(	self.metadata.element_list,
+							# self.metadata.element_type,
+							# self.metadata.element_modif):
+			# if m:
+				# values_dict[k] = (t,self.metadata[k],None) 
+				
+		# constraints_dict = {'language': [TELanguageDico.keys()] }
+		
+		# DVDialog.__init__(self,parent=parent,
+				# values_dict=values_dict,
+				# constraints_dict=constraints_dict,
+				# key_list = self.metadata.element_list,
+				# )
+				
+	# def accepted(self):
+		# DialogValues.DVDialog.accepted(self)
+		# self.
 		
 		
-
-
-
-class MDMetaDataDialog (MDMetaData,QtGui.QDialog):
-	def __init__(self,metadata=None,*args,**kargs):
-		QtGui.QDialog.__init__(self,*args,**kargs)
-		if metadata==None:
-			metadata=MDMetaData()
-		self.metadata = metadata
-		self.dict_choice={}
-		layout_info=QtGui.QFormLayout()
 		
-		zipp = zip(self.metadata.element_list,self.metadata.element_modif)
-		for k,modifable in zipp:
-			if modifable:
-				choice = QtGui.QLineEdit()
-				if self.metadata.__dict__[k]!=None:
-					choice.setText (unicode(self.metadata.__dict__[k]))
-				self.dict_choice[k]=choice
-				layout_info.addRow(k+':',choice)
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		# self.exec_()
+		
+		# self.dict_choice={}
+		# layout_info=QtGui.QFormLayout()
+		# QtGui.QDialog.__init__(self,*args,**kargs)
+		
+		# zipp = zip(self.metadata.element_list,self.metadata.element_modif)
+		# for k,modifable in zipp:
+			# if modifable:
+				# choice = QtGui.QLineEdit()
+				# if self.metadata[k]!=None:
+					# choice.setText (unicode(self.metadata[k]))
+				# self.dict_choice[k]=choice
+				# layout_info.addRow(k+':',choice)
 			
 		
-		layout_button=QtGui.QHBoxLayout ()
-		button_ok 		= QtGui.QPushButton("OK")
-		button_cancel 	= QtGui.QPushButton("Cancel")
-		layout_button.addWidget(button_ok)
-		layout_button.addWidget(button_cancel)
+		# layout_button=QtGui.QHBoxLayout ()
+		# button_ok 		= QtGui.QPushButton("OK")
+		# button_cancel 	= QtGui.QPushButton("Cancel")
+		# layout_button.addWidget(button_ok)
+		# layout_button.addWidget(button_cancel)
 			
 	
-		layout_main=QtGui.QVBoxLayout ()
-		layout_main.addLayout(layout_info)
-		layout_main.addLayout(layout_button)	
+		# layout_main=QtGui.QVBoxLayout ()
+		# layout_main.addLayout(layout_info)
+		# layout_main.addLayout(layout_button)	
 		
-		self.setLayout(layout_main)
-		self.connect(button_cancel, QtCore.SIGNAL("clicked()"), self, QtCore.SLOT("close()"))
-		self.connect(button_ok 	  , QtCore.SIGNAL("clicked()"), self.generateMeta)
+		# self.setLayout(layout_main)
+		# self.connect(button_cancel, QtCore.SIGNAL("clicked()"), self, QtCore.SLOT("close()"))
+		# self.connect(button_ok 	  , QtCore.SIGNAL("clicked()"), self.generateMeta)
 	
-	def generateMeta(self):
-		zipp = zip(	MDMetaData.element_list,
-					MDMetaData.element_type,
-					MDMetaData.element_modif,
-					)		
-		for k,type_,modifable in zipp:
-			if modifable:
-				try :
-					v = type_(self.dict_choice[k].text())
-				except  ValueError:
-					v = ""
-				if len(v)>0:
-					self.metadata.__dict__[k]=v
-				else:
-					self.metadata.__dict__[k]=None
-		self.close()
+	# def generateMeta(self):
+		# zipp = zip(	MDMetaData.element_list,
+					# MDMetaData.element_type,
+					# MDMetaData.element_modif,
+					# )		
+		# for k,type_,modifable in zipp:
+			# if modifable:
+				# try :
+					# v = type_(self.dict_choice[k].text())
+				# except  ValueError:
+					# v = ""
+				# if len(v)>0:
+					# self.metadata[k]=v
+				# else:
+					# self.metadata[k]=None
+		# self.close()
 				
 if __name__ == '__main__':
 	import sys
+	import os
 	app = QtGui.QApplication(sys.argv)
 	to_analyse="""<?xml version="1.0" ?>
 					<structure>
