@@ -8,7 +8,7 @@ Contains the class that deal with the configuration of the core program.
 from PyQt4 import QtGui, QtCore
 
 import os
-
+from TextEditLanguages import TELanguageChoice
 
 ############ IMPORTATION OF CMConstantsAbstarct ############
 try :
@@ -39,7 +39,7 @@ class TEConstantsAbstract (CMConstantsAbstarct):
 				RECHECK_TEXT_OPEN 	 		= (bool		,False		, "Will recheck the typography of the file when opening"),
 				DO_TYPOGRAPHY		 		= (bool		,True       , "Will perform the typography checking while writing"),
 				AUTO_CORRECTION      		= (bool		,True       , "Will perform the word auto-correction while writing"),
-				DFT_WRITING_LANGUAGE 		= (str		,"English"  , "The default writing language"),
+				DFT_WRITING_LANGUAGE 		= (TELanguageChoice		,"English"  , "The default writing language"),
 				LIM_RECURSIV_UNDO    		= (int		,100        , 
 									"The limit of recursion to come back before the typography correction while making an undo"),
 				FIND_LEN_CONTEXT 		= (int		,10  , "Number of chars in which the context is inserted when searching for a pattern."),

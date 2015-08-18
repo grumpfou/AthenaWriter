@@ -1,28 +1,22 @@
 class DVError (StandardError):pass
 class DVContrainedDict(dict):
-	def __init__(self,a):
+	list_keys = []
+	def __init__(self,a=None):
 		"""
 		If a is a list of string: it will be the keys and all the values will 
 		be initiated to None
 		"""
 		dict.__init__(self)
-		if type(a)==list:
-			# self.init_keys(a)
-			for k in a:
-				self.__setitem__(k,None,False)
-		elif type(a)==dict:
-			for k,v in a.items():
-				self.__setitem__(k,v,False)
-		else:
-			raise ValueError('ContrainedDict should have in entry only a '+\
-				'dict or a list.')
+		if a ==None: a={}
+		for k,v in a.items():
+			self.__setitem__(k,v)
 	
 	def __setitem__(self,k,v,protected=True):
-		if protected and k not in self.keys():
+		if protected and k not in self.list_keys:
 			raise KeyError('The key '+k+' is unkown for this ContrainedDict.')
 		return dict.__setitem__(self,k,v)
 	def __getitem__(self,k,protected=True):
-		if protected and k not in self.keys():
+		if protected and k not in self.list_keys:
 			raise KeyError('The key '+k+' is unkown for this ContrainedDict.')
 		return dict.__getitem__(self,k)
 

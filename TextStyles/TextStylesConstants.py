@@ -18,50 +18,19 @@ except ImportError:
 	CMConstantsAbstarct=foo.CMConstantsAbstarct
 ############################################################
 
-class TSStyleAttributes:
+from DialogValues.DialogValuesAdditionalTypes import DVContrainedDict
+
+
+
+class TSStyleAttributes (DVContrainedDict):
 	"""A class that will define in a proper way the acceptable attributes for 
 	the styles"""
-	def __init__(self,attributes=None):
-		if attributes == None:
-			self.style_attr = {}
-		elif isinstance(attributes,dict):
-			self.style_attr = attributes
-		else:
-			self.style_attr = CMConstantsAbstarct.str_to_dict(attributes,{unicode:unicode})
+	list_keys = ["char_style","font_size","font_name","alignment","font_color"]
+	def __init__(self,a=None):
+		if type(a)==list or type(a)==unicode:
+			a = CMConstantsAbstarct.str_to_dict(a,{unicode:unicode})
+		DVContrainedDict.__init__(self,a)
 		
-		possible_attr = ["char_style","font_size","font_name","alignment",
-				"font_color"]
-		for k in self.style_attr.keys():
-			if not k in possible_attr:
-				raise KeyError('The style attribute should be in ' + \
-						str(possible_attr) + '; get "'+k+'" instead')
-						
-	def __getitem__(self,key):
-		return self.style_attr[key]
-	
-	def __str__(self):
-		
-		to_join = [' '.join([kk,vv]) for kk,vv in self.style_attr.items()]
-		res =' | '.join(to_join)
-		return res
-	
-	def has_key(self,key):
-		return self.style_attr.has_key(key)
-
-	def keys(self):
-		return self.style_attr.keys()
-	
-	def copy(self):
-		return TSStyleAttributes(attributes = self.style_attr.copy())
-	
-	def pop(self,key):
-		return self.style_attr.pop(key)
-	
-	def items(self):
-		return self.style_attr.items()
-
-
-
 class TSConstantsAbstract (CMConstantsAbstarct):
 	all_constants=dict(	
 				# EMPHASIZE_STYLE_OLD				= (unicode	,"italic"	, "The style of the emphasize file (for now only 'italic')"),

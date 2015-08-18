@@ -32,7 +32,8 @@ class AWCore:
 			return self.raison.encode('ascii','replace')
 
 	def __init__(self):
-		self.textEdit = TETextEdit(language_name='French')
+		self.textEdit = TETextEdit(language_name=
+										TEConstants['DFT_WRITING_LANGUAGE'])
 		self.metadata = MDMetaData()
 		self.filepath=None
 		self.lastFilesList=LFList(FMLastFilesFile.open())
