@@ -457,7 +457,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				)
 		if d and len(d)>0 :
 			self.metadata.update(d)
-			if 'language' in d.keys() and not self.textEdit.document().isEmpty():
+			if 'language' in d.keys():
 				self.textEdit.changeLanguage(language_name = unicode(d['language']))
 				r = QtGui.QMessageBox.question(self, "Recheck Typography", 
 					"Do you want to import the recheck the typography ?",
