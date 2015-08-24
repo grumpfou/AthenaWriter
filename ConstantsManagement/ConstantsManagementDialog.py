@@ -56,7 +56,7 @@ class CMDialog (QtGui.QDialog):
 		
 		for w,k in zip(self.wid_list[1:],self.constants_names[1:]):
 			d = w.getValueDict(skip_same_as_init=True)
-			new_dict.update({k+kk:vv for kk,vv in d.items()})
+			new_dict.update({k+'.'+kk:vv for kk,vv in d.items()})
 		
 		for k,v in new_dict.items():
 			self.constants[k] = v
