@@ -1,28 +1,22 @@
 from ConstantsManagement.ConstantsManagementConstantsAbstarct import *
+from ConfigLoading.ConfigLoading import CLPreferences
 
 
-from TextEdit.TextEditConstants 			import TEConstants
 from DocStatistics.DocStatisticsConstants	import DSConstants
+from FileExport.FileExportConstants 		import FEConstants
+from FileImport.FileImportConstants 		import FIConstants
 from FileManagement.FileManagementConstants import FMConstants
 from LastFiles.LastFilesConstants 			import LFConstants
-from FileImport.FileImportConstants 		import FIConstants
-from FileExport.FileExportConstants 		import FEConstants
-from TextStyles.TextStylesConstants 		import TSConstants
 from MetaData.MetaDataConstants 			import MDConstants
+from TextEdit.TextEditConstants 			import TEConstants
+from TextStyles.TextStylesConstants 		import TSConstants
 
 
-
-from FileManagement.FileManagementFileConstants import FMFileConstants
 
 
 import os
 import sys
 
-path_to_config_file_general = os.path.join(
-		CMConstantsAbstarct().abs_path_script_file,
-		'./config/config.txt'
-		)
-path_to_config_file_user = '~/.athena/config_AthenaWriter.txt'
 
 class AWAllConstants (CMConstantsAbstarct):
 	all_constants 			= {
@@ -66,59 +60,8 @@ class AWAllConstants (CMConstantsAbstarct):
 						'MetaData'		 	: MDConstants 	,
 						}
 						
-	def __init__(self,file_to_read=None):
-		CMConstantsAbstarct.__init__(self)
-		self.file_to_read = file_to_read
-	# 	
-	# 	self.file_to_read = file_to_read
-	# 	# if type(file_to_read)!=str or type(file_to_read)!=unicode:
-	# 	if file_to_read == None:
-	# 		# file_to_read=path_to_config_file :
-	# 		file_to_read=os.path.join(CMConstantsAbstarct().abs_path_script_file,path_to_config_file)
-	# 			
-	# 	self.loadFile(file_to_read)
-				
-			
-			
-	# def loadFile(self,file_to_read=None):
-		# """Load the constants from the file file_to_read. If file_to_read is 
-		# None, then it will take self.file_to_read if it exists.
-		# """
-		# if file_to_read==None:	
-			# file_to_read = self.file_to_read
-			
-		# if file_to_read!=False:
-			# file_to_read = os.path.expanduser(file_to_read)
-			# if os.path.exists(file_to_read):
-				# self.file_to_read = file_to_read
-				# result_dictionary = FMFileConstants.open(self.file_to_read)
-				# for k,v in result_dictionary.items():
-					# try:
-						# self.__setitem__(k,v)
-					# except  KeyError,e:
-						# print "Caution : ",e
-			# else:
-				# print (file_to_read+' not found, taking the default options!')
-				# CMConstantsAbstarct.__init__(self)
-				
-		# else:
-			# raise Exception('file_to_read was not specified')				
-	
-	# def saveFile(self,file_to_read=None):
-		# """Save the constants in the file file_to_read. If file_to_read is 
-		# None, then it will take self.file_to_read if it exists.
-		# """		
-		# if file_to_read==None:	
-			# file_to_read = self.file_to_read
-		
-		# if file_to_read:
-			# FMFileConstants.save(self.to_string(),file_to_read)
-		# else:
-			# raise Exception('file_to_read was not specified')
 
-AWConstants = AWAllConstants()
-AWConstants.loadFile(file_manager = FMFileConstants,
-									file_to_read = path_to_config_file_general)
-AWConstants.loadFile(file_manager = FMFileConstants,
-									file_to_read = path_to_config_file_user)
-
+d = CLPreferences.get_values()
+AWConstants = AWAllConstants(dict_overwrite=d)
+if __name__ == '__main__':
+	print AWConstants.to_string()

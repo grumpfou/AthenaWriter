@@ -9,7 +9,7 @@ from DocStatistics.DocStatistics import DSDialogManager
 from FileManagement.FileManagement import FMFileManagement
 # from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
-from FileManagement.FileManagementFileConstants	 import FMFileConstants
+# from FileManagement.FileManagementFileConstants	 import FMFileConstants
 from FileExport.FileExportExportDialog import FEExportDialog
 from LastFiles.LastFiles import LFList
 from ConstantsManagement.ConstantsManagementDialog import CMDialog
@@ -79,7 +79,6 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		self.actionSendToExternalSoftware = QtGui.QAction(
 										"Send to external software"	,self)
 		self.actionEditPreferences = QtGui.QAction("Preferences"	,self)
-		
 		# self.actionViewZoomIn		= QtGui.QAction("Zoom in"		,self)
 		# self.actionViewZoomOut		= QtGui.QAction("Zoom out"		,self)
 		# self.actionViewZoomDft		= QtGui.QAction("Zoom default"	,self)
@@ -547,7 +546,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.setText(text,type='xml')
 	
 	def SLOT_actionEditPreferences(self):
-		dialog = CMDialog(constants=AWConstants,parent=self,file_manager=FMFileConstants)
+		dialog = CMDialog(constants=AWConstants,parent=self)
 		dialog.show()
 		
 		

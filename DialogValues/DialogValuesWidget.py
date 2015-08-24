@@ -19,7 +19,7 @@ class DVWidgetBool(QtGui.QCheckBox):
 
 
 class DVWidgetInt(QtGui.QSpinBox):
-	def __init__(self,parent,value=0,minimum=0,maximum=100,step=1):
+	def __init__(self,parent,value=0,minimum=0,maximum=1e9,step=1):
 		QtGui.QSpinBox.__init__(self,parent=parent)
 		self.setMinimum ( minimum )
 		self.setMaximum ( maximum )
@@ -103,15 +103,15 @@ class DVWidgetContrainedDict(DVWidgetDict):
 		Widget that will represent the DVContrainedDict
 		"""
 		DVWidgetDict.__init__(self,parent,values)
-		self.constrainedDictKeys = values.keys()
+		self.constrainedDict = values
 		
 	def setDict(self,d):
 		DVWidgetDict.setDict(self,d)
-		self.constrainedDictKeys = d.keys()
+		self.constrainedDict = d
 	
 	def getValue(self):
 		res0 = DVWidgetDict.getValue(self)
-		res1 = DVContrainedDict(self.constrainedDictKeys)
+		res1 = self.constrainedDict
 		res1.update(res0)
 		return res1
 		
@@ -142,6 +142,7 @@ DVWidgets = {
 	int : DVWidgetInt,
 	float : DVWidgetFloat,
 	unicode: DVWidgetUnicode,
+	str: DVWidgetUnicode,
 	list: DVWidgetList,
 	dict: DVWidgetDict,
 	DVContrainedDict: DVWidgetContrainedDict,

@@ -4,6 +4,8 @@ import string
 from FileManagement import FMFileManagement
 from FileManagementConstants import *
 
+raise DeprecationWarning()
+
 class FMConfigFileError (BaseException):
 	def __init__(self,raison,line=False,file=False):
 		"""Special Error function for the config file (is normaly able to gives 

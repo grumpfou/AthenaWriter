@@ -215,7 +215,6 @@ class CMConstantsAbstarct:
 				print 'CAUTION'
 				res+=pre+kk+' : '+unicode(vv)+'\n\n'
 		
-		print 'res : ',
 		return res
 		
 	def to_dict(self,pre=None):
@@ -244,6 +243,7 @@ class CMConstantsAbstarct:
 		None, then it will take self.file_to_read if it exists.
 		- file_manager : FMFileConstants instance
 		"""
+		raise DeprecationWarning()
 		if file_to_read==None:	
 			file_to_read = self.file_to_read
 			
@@ -268,8 +268,10 @@ class CMConstantsAbstarct:
 	def saveFile(self,file_manager,file_to_read=None):
 		"""Save the constants in the file file_to_read. If file_to_read is 
 		None, then it will take self.file_to_read if it exists.
-		- file_manager : FMFileConstants instance		
-		"""		
+		- file_manager : FMFileManager instance
+		# dangerous to call directly FMFileManager
+		"""
+		raise DeprecationWarning()
 		if file_to_read==None:	
 			file_to_read = self.file_to_read
 		

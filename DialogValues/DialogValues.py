@@ -89,8 +89,8 @@ class DVWidget (QtGui.QWidget):
 			for k in DVWidgets.keys():
 				if issubclass(type_,k):
 					
-					wid = DVWidgets[k](value,*constraints)
-					break
+					wid = DVWidgets[k](self,value,*constraints)
+					break	
 			else :
 				import textwrap
 				msg = textwrap.fill(\
