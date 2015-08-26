@@ -23,7 +23,7 @@ class FMFileManagement:
 	
 		
 	@staticmethod
-	def save_gui(text,dft_opening_saving_site=None,parent=None,extension=None,*args,**kargs):
+	def save_gui(text,dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to save the file.
 		- text : the unicode sstring to save into the file
 		- dft_opening_saving_site : the path where to put the window at first
@@ -33,11 +33,8 @@ class FMFileManagement:
 		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
-		if extension!=None:
-			filepath = dialog.getSaveFileName(parent,"Select the file to save",dft_opening_saving_site,
-					filter='*.'+extension)
-		else :
-			filepath = dialog.getSaveFileName(parent,"Select the file to save",dft_opening_saving_site)
+		filepath = dialog.getSaveFileName(parent,"Select the file to save",
+										dft_opening_saving_site,filter=filter)
 		if filepath:
 			filepath=unicode(filepath)
 			FMFileManagement.save(text,filepath,*args,**kargs)
@@ -45,7 +42,7 @@ class FMFileManagement:
 		return False
 		
 	@staticmethod
-	def save_gui_filepath(dft_opening_saving_site=None,parent=None,extension=None,*args,**kargs):
+	def save_gui_filepath(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to get a filepath.
 		- dft_opening_saving_site : the path where to put the window at first
 			(default : current path)
@@ -54,11 +51,8 @@ class FMFileManagement:
 		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
-		if extension!=None:
-			filepath = dialog.getSaveFileName(parent,"Select the file to save",dft_opening_saving_site,
-					filter='*.'+extension)
-		else :
-			filepath = dialog.getSaveFileName(parent,"Select the file to save",dft_opening_saving_site)
+		filepath = dialog.getSaveFileName(parent,"Select the file to save",
+									dft_opening_saving_site,filter=filter)
 		if filepath:
 			return filepath
 		return False
@@ -118,6 +112,7 @@ class FMFileManagement:
 		Return	filepath:
 		- filepath : the path to the file that is opened
 		"""		
+		print 'filter : ',filter
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
 		filepath = dialog.	getOpenFileName(parent,"Select the file to open",

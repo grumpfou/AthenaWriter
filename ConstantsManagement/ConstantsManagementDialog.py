@@ -43,6 +43,7 @@ class CMDialog (QtGui.QDialog):
 			w = DVWidget(values_dict =values_dict)
 			tab_widget.addTab(w,m)
 			self.wid_list.append(w)
+		self.new_dict=None
 			
 		self.connect(	button_ok, 
 						QtCore.SIGNAL('clicked()'), 
@@ -52,18 +53,29 @@ class CMDialog (QtGui.QDialog):
 						self.close)
 			
 	def SLOT_replace_constants(self):
-		new_dict = self.wid_list[0].getValueDict(skip_same_as_init=True)
+		self.new_dict = self.wid_list[0].getValueDict(skip_same_as_init=True)
 		
 		for w,k in zip(self.wid_list[1:],self.constants_names[1:]):
 			d = w.getValueDict(skip_same_as_init=True)
-			new_dict.update({k+'.'+kk:vv for kk,vv in d.items()})
-		print 'new_dict : ',new_dict
-		for k,v in new_dict.items():
+			self.new_dict.update({k+'.'+kk:vv for kk,vv in d.items()})
+		for k,v in self.new_dict.items():
 			self.constants[k] = v
 			
 		CLPreferences.replace(self.constants.to_string(skip_same_as_dft=True))
-		self.close()
+		self.accept()
 		
+	@staticmethod
+	def getValueDict(*args,**kargs):
+		dialog = CMDialog(*args,**kargs)
+		result = dialog.exec_()
+		d = dialog.new_dict
+		assert d!=None
+		dialog.close()
+		
+		if result == QtGui.QDialog.Accepted:
+			return d
+		else:
+			return False
 			
 		# def
 # 		self.new_constants = copy.deepcopy(constants)

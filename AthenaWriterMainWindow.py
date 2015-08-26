@@ -242,7 +242,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		if self.filepath==None:
 			filepath = FMFileManagement.save_gui_filepath(
 					self.get_default_opening_saving_site(),
-					self)
+					self,filter="AthW files (*.athw);; All files (*.*)")
 		else:
 			filepath = self.filepath
 		if filepath :
@@ -295,7 +295,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		"""
 		filepath = FMFileManagement.save_gui_filepath(
 				self.get_default_opening_saving_site(),
-				self)
+				self,filter="AthW files (*.athw);; All files (*.*)")
 		if filepath :
 			self.clean_tmp_files() # we remove the previous tmp files
 			self.CMD_FileSave(filepath=unicode(filepath))
@@ -329,9 +329,10 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		if (res != QtGui.QMessageBox.Yes) and (res != QtGui.QMessageBox.No):
 			return False
 		if filepath==None:
+			print "coucou1"
 			filepath = FMFileManagement.open_gui_filepath(
 					self.get_default_opening_saving_site(),
-					self)			
+					self,filter="AthW files (*.athw);; All files (*.*)")			
 		else :
 			filepath=str(filepath)
 		if filepath:
@@ -474,8 +475,6 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 					QtCore.Qt.ScrollBarAlwaysOff)
 			self.menuBar().setHidden(True)
 			if AWConstants['FULLSCREEN_CENTRAL_MAX_SIZE']>0:
-				
-				
 				rec = QtGui.QApplication.desktop().screenGeometry()
 				marg = rec.width()
 				marg -= AWConstants['FULLSCREEN_CENTRAL_MAX_SIZE']
@@ -546,8 +545,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.setText(text,type='xml')
 	
 	def SLOT_actionEditPreferences(self):
-		dialog = CMDialog(constants=AWConstants,parent=self)
-		dialog.show()
+		d = CMDialog.getValueDict(constants=AWConstants,parent=self)
 		
 		
 	def closeEvent(self, event):

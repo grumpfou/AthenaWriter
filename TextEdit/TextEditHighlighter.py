@@ -100,6 +100,7 @@ class TESpellingAddWordDialog (QtGui.QDialog):
 	
 	@staticmethod
 	def getFields(*args,**kargs):
+		
 		dialog = TESpellingAddWordDialog(*args,**kargs)
 		result = dialog.exec_()
 		

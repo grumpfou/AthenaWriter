@@ -229,6 +229,7 @@ class TSClassManager:
 			
 	def recheckBlockStyle(self,cursor):
 		for block in cursor.yieldBlockInSelection():
+			print 'block : ',block
 			cursor1 = QtGui.QTextCursor(block)
 
 			qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)
@@ -369,7 +370,7 @@ class TSClassManager:
 #		
 #		# return res1,res2
 			
-		
+
 TSManager = TSClassManager(
 	listBlockStyle = [	TSStyleSeparator,TSStyleHeader1,
 						TSStyleHeader2,TSStyleHeader3,TSStyleCode,
