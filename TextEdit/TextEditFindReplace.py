@@ -1,7 +1,7 @@
 from PyQt4 import QtGui,QtCore
 
-from TextEditConstants 	import *
-from TextEditWord 		import TEWordTools
+from TextEditPreferences 	import *
+from CommonObjects.CommonObjectsWord		import COWordTools
 
 
 # add a simple function to the QCheckBox that return the checked state of the CheckBox
@@ -94,10 +94,10 @@ class TEFindDialog(QtGui.QDialog):
 			cursor_context.clearSelection()
 			cursor_context.movePosition (QtGui.QTextCursor.Left,
 					QtGui.QTextCursor.MoveAnchor,
-					TEConstants["FIND_LEN_CONTEXT"])
+					TEPreferences["FIND_LEN_CONTEXT"])
 			cursor_context.movePosition (QtGui.QTextCursor.Right,
 					QtGui.QTextCursor.KeepAnchor,
-					2*TEConstants["FIND_LEN_CONTEXT"]+selection_lenght)
+					2*TEPreferences["FIND_LEN_CONTEXT"]+selection_lenght)
 			
 			context = cursor_context.selectedText ()
 			
@@ -131,8 +131,8 @@ class TEFindDialog(QtGui.QDialog):
 				next_text = unicode(self.replace_line.text())
 				if not self.casse_checkbox.isChecked():
 					previous_text = unicode(cursor.selection().toPlainText())
-					id = TEWordTools.whatID(previous_text)
-					next_text = TEWordTools.toID(next_text,id)				
+					id = COWordTools.whatID(previous_text)
+					next_text = COWordTools.toID(next_text,id)				
 				cursor.insertText(next_text)
 			self.activate_next()
 				

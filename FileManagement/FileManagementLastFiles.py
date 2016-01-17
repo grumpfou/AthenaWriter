@@ -1,5 +1,5 @@
 from FileManagement import FMFileManagement
-from FileManagementConstants import *
+from FileManagementPreferences import *
 
 import os
 
@@ -7,11 +7,12 @@ class FMLastFilesFile:
 	
 	@staticmethod
 	def open(filepath=None):
+		print "TODO : depricated !!!!"
 		if filepath==None:
 			filepath = os.path.expanduser(
-									FMConstants['LAST_FILES_FILE_PATH'])
+									FMPreferences['LAST_FILES_FILE_PATH'])
 			if not os.path.isabs(filepath):
-				filepath=os.path.join(FMConstants.abs_path_script_file,filepath)
+				filepath=os.path.join(FMPreferences.abs_path_script_file,filepath)
 		res=[]
 		if os.path.exists(filepath):
 			# We read the config.txt file
@@ -28,9 +29,9 @@ class FMLastFilesFile:
 	def save(list_files,filepath=None):
 		if filepath==None:
 			filepath = os.path.expanduser(
-									FMConstants['LAST_FILES_FILE_PATH'])
+									FMPreferences['LAST_FILES_FILE_PATH'])
 			if not os.path.isabs(filepath):
-				filepath=os.path.join(FMConstants.abs_path_script_file,filepath)
+				filepath=os.path.join(FMPreferences.abs_path_script_file,filepath)
 		
 		text = "\n".join(list_files)
 		return FMFileManagement.save(text,filepath)

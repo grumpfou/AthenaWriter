@@ -112,7 +112,6 @@ class FMFileManagement:
 		Return	filepath:
 		- filepath : the path to the file that is opened
 		"""		
-		print 'filter : ',filter
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
 		dialog= QtGui.QFileDialog(parent)
 		filepath = dialog.	getOpenFileName(parent,"Select the file to open",

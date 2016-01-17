@@ -1,5 +1,5 @@
 from PyQt4 import QtGui, QtCore
-from TextStylesConstants import TSConstants
+from TextStylesPreferences import TSPreferences
 
 # def problem with Ctrl+K
 
@@ -202,7 +202,7 @@ class TSStyleClassSeparator (TSStyleClassBlock):
 		id_ = getBlockId(cursor)
 		if id_ != self.userPropertyId:
 			cursor.insertBlock()
-			cursor.insertText(TSConstants['SEPARATOR_MOTIF'])
+			cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
 			pos = cursor.position()
 			cursor.insertBlock()
 			cursor.setPosition(pos,QtGui.QTextCursor.MoveAnchor)
@@ -219,7 +219,7 @@ class TSStyleClassSeparator (TSStyleClassBlock):
 		
 		# pass
 		# if res:
-			# cursor.insertText(TSConstants['SEPARATOR_MOTIF']+'\n')
+			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF']+'\n')
 			
 		return res
 
@@ -262,7 +262,7 @@ class TSStyleClassImage (TSStyleClassBlock):
 			pass
 			if not cursor.hasSelection():
 				cursor.insertBlock()
-				# cursor.insertText(TSConstants['SEPARATOR_MOTIF'])
+				# cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
 				pos = cursor.position()
 				cursor.insertBlock()
 				cursor.setPosition(pos,QtGui.QTextCursor.MoveAnchor)
@@ -279,12 +279,12 @@ class TSStyleClassImage (TSStyleClassBlock):
 		
 		# pass
 		# if res:
-			# cursor.insertText(TSConstants['SEPARATOR_MOTIF']+'\n')
+			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF']+'\n')
 			
 		return res
 		
 TSStyleEmphasize = TSStyleClassChar(
-	constant		=  TSConstants['EMPHASIZE_STYLE'],
+	constant		=  TSPreferences['EMPHASIZE_STYLE'],
 	xmlMark			=  'e',
 	userPropertyId	=  1,
 	name			=  'Emphasize',
@@ -292,12 +292,13 @@ TSStyleEmphasize = TSStyleClassChar(
 	exportDict		=  {	'txt'  :('*','*'),
 							'html' :('<i>', '</i>') ,
 							'tex':(r'\emph{',r'}'),
+							'mkd':('*','*'),
 						}
 	)
 
 
 TSStyleSeparator = TSStyleClassSeparator(
-	constant		=  TSConstants['SEPARATOR_STYLE'],
+	constant		=  TSPreferences['SEPARATOR_STYLE'],
 	xmlMark			=  'sep',
 	userPropertyId	=  2,
 	name			=  'Separator',
@@ -305,11 +306,12 @@ TSStyleSeparator = TSStyleClassSeparator(
 	exportDict		=  {	'txt'  :('***',''),
 							'html' :('<h4><center>***</center></h4>',''),
 							'tex':('\\begin{center}\n***\n\\end{center}',''),
+							'mkd':('***',''),
 						}
 	)
 
 TSStyleHeader1 = TSStyleClassBlock(
-	constant		=  TSConstants['HEADER1_STYLE'],
+	constant		=  TSPreferences['HEADER1_STYLE'],
 	xmlMark			=  'h1',
 	userPropertyId	=  3,
 	name			=  'Header 1',
@@ -317,11 +319,12 @@ TSStyleHeader1 = TSStyleClassBlock(
 	exportDict		=  {	'txt'  :('==','=='),
 							'html' :('<h1>','</h1>'),
 							'tex':(r'\section*{','}'),
+							'mkd':('# ',''),
 						}
 	)
 
 TSStyleHeader2 = TSStyleClassBlock(
-	constant		=  TSConstants['HEADER2_STYLE'],
+	constant		=  TSPreferences['HEADER2_STYLE'],
 	xmlMark			=  'h2',
 	userPropertyId	=  4,
 	name			=  'Header 2',
@@ -329,11 +332,12 @@ TSStyleHeader2 = TSStyleClassBlock(
 	exportDict		=  {	'txt'  :('===','==='),
 							'html' :('<h2>','</h2>'),
 							'tex':(r'\subsection*{','}'),
+							'mkd':('## ',''),
 						}
 	)
 	
 TSStyleHeader3 = TSStyleClassBlock(
-	constant		=  TSConstants['HEADER3_STYLE'],
+	constant		=  TSPreferences['HEADER3_STYLE'],
 	xmlMark			=  'h3',
 	userPropertyId	=  5,
 	name			=  'Header 3',
@@ -341,11 +345,12 @@ TSStyleHeader3 = TSStyleClassBlock(
 	exportDict		=  {	'txt'  :('====','===='),
 							'html' :('<h3>','</h3>'),
 							'tex':(r'\subsubsection*{','}'),
+							'mkd':('### ',''),
 						}
 	)
 	
 TSStyleCode = TSStyleClassBlock(
-	constant		=  TSConstants['CODE_STYLE'],
+	constant		=  TSPreferences['CODE_STYLE'],
 	xmlMark			=  'code',
 	userPropertyId	=  6,	
 	name			=  'Code',
@@ -354,11 +359,12 @@ TSStyleCode = TSStyleClassBlock(
 	exportDict		=  {	'txt'  :('>>> ',''),
 							'html' :('>>> ',''),
 							'tex'  :('>>> ',''),
+							'mkd'  :('```','```'),
 						}
 	)
 	
 TSStylePhantom = TSStyleClassBlock(
-	constant		=  TSConstants['PHANTOM_STYLE'],
+	constant		=  TSPreferences['PHANTOM_STYLE'],
 	xmlMark			=  'phantom',
 	userPropertyId	=  7,
 	name			=  'Phantom',
@@ -366,11 +372,12 @@ TSStylePhantom = TSStyleClassBlock(
 	exportDict		=  {	'txt'  :('[[[',']]]'),
 							'html' :(' <font color="gray">','</font>'),
 							'tex'  :(r'{\tiny ','}'),
+							'mkd' :(' <font color="gray">','</font>'),
 						}
 	)
 	
 TSStyleImage =  TSStyleClassImage(
-	constant		=  TSConstants['IMAGE_STYLE'],
+	constant		=  TSPreferences['IMAGE_STYLE'],
 	xmlMark			=  'img',
 	userPropertyId	=  8,
 	name			=  'Image',
@@ -379,7 +386,6 @@ TSStyleImage =  TSStyleClassImage(
 							'txt'  :('[[File:',']]'),
 							'html' :('<center><img src="','" width="685" /></img></center>'),
 							'tex'  :(r'\begin{center}\includegraphics[width=10cm]{','}\end{center}'),
-							
+							'mkd' :('![image](',')'),
 						}
 	)
-		

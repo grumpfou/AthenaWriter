@@ -1,10 +1,11 @@
 from FileManagement import FMFileManagement
-from FileManagementConstants import *
+from FileManagementPreferences import *
 
 class FMAutoCorrectionFile:
 	
 	@staticmethod
 	def open(filepath=None):
+		print "TODO : depricated !!!!"
 		if filepath==None:
 			filepath = os.path.expanduser(
 									FMConstants['AUROCORRECTION_FILE_PATH'])

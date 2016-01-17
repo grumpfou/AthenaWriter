@@ -15,7 +15,8 @@ import string
 
 
 from PyQt4 import QtGui, QtCore
-from TextEditLanguages import *
+from TextLanguages.TextLanguages import TLEnchantDico
+from TextEditPreferences import TEPreferences
 
 
 class TEHighlighter (QtGui.QSyntaxHighlighter):
@@ -25,14 +26,14 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 	
 	def __init__(self,parent,texteditlanguage,list_spelling=None):
 		QtGui.QSyntaxHighlighter.__init__(self,parent)
-		self.lang = TELanguageEnchantDico[texteditlanguage.name]
+		self.lang = TLEnchantDico[texteditlanguage.name]
 		self.dict = enchant.Dict(self.lang)
 		if list_spelling!=None:
 			for w in list_spelling:
 				self.dict.add(w)
 	
 	def highlightBlock(self, text):
-		if TEConstants['SPELL_CHECK'] :
+		if TEPreferences['SPELL_CHECK'] :
 			self.spellCheakHighlight(text)
 		
 	def getDefaultCharFormat(self,id=0):

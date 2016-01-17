@@ -1,8 +1,8 @@
-# from importation import *
 from AthenaWriterCore import *
+from AthenaWriterCore import __version__
 from AthenaWriterMainWindow import AWWriterText
-from FileExport.FileExportExport import FEList
-from FileImport.FileImport import FIList
+from DocExport.DocExport import DEList
+from DocImport.DocImport import DIList
 from FileManagement.FileManagement import FMFileManagement
 
 import argparse
@@ -57,6 +57,10 @@ class AWConsole (AWCore):
 			help="Will list the last files of LastFile.txt",
 			dest='list_last_files',action="store_true")
 		
+		self.parser.add_argument("-v","--version", 
+			help="Will print the current version of the software",
+			dest='version',action="store_true")
+		
 		self.args = self.parser.parse_args()
 		
 		l = [i for i in range(1,10) if self.args.__dict__["last_file_"+str(i)]]
@@ -72,11 +76,11 @@ class AWConsole (AWCore):
 			if self.args.file!=None:
 				raise AWConsoleError("Do not use the '-1' argument if a file"+\
 						"is specified.")
-			if len(self.lastFilesList.list_files)==0:
+			if len(self.lastFiles.list_files)==0:
 				raise AWConsoleError("The last files memory is empty can not"+\
 						"open the last of the list.")
 			
-			self.args.file=self.lastFilesList.list_files[self.args.last_file-1]
+			self.args.file=self.lastFiles.list_files[self.args.last_file-1]
 
 		if self.args.importt!=None or self.args.export!=None:
 			if self.args.last_file :
@@ -121,7 +125,6 @@ class AWConsole (AWCore):
 				else:
 					
 					res[list_kv[0]]=list_kv[1].decode('utf-8')
-		print 'sub_options' , res
 		return res
 		
 	def perfomImportOptions(self):
@@ -164,9 +167,9 @@ class AWConsole (AWCore):
 		if self.args.list_last_files:# if we export the file, the console mode 
 							# is disabled
 			self.args.console = True
-			print 'self.lastFilesList : ',self.lastFilesList
+			print 'self.lastFiles : ',self.lastFiles
 			
-			lf = self.lastFilesList.list_files
+			lf = self.lastFiles.list_files
 			if len(lf)>9: lf = lf[:9]
 			print "=== Last files list ==="
 			print '\n'.join([str(i+1)+'- '+v for i,v in enumerate(lf)])
@@ -202,7 +205,6 @@ class AWConsole (AWCore):
 			if arg_dict.has_key('outdir'):
 				dir,filepath = os.path.split(filepath)
 				filepath = os.path.join(arg_dict['outdir'],filepath)
-				print "outdir_filepath : ",filepath
 			
 			# We save the file				
 			self.CMD_FileSave(filepath = filepath)
@@ -246,10 +248,11 @@ class AWConsole (AWCore):
 			if export_args.has_key('outdir'):
 				dir,filepath = os.path.split(filepath)
 				filepath = os.path.join(export_args['outdir'],filepath)
-				print "outdir_filepath : ",filepath
 				
 			# We export the file
-			self.CMD_FileExport(format_name=format,filepath=filepath,**export_args)
+			self.CMD_FileExport(format_name=format,filepath=filepath,
+																**export_args)
+			
 				
 #			
 #			xml_string = FMFileManagement.open(self.args.file)
@@ -273,7 +276,6 @@ class AWConsole (AWCore):
 #		
 #
 		if not self.args.console:
-			print "coucou"
 			# app = QtGui.QApplication(sys.argv)
 			writerText = AWWriterText()
 			if self.filepath !=None :
@@ -281,6 +283,8 @@ class AWConsole (AWCore):
 			# writerText.show()
 			return writerText
 			# sys.exit(writerText.exec_())
+		if self.args.version:
+			print "Version : ",__version__
 		return None
 			
 	

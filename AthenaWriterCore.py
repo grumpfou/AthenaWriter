@@ -1,20 +1,17 @@
+__version__ = "1.0beta"
+
 from PyQt4 import QtGui, QtCore
 
-from AthenaWriterConstants import *
+from AthenaWriterPreferences import *
 from TextEdit.TextEdit import TETextEdit
-from TextEdit.TextEditLanguages import TELanguageDico
 from TextStyles.TextStyles import TSManager
-from DocStatistics.DocStatistics import DSDialogManager
 from FileManagement.FileManagement import FMFileManagement
 from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
-from FileExport.FileExportExport import FEList
-from FileImport.FileImport import FIList
-from LastFiles.LastFiles import LFList
-from MetaData.MetaData import MDMetaData
-from ConstantsManagement.ConstantsManagementDialog import CMDialog
-
-
+from DocExport.DocExport import DEList
+from DocImport.DocImport import DIList
+from ConfigLoading.ConfigLoadingLastFiles import CLLastFiles
+from DocProperties.DocPropertiesMetaData import DPMetaData
 
 import sys
 import os
@@ -22,6 +19,7 @@ import threading
 import time
 import codecs
 import subprocess
+
 
 class AWCore:
 	class Error (Exception):
@@ -33,10 +31,10 @@ class AWCore:
 
 	def __init__(self):
 		self.textEdit = TETextEdit(language_name=
-										TEConstants['DFT_WRITING_LANGUAGE'])
-		self.metadata = MDMetaData()
+										TLPreferences['DFT_WRITING_LANGUAGE'])
+		self.metadata = DPMetaData()
 		self.filepath=None
-		self.lastFilesList=LFList(FMLastFilesFile.open())
+		self.lastFiles=CLLastFiles(FMLastFilesFile.open())
 
 		
 	def CMD_FileSave(self,filepath=None):
@@ -49,10 +47,11 @@ class AWCore:
 		res = FMFileManagement.save(unicode(self.textEdit.toXml()),filepath)
 		
 		if res :
-			if AWConstants['DO_METADATA'] and not self.metadata.isEmpty(): 
+			if not self.metadata.isEmpty(): 
 				# we will save the file .athw_meta as well
 				cur = self.textEdit.textCursor()
-				self.metadata['lastpos'] = int(cur.position())
+				self.metadata.__setitem__('lastpos', int(cur.position()), 
+															protected=False)
 				self.metadata['language'] = self.textEdit.language.name
 				
 				to_save = self.metadata.toxml()
@@ -79,24 +78,21 @@ class AWCore:
 		local_dir,tmp = os.path.split(self.filepath)
 		text = FMFileManagement.open(filepath)
 		
-		if AWConstants['DO_METADATA'] :
-			meta_filepath,tmp = os.path.splitext(self.filepath)
-			meta_filepath += '.athw_meta'
-			if os.path.exists(meta_filepath):
-				self.metadata=MDMetaData.init_from_xml_string(
-									FMFileManagement.open(meta_filepath))
-			else:
-				self.metadata=MDMetaData()
-			language = self.metadata['language']
-			lastpos = self.metadata['lastpos']
-			
-			self.textEdit.setText(text,type='xml',local_dir=local_dir,new_language=language)
-			if lastpos != None:
-				cur = self.textEdit.textCursor()
-				cur.setPosition(lastpos)
-				self.textEdit.setTextCursor(cur)
+		meta_filepath,tmp = os.path.splitext(self.filepath)
+		meta_filepath += '.athw_meta'
+		if os.path.exists(meta_filepath):
+			self.metadata=DPMetaData.init_from_xml_string(
+								FMFileManagement.open(meta_filepath))
 		else:
-			self.textEdit.setText(text,type='xml',local_dir=local_dir)
+			self.metadata=DPMetaData()
+		language = self.metadata['language']
+		lastpos = self.metadata['lastpos']
+		
+		self.textEdit.setText(text,type='xml',new_language=language)
+		if lastpos != None:
+			cur = self.textEdit.textCursor()
+			cur.setPosition(lastpos)
+			self.textEdit.setTextCursor(cur)
 			
 		return True
 	
@@ -108,13 +104,13 @@ class AWCore:
 		"""
 		if to_skip==None : to_skip=[]
 		# We check whenever we can import this type of files
-		list_extentions = [format.extension for format in FIList]
+		list_extentions = [format.extension for format in DIList]
 		if format_name not in list_extentions:
 			raise self.Error('Unknown format to import: choose in '+\
 														str(list_extentions))
 		
 		
-		fiimport_instance = FIList[list_extentions.index(format_name)](
+		fiimport_instance = DIList[list_extentions.index(format_name)](
 														file=filepath)
 		fiimport_instance.import2xml()
 		for i in to_skip:
@@ -128,14 +124,12 @@ class AWCore:
 																	**kargs):
 		if check_typo:
 			self.textEdit.SLOT_actionRecheckTypography()
-		list_extentions = [format.extension for format in FEList]
+		list_extentions = [format.name for format in DEList]
 		if format_name not in list_extentions:
 			raise self.Error('Unknown format to import: choose in '+\
 														str(list_extentions))
 		index = list_extentions.index(format_name)
-		format = FEList[index](TSManager)
-		# if len(kargs)==0 and AWConstants['DO_METADATA']:
-		# kargs=self.metadata.getDict()
+		format = DEList[index](TSManager)
 		
 	
 		format.export(self.textEdit,**kargs)

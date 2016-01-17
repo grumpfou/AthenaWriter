@@ -1,19 +1,18 @@
 from PyQt4 import QtGui, QtCore
 
-from AthenaWriterConstants import *
+from AthenaWriterPreferences import *
 from AthenaWriterCore import AWCore
-from TextEdit.TextEdit import TETextEdit
-from TextEdit.TextEditLanguages import TELanguageDico
-from TextStyles.TextStyles import TSManager
-from DocStatistics.DocStatistics import DSDialogManager
+# from ConfigLoading.ConfigLoadingLastFiles import CLLastFiles
+from ConfigLoading.ConfigLoadingPreferencesDialog import CLPreferencesDialog
+from ConstantsManager.ConstantsManagerWidget import CMDialog
+from ConstantsManager.ConstantsManager import CMConstantsManager
+from DocProperties.DocPropertiesStatistics import DPStatisticsDialog
+from DocExport.DocExportDialog import DEDialog
 from FileManagement.FileManagement import FMFileManagement
-# from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
-# from FileManagement.FileManagementFileConstants	 import FMFileConstants
-from FileExport.FileExportExportDialog import FEExportDialog
-from LastFiles.LastFiles import LFList
-from ConstantsManagement.ConstantsManagementDialog import CMDialog
-from DialogValues.DialogValues import DVDialog
+from TextEdit.TextEdit import TETextEdit
+from TextLanguages.TextLanguages import TLDico
+from TextStyles.TextStyles import TSManager
 
 
 import sys
@@ -32,13 +31,9 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		AWCore.__init__(self)
 		# dict_autocorrection = FMAutoCorrectionFile.open()
 		
-		kargs_font = dict(
-				font_indent      = AWConstants['TEXT_INDENT']		,
-				font_line_height = AWConstants['TEXT_LINE_HEIGHT']	,
-				doc_margin	 	 = AWConstants['TEXT_MARGIN']	,
-				)
-		self.textEdit = TETextEdit(language_name='French',**kargs_font)
-						# dict_autocorrection=dict_autocorrection,**kargs_font)
+		
+		self.textEdit = TETextEdit(
+						language_name=TLPreferences['DFT_WRITING_LANGUAGE'])
 		
 		self.setCentralWidget (self.textEdit)
 		
@@ -49,11 +44,11 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		self.setup_menus()
 		
 		self.setWindowTitle("AthenaWriter : NewFile")
-		self.setGeometry(100,100,AWConstants["INIT_SIZE_X"],
-												AWConstants["INIT_SIZE_Y"])
+		self.setGeometry(100,100,AWPreferences["INIT_SIZE_X"],
+												AWPreferences["INIT_SIZE_Y"])
 		self.changeMessageStatusBar("Welcome in AthenaWriter :)")
 		
-		if AWConstants['AUTOSAVE']:
+		if AWPreferences['AUTOSAVE']:
 			self.timer(start=True)
 		
 		# self.setGeometry(100,100,500,1000)
@@ -71,7 +66,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		self.actionRecentFilesList = []
 		# dico=self.language.shortcuts_insert
-		for path in self.lastFilesList.list_files: 
+		for path in self.lastFiles.list_files: 
 			#create the actions to open the last files
 			act = QtGui.QAction(path,self)
 			self.actionRecentFilesList.append(act)
@@ -97,6 +92,9 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		self.actionViewFullScreen.setShortcuts(QtGui.QKeySequence("F11"))
 		
+		# TODO: fix Import
+		self.actionFileImport.setEnabled(False)
+		
 		
 	def setup_connections(self):
 		trig = QtCore.SIGNAL("triggered()")
@@ -117,7 +115,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		# Add last file list
 		mapper = QtCore.QSignalMapper(self)
-		for path,act in zip(self.lastFilesList.list_files,self.actionRecentFilesList):
+		for path,act in zip(self.lastFiles.list_files,self.actionRecentFilesList):
 			QtCore.QObject.connect(act,QtCore.SIGNAL("triggered ()"), mapper, QtCore.SLOT("map()"))
 			# short.setContext(QtCore.Qt.WidgetShortcut)
 			mapper.setMapping(act, path)
@@ -157,10 +155,9 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		
 		
 	def setup_menus(self):
-		menuFile		= self.menuBar().addMenu ( "File" )		
+		menuFile = self.menuBar().addMenu ( "File" )		
 		menuFile.addAction(self.actionFileNew)
 		menuFile.addAction(self.actionFileOpen)	
-		menuFile.addAction(self.actionFileImport)	
 		menuRecentFiles = menuFile.addMenu ("RecentFiles")
 		for act in self.actionRecentFilesList:
 			menuRecentFiles.addAction(act)
@@ -168,29 +165,10 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuFile.addAction(self.actionFileSave)
 		menuFile.addAction(self.actionFileSaveAs)		
 		menuFile.addSeparator ()
+		menuFile.addAction(self.actionFileImport)	
 		menuFile.addAction(self.actionFileExport)
 		menuFile.addSeparator ()
-		menuFile.addAction(self.actionFileStats)
-		menuFile.addAction(self.actionFileMetaData)
-		menuFile.addSeparator ()
 		menuFile.addAction(self.actionFileQuit)		
-		
-		menuFormat = self.menuBar().addMenu ( "Format" )
-		for id in TSManager.dictCharStyle.keys():
-			if id in self.textEdit.actionFormatsDict.keys():
-				menuFormat.addAction(self.textEdit.actionFormatsDict[id])
-		menuFormat.addSeparator ()
-		for id in TSManager.dictBlockStyle.keys():
-			if id in self.textEdit.actionFormatsDict.keys():
-				menuFormat.addAction(self.textEdit.actionFormatsDict[id])
-		menuFormat.addSeparator ()
-		menuFormat.addAction(self.textEdit.actionInsertImage)
-		menuFormat.addSeparator ()
-		menuFormat.addAction (self.textEdit.actionResetFormat)
-		
-		
-		menuView = self.menuBar().addMenu ( "View" )
-		menuView.addAction(self.actionViewFullScreen)
 		
 		menuEdit = self.menuBar().addMenu ( "Edit" )
 		menuEdit.addAction(self.textEdit.actionUndo)
@@ -206,11 +184,34 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		menuEdit.addAction(self.textEdit.actionLaunchCharWidgetTable)		
 		menuEdit.addSeparator ()		
 		# menuEdit.addAction(self.textEdit.actionChangeLanguage)
-		menuEdit.addAction(self.textEdit.actionRecheckTypography)
-		menuEdit.addAction(self.textEdit.actionEnableTypo)
-		menuEdit.addAction(self.actionSendToExternalSoftware)
-		menuEdit.addSeparator ()		
 		menuEdit.addAction(self.actionEditPreferences)
+		
+		menuDocument = self.menuBar().addMenu ( "Document" )
+		menuDocument.addAction(self.textEdit.actionRecheckTypography)
+		menuDocument.addAction(self.textEdit.actionEnableTypo)
+		menuDocument.addSeparator ()
+		menuDocument.addAction(self.actionFileStats)
+		menuDocument.addAction(self.actionFileMetaData)
+		menuDocument.addSeparator ()		
+		menuDocument.addAction(self.actionSendToExternalSoftware)
+		
+		menuStyle = self.menuBar().addMenu ( "Styles" )
+		for id in TSManager.dictCharStyle.keys():
+			if id in self.textEdit.actionStylesDict.keys():
+				menuStyle.addAction(self.textEdit.actionStylesDict[id])
+		menuStyle.addSeparator ()
+		for id in TSManager.dictBlockStyle.keys():
+			if id in self.textEdit.actionStylesDict.keys():
+				menuStyle.addAction(self.textEdit.actionStylesDict[id])
+		menuStyle.addSeparator ()
+		menuStyle.addAction(self.textEdit.actionInsertImage)
+		menuStyle.addSeparator ()
+		menuStyle.addAction (self.textEdit.actionResetStyle)
+		
+		
+		menuView = self.menuBar().addMenu ( "View" )
+		menuView.addAction(self.actionViewFullScreen)
+		
 
 		
 		menuAbout		= self.menuBar().addMenu ( "About" )
@@ -230,7 +231,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.actionRecheckTypography,
 			self.textEdit.actionEnableTypo,self.actionSendToExternalSoftware,
 			self.actionAboutHelp,self.actionAboutAbout] + \
-			self.textEdit.actionFormatsDict.values()
+			self.textEdit.actionStylesDict.values()
 		for act in list_actions:
 			self.addAction(act)
 			
@@ -277,7 +278,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				self.setWindowTitle("AthenaWriter : "+self.filepath)
 				tmp,filename = os.path.split(self.filepath)
 				self.changeMessageStatusBar("Has saved "+filename)
-				self.lastFilesList.addFile(self.filepath)
+				self.lastFiles.addFile(self.filepath)
 			
 			self.myLongTask = TaskThread()
 			self.connect(self.myLongTask,QtCore.SIGNAL("taskFinished()"),
@@ -303,7 +304,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.setWindowTitle("AthenaWriter : "+self.filepath)
 			tmp,filename = os.path.split(self.filepath)
 			self.changeMessageStatusBar("Has saved "+filename)
-			self.lastFilesList.addFile(self.filepath)
+			self.lastFiles.addFile(self.filepath)
 			
 	def SLOT_actionFileNew(self):
 		"""
@@ -315,7 +316,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		self.clean_tmp_files() # we remove the previous tmp files
 		self.textEdit.setText("")
 		self.filepath=None
-		self.metadata=MDMetaData()
+		self.metadata=DPMetaData()
 		self.setWindowTitle("AthenaWriter : NewFile")
 		self.changeMessageStatusBar("Created a new file")
 
@@ -324,12 +325,12 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 	def SLOT_actionFileOpen(self,filepath=None):
 		"""
 		If filepath==None, it will display the window to search the file
+		If filepath==None, it will display the window to search the file
 		"""
 		res=self.doSaveDialog()
 		if (res != QtGui.QMessageBox.Yes) and (res != QtGui.QMessageBox.No):
 			return False
 		if filepath==None:
-			print "coucou1"
 			filepath = FMFileManagement.open_gui_filepath(
 					self.get_default_opening_saving_site(),
 					self,filter="AthW files (*.athw);; All files (*.*)")			
@@ -337,14 +338,25 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			filepath=str(filepath)
 		if filepath:
 			self.clean_tmp_files() # we remove the previous tmp files
-			self.CMD_FileOpen(filepath)
-			
+			try:
+				self.CMD_FileOpen(filepath)
+			except IOError:
+				# if the file do not exist, propose to crreate it
+				r = QtGui.QMessageBox.question(self,"Non existing file",
+					"The file "+filepath+" do not exist. Do you want to "+\
+					"create it ?",
+					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
+					
+				if r!= QtGui.QMessageBox.Yes:
+					return False
+				self.filepath = filepath
+				
 			self.actionFileSave.setEnabled(False)
 
 			self.setWindowTitle("AthenaWriter : "+self.filepath)
 			tmp,filename = os.path.split(filepath)
 			self.changeMessageStatusBar("Has opened "+filename)
-			self.lastFilesList.addFile(self.filepath)
+			self.lastFiles.addFile(self.filepath)
 			
 			return True
 		else:
@@ -378,18 +390,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			return False
 			
 	def SLOT_actionFileExport(self):
-		if AWConstants['DO_METADATA']: 
-			metadata = self.metadata
-		else:
-			metadata = None
 		dft_opening_saving_site = self.get_default_opening_saving_site()
 		if self.filepath!=None:
-			res = FEExportDialog.getFields(metadata=metadata, 
+			res = DEDialog.getFields(
 					dft_opening_saving_site=dft_opening_saving_site,
 					default_path = self.filepath,
 					)
 		else:
-			res = FEExportDialog.getFields(metadata=metadata, 
+			res = DEDialog.getFields(
 					dft_opening_saving_site=dft_opening_saving_site,
 					)
 			
@@ -427,32 +435,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 				
 			
 	def SLOT_actionFileStats(self):
-		dialog = DSDialogManager(textedit=self.textEdit,parent=self)
+		dialog = DPStatisticsDialog(textedit=self.textEdit,parent=self)
 		dialog.show()
 	def SLOT_actionFileMetaData(self):
 		
-		values_dict ={}
-		key_list =[]
-		for k,t,m in zip(	self.metadata.element_list,
-							self.metadata.element_type,
-							self.metadata.element_modif):
-			if m:
-				if self.metadata[k] == None:
-					if t == unicode or t==str:
-						v = ""
-					elif t==float or t==int:
-						v = t(0)
-					else:
-						v = t(None)
-				else:
-					v = self.metadata[k]
-				values_dict[k] = (t,v,None) 
-				key_list.append(k)
-		# constraints_dict = {'language': [TELanguageDico.keys()] }
-		d = DVDialog.getValueDict(parent=self,
-				values_dict = values_dict,
-				# constraints_dict=constraints_dict,
-				key_list = key_list,
+			
+		# constraints_dict = {'language': [TLDico.keys()] }
+		d = CMDialog.getValueDict(parent=self,
+				constants_manager = self.metadata,
 				skip_same_as_init = True
 				)
 		if d and len(d)>0 :
@@ -474,10 +464,10 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.setVerticalScrollBarPolicy(
 					QtCore.Qt.ScrollBarAlwaysOff)
 			self.menuBar().setHidden(True)
-			if AWConstants['FULLSCREEN_CENTRAL_MAX_SIZE']>0:
+			if AWPreferences['FULLSCREEN_CENTRAL_MAX_SIZE']>0:
 				rec = QtGui.QApplication.desktop().screenGeometry()
 				marg = rec.width()
-				marg -= AWConstants['FULLSCREEN_CENTRAL_MAX_SIZE']
+				marg -= AWPreferences['FULLSCREEN_CENTRAL_MAX_SIZE']
 				marg *= .5
 				if marg >0:
 					self.setContentsMargins ( marg, 0, marg, 0)
@@ -511,14 +501,14 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		if self.filepath!=None:
 			direct,file=os.path.split(self.filepath)
 			tmp_filepath = os.path.join(direct,
-					AWConstants['TMP_FILE_MARK']+file)
+					AWPreferences['TMP_FILE_MARK']+file)
 			res = FMFileManagement.save(
 					unicode(self.textEdit.toXml()),tmp_filepath)
 			
 	def SLOT_actionSendToExternalSoftware (self):
 		# Send the scene to another software (mine is called Antidote and 
 		# accept only a certain type of encoding).
-		path=AWConstants['EXTERNAL_SOFT_PATH']
+		path=AWPreferences['EXTERNAL_SOFT_PATH']
 		if path=="":
 			QtGui.QMessageBox.information(self,
 			"External Software Sender",
@@ -528,10 +518,10 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			
 		text=self.textEdit.toXml()
 		i=0
-		while AWConstants['TMP_FILE_MARK']+"tmp"+str(i).zfill(3)+'.txt' in \
+		while AWPreferences['TMP_FILE_MARK']+"tmp"+str(i).zfill(3)+'.txt' in \
 															os.listdir('.'):
 			i+=1
-		name=AWConstants['TMP_FILE_MARK']+"tmp"+str(i).zfill(3)+'.txt'
+		name=AWPreferences['TMP_FILE_MARK']+"tmp"+str(i).zfill(3)+'.txt'
 		FMFileManagement.save(text,name, encoding='utf-8-sig', mode='w')
 		s=subprocess.Popen(path+' '+os.path.abspath(name))
 		
@@ -545,16 +535,22 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 			self.textEdit.setText(text,type='xml')
 	
 	def SLOT_actionEditPreferences(self):
-		d = CMDialog.getValueDict(constants=AWConstants,parent=self)
+		d = CLPreferencesDialog.getValueDict(
+			dict_preferences = AWDictPreferences,parent=self)
+		if d:
+			AWOverwritePreferences(d)
+			pref_dict , descr_dict = AWPreferencesToDict(skip_same_as_dft=True)
+			CLPreferencesFiles.replace(dict_to_save=pref_dict,
+													descriptions=descr_dict)
 		
 		
 	def closeEvent(self, event):
 		"""Check if we have changed something without saving"""
 		res=self.doSaveDialog()
 		if (res == QtGui.QMessageBox.Yes) or (res == QtGui.QMessageBox.No):
-			FMLastFilesFile.save(self.lastFilesList.list_files)
+			FMLastFilesFile.save(self.lastFiles.list_files)
 			self.clean_tmp_files()
-			if AWConstants['AUTOSAVE']: #We stop the thread of the autosave
+			if AWPreferences['AUTOSAVE']: #We stop the thread of the autosave
 				self.threading_autosave.cancel()
 			event.accept()
 		else:
@@ -567,7 +563,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		should begin :
 		"""
 		if self.filepath== None:
-			return os.path.expanduser(AWConstants['DLT_OPEN_SAVE_SITE'])
+			return os.path.expanduser(AWPreferences['DLT_OPEN_SAVE_SITE'])
 		else :
 			res,tmp=os.path.split(self.filepath)
 			return res		
@@ -593,11 +589,11 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		"""This function is called to display a message in the status bar"""
 		if message==None: message=u""
 		self.statusBar().showMessage(message,
-											AWConstants['TIME_STATUS_MESSAGE'])
+											AWPreferences['TIME_STATUS_MESSAGE'])
 
 	def timer(self,start=False):
 		self.threading_autosave = threading.Timer(
-				AWConstants['AUTOSAVE_TEMPO'], self.timer)
+				AWPreferences['AUTOSAVE_TEMPO'], self.timer)
 		self.threading_autosave.start()
 		if not start:
 			self.changeMessageStatusBar('Autosave')
@@ -607,7 +603,7 @@ class AWWriterText(QtGui.QMainWindow,AWCore):
 		if self.filepath!=None:
 			direct,file=os.path.split(self.filepath)
 			tmp_filepath = os.path.join(direct,
-					AWConstants['TMP_FILE_MARK']+file)
+					AWPreferences['TMP_FILE_MARK']+file)
 			try:
 				os.remove(tmp_filepath)
 			except : pass

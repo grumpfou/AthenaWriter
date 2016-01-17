@@ -1,8 +1,8 @@
 """
 Part of the  project AthenaWriter. Written by Renaud Dessalles
 Contains the class that deal with the typograpgy.
-The TELanguageAbstract class is the model class of all the language class below.
-It must not be used directly, only subclass should be used.
+The TLAbstract class is the model class of all the language class 
+below. It must not be used directly, only subclass should be used.
 
 There is two ways of correcting the typography of the user :
 - by cheaking during the editing : every time the cursor moves (a char is 
@@ -20,8 +20,7 @@ When creating a new Language class, it must contain :
 - the encoding
 - the name of the language (in the language)
 - possibly the shortcuts_insert (a dictionary where the key is a tuple 
-	containing the sequence of the shortcut and the value is the string to 
-	insert.
+containing the sequence of the shortcut and the value is the string to insert.
 _ a __init__ method with :
 	a dictionary shortcuts_correction_plugins dict : 
 		key : shortcuts_correction_plugins 
@@ -36,14 +35,13 @@ _ a __init__ method with :
 """
 from PyQt4 import QtGui, QtCore
 
-from TextEditLanguagesRules import *
-from TextEditConstants import *
-from TextEditWord import *
+from TextLanguagesPreferences import *
+from TextLanguagesRules import *
+from CommonObjects.CommonObjectsWord import *
+from CommonObjects.CommonObjects import COChoice
 
 
-
-
-class TLLanguageAbstract:
+class TLAbstract:
 	name=u''
 	encoding=''
 	shortcuts_insert={}
@@ -51,21 +49,21 @@ class TLLanguageAbstract:
 		### We are creating the autocorrection:
 		if dict_autocorrection==None: dict_autocorrection={}
 			
-		self.dict_autocorrection=TEWordDico(data_dict=dict_autocorrection)
+		self.dict_autocorrection=COWordDico(dict_autocorrection)
 		self.shortcuts_correction={	}
 		self.rules=[]
 		
 	
 	def correct_between_chars(self,cursor):
-		# Function that will be called everytime the cursor moves. It check the 
-		# respect of all the typography rules of the two char of both sides of 
-		# the position that the cursor has just left.
+		"""Function that will be called everytime the cursor moves. It 
+		check the respect of all the typography rules of the two char of 
+		both sides of the position that the cursor has just left."""
 
 		last_char=self.lastChar(cursor)
 		next_char=self.nextChar(cursor)
 		
 		
-		for rule in self.rules:
+		for rule in self.afterCharRules:
 			res=rule.correct(last_char,next_char,cursor)
 			if res :
 				return (rule,cursor.position())
@@ -73,8 +71,8 @@ class TLLanguageAbstract:
 		return False
 		
 	def lastChar(self,cursor,n=1):
-		# Return the left char at the distance n from the cursor (n=1 means 
-		# the one just on the left).
+		"""Return the left char at the distance n from the cursor (n=1 means 
+		the one just on the left)."""
 		if cursor.atBlockStart():
 			return u'\n'		
 		else :
@@ -90,8 +88,8 @@ class TLLanguageAbstract:
 			return cur_tmp.selectedText ()
 
 	def nextChar(self,cursor,n=1):
-		# Return the right char at the distance n from the cursor (n=1 means 
-		# the one just on the right).		
+		"""Return the right char at the distance n from the cursor (n=1 means 
+		the one just on the right)."""
 		if cursor.atBlockEnd():
 			return u'\n'		
 		else :
@@ -107,9 +105,11 @@ class TLLanguageAbstract:
 			return cur_tmp.selectedText ()
 			
 	def getWordUnderCursor(self,cursor,char_exception=None):
-		# Return the word under the cursor. char_exception in entry should be 
-		# the list of the chars that should not be considered as word breack 
-		# (usefull to take words like "I'am" or "re-invented").
+		"""
+		Return the word under the cursor. char_exception in entry should be 
+		the list of the chars that should not be considered as word break (
+		usfull to take  words like "I'am" or "re-invented").
+		"""
 		if char_exception==None : char_exception=[]
 		cur_start=QtGui.QTextCursor(cursor)
 		cur_start.clearSelection()
@@ -138,9 +138,9 @@ class TLLanguageAbstract:
 		
 
 	def cheak_after_paste(self,cursor,nb_ite=-1):
-		# Method that will be called after a paste. It will correct the 
-		# typography from the position of the cursor during nb_ite. If nb_ite 
-		# is -1 then it will do the correction until the end of the document.
+		"""Method that will be called after a paste. It will correct the 
+		typography from the position of the cursor during nb_ite. If nb_ite is 
+		-1 then it will do the correction until the end of the document."""
 		i=0
 		res=False
 		res_tmp=self.correct_between_chars(cursor)
@@ -152,26 +152,29 @@ class TLLanguageAbstract:
 		return res
 	
 	def afterWordWritten(self,cursor):
-		# Function which is called after a word has just been witten. It 
-		# replaces some things that are specific to the language. It also 
-		# correct the word if there has some auto-correction to make.
+		"""Function which is called after a word has just been witten. It 
+		replaces some things that are specific to the language. It also correct 
+		the word if there has some auto-correction to make."""
 		cur_tmp=QtGui.QTextCursor(cursor)
 		cur_tmp.clearSelection()
-		if cur_tmp.movePosition (QtGui.QTextCursor.Left,
-											QtGui.QTextCursor.MoveAnchor,1):
+		if cur_tmp.movePosition (QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor,1):
 			word,cur_tmp=self.getWordUnderCursor(cur_tmp)
 			replace=False
 			
 			# We replace things due to the language : 'oe' as a elision for 
 			# instance
-			word_replace=self.wordCorrection(word)
-			if word_replace:
-				word=word_replace
-				replace=True
-				
-			# We replace things due to the language user settings : 
-			#	'gvt' --> 'government'
-			word_replace=self.dict_autocorrection.get(word)
+			word_replace=unicode(word)
+			id = COWordTools.whatID(word_replace)
+			word_replace=word_replace.lower()
+			for rule in self.afterWordRules:
+				word_replace=rule.correct(word_replace,cursor)
+				if word_replace :
+					word = COWordTools.toID(word_replace,id)
+					replace=True
+			
+			# We replace things due to the language user settings.
+			# Example: 'gvt' --> 'government'
+			word_replace=self.dict_autocorrection.get(word,False)
 			if word_replace:
 				word=word_replace
 				replace=True
@@ -181,38 +184,32 @@ class TLLanguageAbstract:
 			return replace
 		return False
 
-	def wordCorrection(self):
-		# To reimplement if the language has some specific correction to make. 
-		# For instance, in French, it is correct to make elisions of the two 
-		# chars 'oe' into a single char.
-		raise False
 		
 	
 
 	
-class TELanguageEnglish (TELanguageAbstract):
+class TLEnglish (TLAbstract):
 	encoding='utf-8'
 	name=u'English'
-	enchant_name=u'en_UK'
 	shortcuts_insert={}
 	
 	
 	def __init__(self,*args,**kargs):
-		TELanguageAbstract.__init__(self,*args,**kargs)
+		TLAbstract.__init__(self,*args,**kargs)
 		self.shortcuts_correction_plugins={}
-		self.rules=[	\
-						TERuleEnglish0001(language=self),
-						TERuleEnglish0002(language=self),
-						TERuleEnglish0003(language=self),
-						TERuleEnglish0004(language=self),
-						TERuleEnglish0005(language=self),
-						TERuleEnglish0006(language=self),
-						TERuleEnglish0007(language=self),
-						TERuleEnglish0008(language=self),
-						TERuleEnglish0009(language=self),
-						TERuleEnglish0010(language=self),
-						TERuleEnglish0011(language=self)]
-						
+		self.afterCharRules=[	\
+						TLRuleEnglish0001(language=self),
+						TLRuleEnglish0002(language=self),
+						TLRuleEnglish0003(language=self),
+						TLRuleEnglish0004(language=self),
+						TLRuleEnglish0005(language=self),
+						TLRuleEnglish0006(language=self),
+						TLRuleEnglish0007(language=self),
+						TLRuleEnglish0008(language=self),
+						TLRuleEnglish0009(language=self),
+						TLRuleEnglish0010(language=self),
+						TLRuleEnglish0011(language=self)]
+		self.afterWordRules = [	]		
 	
 	def wordCorrection(self,word):
 		return False
@@ -220,53 +217,40 @@ class TELanguageEnglish (TELanguageAbstract):
 
 			
 	
-class TELanguageFrench (TELanguageAbstract):
+class TLFrench (TLAbstract):
 	encoding='utf-8'
 	name=u'French'
-	enchant_name=u'fr_FR'
-	QQ = QtCore.Qt
 	shortcuts_insert={
-			(QQ.CTRL + QQ.Key_7		,QQ.SHIFT+QQ.Key_A)	:u"\u00C0",
-			(QQ.CTRL + QQ.Key_Comma	,QQ.SHIFT+QQ.Key_C)	:u"\u00C7",
-			(QQ.CTRL + QQ.Key_4		,QQ.SHIFT+QQ.Key_E)	:u"\u00C9",
-			(QQ.CTRL + QQ.Key_7		,QQ.SHIFT+QQ.Key_E)	:u"\u00C8",
-			}
+			(QtCore.Qt.CTRL+QtCore.Qt.Key_7		,QtCore.Qt.SHIFT+QtCore.Qt.Key_A)	:u"\u00C0",
+			(QtCore.Qt.CTRL+QtCore.Qt.Key_Comma	,QtCore.Qt.SHIFT+QtCore.Qt.Key_C)	:u"\u00C7",
+			(QtCore.Qt.CTRL+QtCore.Qt.Key_4		,QtCore.Qt.SHIFT+QtCore.Qt.Key_E)	:u"\u00C9",
+			(QtCore.Qt.CTRL+QtCore.Qt.Key_7		,QtCore.Qt.SHIFT+QtCore.Qt.Key_E)	:u"\u00C8"}
 	
 	
 	def __init__(self,*args,**kargs):
-		TELanguageAbstract.__init__(self,*args,**kargs)
+		TLAbstract.__init__(self,*args,**kargs)
 		self.shortcuts_correction_plugins={
 			(QtCore.Qt.CTRL+QtCore.Qt.Key_D,)	: self.dialog_correction ,
 			(QtCore.Qt.CTRL+QtCore.Qt.Key_L,)	: self.delete_bloc       ,
 			}
-		self.rules=[	TERuleFrench0001(language=self),
-						TERuleFrench0002(language=self),
-						TERuleFrench0003(language=self),
-						TERuleFrench0004(language=self),
-						TERuleFrench0005(language=self),
-						TERuleFrench0006(language=self),
-						TERuleFrench0007(language=self),
-						TERuleFrench0008(language=self),
-						TERuleFrench0009(language=self),
-						TERuleFrench0010(language=self),
-						TERuleFrench0011(language=self),
-						TERuleFrench0012(language=self),
-						TERuleFrench0013(language=self)]
+		self.afterCharRules=[	TLRuleFrench0001(language=self),
+						TLRuleFrench0002(language=self),
+						TLRuleFrench0003(language=self),
+						TLRuleFrench0004(language=self),
+						TLRuleFrench0005(language=self),
+						TLRuleFrench0006(language=self),
+						TLRuleFrench0007(language=self),
+						TLRuleFrench0008(language=self),
+						TLRuleFrench0009(language=self),
+						TLRuleFrench0010(language=self),
+						TLRuleFrench0011(language=self),
+						TLRuleFrench0012(language=self),
+						TLRuleFrench0013(language=self)]
+						
+		self.afterWordRules = [	
+			TLWordCorrectionRuleFrench0001(language=self),
+			]
 
-	def wordCorrection(self,word):
-		word=unicode(word)
-		id=TEWordTools.whatID(word)
-		word=word.lower()
-		if word=='--':
-			return u"\u2014"
-		if word.find(u'oe')!=-1:
-			word=word.replace(u'oe',u'\u0153')
-			word=TEWordTools.toID(word,id)
-			word=TEWordTools.toID(word,id)
-			return word
-		
-		else:
-			return False
 
 	def dialog_correction(self,cursor):
 		for block in cursor.yieldBlockInSelection():
@@ -289,11 +273,17 @@ class TELanguageFrench (TELanguageAbstract):
 		endCursor  . movePosition(QtGui.QTextCursor.EndOfBlock)
 
 		cur_tmp=QtGui.QTextCursor(startCursor)
-		cur_tmp.setPosition(endCursor.position(), QtGui.QTextCursor.KeepAnchor);
+		cur_tmp.setPosition(endCursor.position(), QtGui.QTextCursor.KeepAnchor)
 		cur_tmp.deleteChar()
 	
-TLLanguageList = [TELanguageFrench,TELanguageEnglish]
-TLLanguageDico = {lang.name : lang for lang in TLLanguageList}
-TLLanguageEnchantDico = {lang.name : lang.enchant_name for lang in \
-																TLLanguageList}
+TLDico = {"French":TLFrench,"English":TLEnglish}			
+TLEnchantDico={"French":'fr_FR',"English":'en_UK'}
 
+class TLChoice(COChoice):			# bofff
+	elements_list = TLDico.keys()	# bofff
+
+
+
+if __name__ == '__main__':
+	pass
+# Language=LanguageEnglish()

@@ -1,6 +1,6 @@
 """
 This file deals with the words to add to the spell checker and the 
-autocorrelation.
+autocorrelation and the preferences.
 """
 
 ######################### FileManagement importation #########################
@@ -13,7 +13,7 @@ from FileManagement.FileManagement import FMFileManagement
 ##############################################################################
 import string
 
-from ConfigLoadingConstants import CLConstants
+from ConfigLoadingPreferences import CLPreferences
 
 def get_file_list(filepath,where='all',local_dir=None):
 	"""
@@ -22,19 +22,19 @@ def get_file_list(filepath,where='all',local_dir=None):
 	res = []
 	if where=='all' or where == 'global':
 		d,f = os.path.split(__file__)
-		p_g = os.path.abspath(os.path.join(d,'..',CLConstants['GLOBAL_DIR'],
+		p_g = os.path.abspath(os.path.join(d,'..',CLPreferences['GLOBAL_DIR'],
 																	filepath))
 		res.append((p_g,os.path.exists(p_g)))
 		
 	if where=='all' or where == 'user':
-		p_u = os.path.expanduser(os.path.join(CLConstants['USER_DIR'],
+		p_u = os.path.expanduser(os.path.join(CLPreferences['USER_DIR'],
 																	filepath))
 		res.append((p_u,os.path.exists(p_u)))
 		
 	if where=='all' or where == 'local':
 		if local_dir!=None:
 			p_l = os.path.abspath(os.path.join(local_dir,
-											CLConstants['LOCAL_DIR'],filepath))
+											CLPreferences['LOCAL_DIR'],filepath))
 			res.append((p_l,os.path.exists(p_l)))
 		else:
 			res.append((None,False))
@@ -94,7 +94,6 @@ class CLSpelling:
 		file_list = get_file_list(CLSpelling.filepath,where=where,
 														local_dir=local_dir)
 		for fp,exists in file_list:
-			print 'fp : ',fp
 			CLSpelling.save(words=l,filepath=fp)
 		
 		
@@ -136,7 +135,7 @@ class CLAutoCorrection:
 		
 	@staticmethod	
 	def save(words,filepath):
-		words_keys = words.kays()
+		words_keys = words.keys()
 		words_keys.sort()
 		words = [(k,words[k]) for k in words_keys]
 		words = [' '.join(w) for w in words]
@@ -158,10 +157,9 @@ class CLAutoCorrection:
 														local_dir=local_dir)
 		for fp,exists in file_list:
 			CLSpelling.save(words=d,filepath=fp)
- 
-			
 
-class CLPreferences:
+
+class CLPreferencesFiles:
 	class Error (StandardError):
 		def __init__(self,raison,line=False,file=False):
 			"""Special Error function for the config file (is normaly able to gives 
@@ -193,26 +191,33 @@ class CLPreferences:
 	separator_sign='|' #the values shall be separated by this sign
 	
 	@staticmethod
-	def get_values(where='all'):
+	def get_values(where='all',errors='raise'):
 		"""Class that will deal with the preference files.
-		where in ['all','global','user']
+		- where in ['all','global','user']
+		- errors: in ['raise','print','skip']
+			see CLPreferencesFiles.open description
 		"""
-		file_list = get_file_list(CLPreferences.filepath,where=where,
+		file_list = get_file_list(CLPreferencesFiles.filepath,where=where,
 														local_dir=None)
 		
 		dd = {}
 		for p,exists in file_list:
 			if exists:
-				dd.update(CLPreferences.open(p))
+				dd.update(CLPreferencesFiles.open(p,errors=errors))
 		return dd
 		
 	###########################################################################
 	@staticmethod
-	def open(pathway=None):
+	def open(pathway=None,errors='raise'):
 		"""
 		- pathway : the path to the "config.txt" file
+		- errors: in ['raise','print','skip']
+			In the case of line line of the file not well written, it either:
+			- it raises the error if it is 'raise'
+			- it prints the error if it is 'print'
+			- it skips the error if it is 'skip'
 		"""
-		
+		assert errors in ['raise','print','skip']
 		pathway=pathway
 		result_dictionary={}
 		
@@ -220,21 +225,24 @@ class CLPreferences:
 		file=FMFileManagement.open(pathway,output='readlines')
 
 		# We get rid of the comments and empty lines
-		file,equivalent_line = CLPreferences.clean_file(file)
+		file,equivalent_line = CLPreferencesFiles.clean_file(file)
 		
 		# We fill the result_dictionary with the values contained into the file
 		for i,ligne in enumerate(file):
 			try :
 				# We call the method interpret_ligne to seperate the key from the values
-				e,v=CLPreferences.interpret_ligne(ligne)
+				e,v=CLPreferencesFiles.interpret_ligne(ligne)
 				result_dictionary[str(e)]=v
-			except CLPreferences.Error , e:
-				print 'ligne : ',ligne.encode('utf-8')
-				e_other = CLPreferences.Error(e.raison,
+			except CLPreferencesFiles.Error , e:
+				e_other = CLPreferencesFiles.Error(e.raison,
 							line=equivalent_line[i],
 							file=pathway)
-				
-				raise	e_other
+				if errors=='raise':
+					raise	e_other
+				elif  errors=='print':
+					print e_other
+				elif errors=='skip':
+					pass
 				
 		return result_dictionary
 		
@@ -252,13 +260,13 @@ class CLPreferences:
 					# end at the end.
 			if ligne == "":
 				pass #if it is empty, we consider nothing
-			elif ligne[0]==CLPreferences.comment_sign:
+			elif ligne[0]==CLPreferencesFiles.comment_sign:
 				pass #if it all the line is a comment, we consider nothing
 			else:
 				for i in range(1,len(ligne)):
 					# if we encounter the comment_sign, we get rid of the end 
 					# of the line
-					if ligne[i]==CLPreferences.comment_sign and ligne[i-1]!=CLPreferences.exception_sign:
+					if ligne[i]==CLPreferencesFiles.comment_sign and ligne[i-1]!=CLPreferencesFiles.exception_sign:
 							new_file.append(ligne[:i])
 							break
 				else:
@@ -278,9 +286,9 @@ class CLPreferences:
 		- (entry,value) : if there is only one value
 		- (entry,[value1,value2,...]) : if there is more that one value
 		"""
-		dp_pos=ligne.find(CLPreferences.entry_separator_sign) #the position of the separator
+		dp_pos=ligne.find(CLPreferencesFiles.entry_separator_sign) #the position of the separator
 		if dp_pos<0:
-			raise CLPreferences.Error( " This line has no entry-value separator. " )
+			raise CLPreferencesFiles.Error( " This line has no entry-value separator. " )
 		
 		# We find the entry
 		entry 	 = ligne[:dp_pos]
@@ -291,7 +299,7 @@ class CLPreferences:
 		
 		# We find the values
 		line_tmp = ligne[dp_pos+1:]
-		line_tmp = line_tmp.split(CLPreferences.separator_sign)
+		line_tmp = line_tmp.split(CLPreferencesFiles.separator_sign)
 		line_tmp = [value.strip() for value in line_tmp]
 		
 		# We return the result depending on the number of values
@@ -302,20 +310,50 @@ class CLPreferences:
 	
 
 	@staticmethod	
-	def save(to_save,filepath):
-		file=FMFileManagement.save(to_save,filepath=filepath)
+	def save(filepath,dict_to_save,descriptions=None):
+		"""
+		- dict_to_save: dict that we have to save.
+		- filepath: where to save the file
+		- descriptions: dict that contains the description corresponding keys 
+			of dict_to_save
+		"""
+		if descriptions==None: descriptions={}
+		s = CLPreferencesFiles.comment_sign+\
+								" Preference for the software AthenaWriter."
+		
+		for k,v in dict_to_save.items():
+			if descriptions.has_key(k):
+				s += CLPreferencesFiles.comment_sign+' '+ descriptions[k]+'\n'
+				
+			if type(v) == list:
+				l = [str(a) for a in v]
+				s += k+' '+CLPreferencesFiles.entry_separator_sign+' '
+				s+= CLPreferencesFiles.separator_sign.join(l) +'\n'
+				
+			elif type(v) == dict:
+				l = [str(kk)+' '+str(vv) for kk,vv in v.items()]
+				s += k+' '+CLPreferencesFiles.entry_separator_sign+' '
+				s+= CLPreferencesFiles.separator_sign.join(l) +'\n'
+				
+			else:
+				s += k+' '+CLPreferencesFiles.entry_separator_sign+' '
+				s += str(v)+'\n'
+				
+		
+		file=FMFileManagement.save(s,filepath=filepath)
 	
 	@staticmethod
-	def replace(to_save,where='user'):
+	def replace(where='user',**kargs):
 		"""
-		where in ['user','local']
+		- where in ['user','local']
+		- kargs: CLPreferencesFiles.save options
 		"""
 		assert where in ['global','user']
 		
-		file_list = get_file_list(CLPreferences.filepath,where=where,
+		file_list = get_file_list(CLPreferencesFiles.filepath,where=where,
 														local_dir=None)
 		for fp,exists in file_list:
-			CLPreferences.save(to_save,filepath=fp)
+			CLPreferencesFiles.save(filepath=fp,**kargs)
 	
 if __name__=='__main__':
 	print 'CLSpelling.get_values() : ',CLSpelling.get_values()

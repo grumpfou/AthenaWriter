@@ -1,8 +1,9 @@
 from PyQt4 import QtGui, QtCore
 import copy
 
-from TextStylesConstants import TSConstants
+from TextStylesPreferences import TSPreferences
 from TextStylesList import *
+
 
 
 	
@@ -75,12 +76,12 @@ class TSClassManager:
 			gap+=len(entry)
 		
 		newText=unicode(newText)
-		# We remove the TSConstants['SEPARATOR_MOTIF']
+		# We remove the TSPreferences['SEPARATOR_MOTIF']
 		for style in self.listBlockStyle: 
 			if isinstance(style,TSStyleClassSeparator):
 				
 				newText = newText.replace(
-					'<'+style.xmlMark+'>'+TSConstants['SEPARATOR_MOTIF']+\
+					'<'+style.xmlMark+'>'+TSPreferences['SEPARATOR_MOTIF']+\
 													'</'+style.xmlMark+'>',
 					'<'+style.xmlMark+'/>')
 				break
@@ -224,12 +225,12 @@ class TSClassManager:
 			if qtCharFormat_id in self.dictCharStyle.keys():
 				style = self.dictCharStyle[qtCharFormat_id]
 				style.setStyleToQtFormating(qtCharFormat,cursor1.document())
+				
 			cursor1.setCharFormat(qtCharFormat)
 			cursor1.clearSelection()
 			
 	def recheckBlockStyle(self,cursor):
 		for block in cursor.yieldBlockInSelection():
-			print 'block : ',block
 			cursor1 = QtGui.QTextCursor(block)
 
 			qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)
@@ -253,7 +254,9 @@ class TSClassManager:
 			style = self.dictBlockStyle[style_id]
 			res = style.inverseId(cursor)
 			self.recheckBlockStyle(cursor)
-			self.recheckCharStyle(cursor)
+			for bl,cursor1 in yieldBlock(cursor):
+				cursor1.select(QtGui.QTextCursor.BlockUnderCursor)
+				self.recheckCharStyle(cursor1)
 			
 				
 		elif style_id in self.dictCharStyle.keys():
@@ -343,32 +346,63 @@ class TSClassManager:
 				style_bl.setStyleToQtFormating([qtBlockFormat,qtCharFormat],
 																cursor.document())
 		return qtBlockFormat,qtCharFormat
-#	
-#	def resetFormat(self,cursor):
-#		"""Will reset all the formating of the cursor, that is to say:
-#		- the char format of the selection
-#		- the block format of the whole block
-#		"""
-#		
-#		# for block,cursor1 in yieldBlock(cursor):
-#			# qtCharFormat_id = getCharId(cursor1)
-#			# qtBlockFormat_id = getBlockId(cursor1)
-#			
-#		
-#		# qtCharFormat = cursor.charFormat()
-#		# qtBlockFormat = cursor.blockFormat()# QtGui.QTextFormat.UserProperty)
-#		
-#		# qtCharFormat_id  = getCharId(cursor)
-#		# qtBlockFormat_id = getBlockId(cursor)
-#		# res1 = False									
-#		# res2 = False									
-#		# if qtCharFormat_id in self.dictCharStyle.keys():
-#			# res1 = self.dictCharStyle[qtCharFormat_id].inverseFormat(cursor)
-#			
-#		# if qtBlockFormat_id in self.dictBlockStyle.keys():
-#			# res2 = self.dictBlockStyle[qtBlockFormat_id].inverseFormat(cursor)
-#		
-#		# return res1,res2
+	
+	def resetStyle(self,cursor):
+		"""Will reset all the formating of the cursor, that is to say:
+		- the char format of the selection
+		- the block format of the whole block
+		"""
+		
+		res1 = False									
+		res2 = False				
+		## Let's remove the style of all the selected blocks					
+		for block,cursor1 in yieldBlock(cursor):
+			qtBlockFormat_id = getBlockId(cursor1)
+	
+			if qtBlockFormat_id in self.dictBlockStyle.keys():
+				self.inverseStyle(cursor1,qtBlockFormat_id)
+				res2 = True
+		
+		## Let's remove then all the styles in the selection
+		if cursor.hasSelection():
+			print "coucou"
+			cursor1 = QtGui.QTextCursor(cursor.document())
+			cursor1.setPosition(cursor.selectionStart())
+			cursor1.movePosition(QtGui.QTextCursor.Right)
+			last_id = None
+			st_pos = cursor1.position()
+			while cursor1.position()<=cursor.selectionEnd():
+				new_id = getCharId(cursor1)
+				if new_id!=last_id:
+					if last_id!=None:
+						print "cursor1.position() : ",cursor1.position()
+						print "st_pos : ",st_pos
+						cursor2 = QtGui.QTextCursor(cursor1.document())
+						cursor2.setPosition(st_pos)
+						cursor2.setPosition(cursor1.position()-1,
+												QtGui.QTextCursor.KeepAnchor)
+						# self.textedit.setTextCursor(cursor2)
+						self.inverseStyle(cursor2,last_id)
+						
+					last_id = new_id
+					st_pos = cursor1.position()-1 # it take the style of the 
+						# previous char
+					res1=True
+						
+				cursor1.movePosition(QtGui.QTextCursor.Right)
+				if cursor1.atEnd():
+					break
+			if last_id!=None:
+				cursor2 = QtGui.QTextCursor(cursor1)
+				cursor2.setPosition(st_pos, QtGui.QTextCursor.KeepAnchor)
+				self.inverseStyle(cursor2,last_id)
+				
+			
+			# if qtCharFormat_id in self.dictCharStyle.keys():
+				# print "coucou1"
+				# self.inverseStyle(cursor1,qtCharFormat_id)
+				# res1 = True
+		return res1,res2
 			
 
 TSManager = TSClassManager(
