@@ -1,14 +1,14 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import sys
-import string
 import shutil
 import os
 
-from TextEditCharTable 					import *
-from TextEditPreferences 				import *
-from TextEditFindReplace 				import *
-from TextEditHighlighter				import *
+from .TextEditCharTable 					import *
+from .TextEditPreferences 				import *
+from .TextEditFindReplace 				import *
+from .TextEditHighlighter				import *
 from TextStyles.TextStyles				import *
 from TextLanguages.TextLanguages		import *
 from CommonObjects.CommonObjects		import COOrderedDict
@@ -18,47 +18,50 @@ from FileManagement.FileManagement 		import FMFileManagement
 from TextStyles.TextStylesPreferences			import TSPreferences
 from TextLanguages.TextLanguagesPreferences		import TLPreferences
 
-class TETextEdit(QtGui.QTextEdit):
+class TETextEdit(QtWidgets.QTextEdit):
+	somethingChanged = QtCore.pyqtSignal()
+	typographyModification = QtCore.pyqtSignal(object)
+	protectedStyleModification = QtCore.pyqtSignal(object)
 	def __init__(self, parent=None,language_name=None):
 		"""
 		- parent : the parent widget
 		"""
-		QtGui.QTextEdit.__init__(self,parent=None)
+		QtWidgets.QTextEdit.__init__(self,parent=None)
 
-		QtCore.QObject.connect(self,QtCore.SIGNAL("cursorPositionChanged()"),
+		self.cursorPositionChanged.connect(
 											self.SLOT_cursorPositionChanged)
-		QtCore.QObject.connect(self,QtCore.SIGNAL("textChanged ()"),
+		self.textChanged .connect(
 											self.SLOT_textChanged)
-		
-		self.old_cursor_position=self.textCursor().position() #we will remember 
-				# the old position of the cursor in order to make typography 
-				# corrections when it will move
-		
-		local_dir = self.get_local_dir() 
-		self.dict_autocorrection = CLAutoCorrection.get_values(
-														local_dir=local_dir)
-		self.changeLanguage(language_name) 
-		
-		self.findDialog 		= TEFindDialog(textedit=self)
-		self.charWidgetTable	= TECharWidgetTable(linked_text_widget=self)
-		
-		# self.isInsertingSeparator = False #TODO
 
 		self.setup_actions()
 		self.setup_connections()
+
+		self.old_cursor_position=self.textCursor().position() #we will remember
+				# the old position of the cursor in order to make typography
+				# corrections when it will move
+
+		local_dir = self.get_local_dir()
+		self.dict_autocorrection = CLAutoCorrection.get_values(
+														local_dir=local_dir)
+		self.changeLanguage(language_name)
+
+		self.findDialog 		= TEFindDialog(textedit=self)
+		self.charWidgetTable	= TECharWidgetTable(linked_text_widget=self)
+
+		# self.isInsertingSeparator = False #TODO
 		self.setText()
-		
+
 		# UGLY !!!!
 		TSManager.textedit=self
-		
+
 		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
-		
-		
-			
-		
-		
+
+
+
+
+
 	def setup_actions(self):
-		Act = QtGui.QAction
+		Act = QtWidgets.QAction
 		self.actionCopy				 		= Act("Copy",self)
 		self.actionCut				 		= Act("Cut",self)
 		self.actionPaste			 		= Act("Paste",self)
@@ -74,8 +77,14 @@ class TETextEdit(QtGui.QTextEdit):
 		# self.actionSeparator			 	= Act("Add/Remove Separator",self)
 		self.actionRecheckTypography	 	= Act("&Recheck typography",self)
 		self.actionResetStyle				= Act("&Reset Style",self)
-		self.actionInsertImage				= Act("&InsertImage",self)
-		
+		self.actionInsertImage				= Act("&Insert Image",self)
+		self.actionGuessLanguage			= Act("Guess Language",self)
+
+		self.actionProfileDict				= COOrderedDict()
+		self.actionProfileDict[0]=Act("Strict profile",self) # profile = 0
+		self.actionProfileDict[1]=Act("Medium profile",self) # profile = 1
+		self.actionProfileDict[10]=Act("Loose profile",self) # profile = 10
+
 		KS = QtGui.QKeySequence
 		self.actionCopy				 		.setShortcuts(KS.Copy		)
 		self.actionCut				 		.setShortcuts(KS.Cut		)
@@ -86,87 +95,98 @@ class TETextEdit(QtGui.QTextEdit):
 		# self.actionSeparator		 		.setShortcuts(KS("Ctrl+K")	)
 		# self.actionChangeLanguage	 		.setShortcuts(KS.ChangeLanguage	 	   )
 		# self.actionEnableTypo		 		.setShortcuts(KS.EnableTypo		 	   )
-		# self.actionLaunchCharWidgetTable 	.setShortcuts(KS.LaunchCharWidgetTable )		
-		self.actionLaunchFindDialog	 	    .setShortcuts(KS.Find )	
-		self.actionFindNext			 	    .setShortcuts(KS.FindNext )	
-		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )	
-		# self.actionResetFormat		 	    .setShortcuts(KS.FindPrevious )	
-		
-		
+		# self.actionLaunchCharWidgetTable 	.setShortcuts(KS.LaunchCharWidgetTable )
+		self.actionLaunchFindDialog	 	    .setShortcuts(KS.Find )
+		self.actionFindNext			 	    .setShortcuts(KS.FindNext )
+		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )
+		# self.actionResetFormat		 	    .setShortcuts(KS.FindPrevious )
+
+
 		self.actionStylesDict = COOrderedDict()
 		for style in TSManager.listCharStyle + TSManager.listBlockStyle :
 			if not isinstance(style,TSStyleClassImage):
 				if style.name!="":
-					act = QtGui.QAction(style.name,self)
+					act = QtWidgets.QAction(style.name,self)
 				else:
-					act = QtGui.QAction(style.xmlMark,self)
+					act = QtWidgets.QAction(style.xmlMark,self)
 				if style.shortcut!=None:
 					act.setShortcuts(QtGui.QKeySequence(style.shortcut))
-				
+
 				self.actionStylesDict[style.userPropertyId] = act
-		
-		
-		
+
+
+
 	def setup_connections(self):
-		
-		trig = QtCore.SIGNAL("triggered()")
-		c = self.connect
-		c(self.actionCopy, trig,self.copy)
-		c(self.actionCut, trig,self.cut)
-		c(self.actionPaste, trig,self.paste)
-		c(self.actionUndo, trig,self.undo)
-		c(self.actionRedo, trig,self.redo)
-		# c(self.actionEnableTypo, trig,self.SLOT_actionEnableTypo	)
-		c(self.actionLaunchCharWidgetTable, trig,
+
+
+
+		self.actionCopy.triggered.connect(self.copy)
+		self.actionCut.triggered.connect(self.cut)
+		self.actionPaste.triggered.connect(self.paste)
+		self.actionUndo.triggered.connect(self.undo)
+		self.actionRedo.triggered.connect(self.redo)
+		# self.actionEnableTypo.triggered.connect(self.SLOT_actionEnableTypo	)
+		self.actionLaunchCharWidgetTable.triggered.connect(
 										self.SLOT_actionLaunchCharWidgetTable)
-		c(self.actionLaunchFindDialog, trig, self.SLOT_actionLaunchFindDialog)
-		c(self.actionFindNext, trig,self.SLOT_actionFindNext)
-		c(self.actionFindPrevious, trig,self.SLOT_actionFindPrevious)
-		# c(self.actionEmphasize, trig,self.SLOT_actionEmphasize)
-		# c(self.actionSeparator, trig,self.SLOT_actionSeparator)
-		c(self.actionRecheckTypography, trig,self.SLOT_actionRecheckTypography)
-		c(self.actionResetStyle, trig,self.SLOT_actionResetStyle)
-		c(self.actionInsertImage, trig,self.SLOT_actionInsertImage)
-		
-		
-		# add the formatting (emphasize, set tot tile etc.) shortcuts to the 
+		self.actionLaunchFindDialog.triggered.connect( self.SLOT_actionLaunchFindDialog)
+		self.actionFindNext.triggered.connect(self.SLOT_actionFindNext)
+		self.actionFindPrevious.triggered.connect(self.SLOT_actionFindPrevious)
+		# self.actionEmphasize.triggered.connect(self.SLOT_actionEmphasize)
+		# self.actionSeparator.triggered.connect(self.SLOT_actionSeparator)
+		self.actionRecheckTypography.triggered.connect(self.SLOT_actionRecheckTypography)
+		self.actionResetStyle.triggered.connect(self.SLOT_actionResetStyle)
+		self.actionInsertImage.triggered.connect(self.SLOT_actionInsertImage)
+		self.actionGuessLanguage.triggered.connect(self.SLOT_actionGuessLanguage)
+
+
+		# add the formatting (emphasize, set tot tile etc.) shortcuts to the
 		mapper = QtCore.QSignalMapper(self)
-		for userPropertyId,act in self.actionStylesDict.items():
-			c(act,trig, mapper, QtCore.SLOT("map()"))
+		for userPropertyId,act in list(self.actionStylesDict.items()):
+			act.triggered.connect( mapper.map)
 			mapper.setMapping(act, userPropertyId)
-			
-		c(mapper, QtCore.SIGNAL("mapped(const int &)"), self.SLOT_setStyle)
-		
+		# mapper.mapped.connect( self.SLOT_setStyle) # TR:todelete
+		mapper.mapped[int].connect( self.SLOT_setStyle)
+
+		# add the profiles
+		mapper = QtCore.QSignalMapper(self)
+		for i,act in list(self.actionProfileDict.items()):
+			act.triggered.connect( mapper.map)
+			mapper.setMapping(act, i)
+		# mapper.mapped.connect( self.SLOT_changeProfile) # TR:todelete
+		mapper.mapped[int].connect( self.SLOT_changeProfile)
+
+
+
 	def get_local_dir(self):
-		"""Will rteturn the local dir of the AWMainWindow in order to search 
+		"""Will rteturn the local dir of the AWMainWindow in order to search
 		for additional spelling words or autocorrection."""
 		if self.parent()== None or self.parent().filepath==None:
 			local_dir = None
 		else:
 			local_dir,tmp = os.path.split(self.parent().filepath)
 		return local_dir
-	
-	def setText(self,text=None,new_language=None,type='plain'):
-		"""This method will set the text contained in text (when changing the 
+
+	def setText(self,text=None,new_language=None,type='plain',profile=None):
+		"""This method will set the text contained in text (when changing the
 		active scene for instance.
 		- text : the text to insert (if None then it will insert u"")
-		- new_language : the language of the text, if it is None, we keep the 
+		- new_language : the language of the text, if it is None, we keep the
 				previous one
-		- type : 'plain' if raw text ; 'xml' if the personal format ; 'html' if 
+		- type : 'plain' if raw text ; 'xml' if the personal format ; 'html' if
 				html
 		"""
 		if text==None: text=""
 		# We change the language if necessary
 		if new_language!=None :
-			if self.language.name!=new_language:
-				self.changeLanguage(new_language)
-		
-		# Creating the new document with the good default format and inserting 
+			if self.language.name!=new_language or self.language.profile!=profile:
+				self.changeLanguage(new_language,profile=profile)
+			self.setProfileEnabled()
+		# Creating the new document with the good default format and inserting
 		# the text in it
 		document=QtGui.QTextDocument(self)
 		cursor , document= self.setDocumentFormat(document)
 		local_dir = self.get_local_dir()
-			
+
 		self.dict_autocorrection = CLAutoCorrection.get_values(
 														local_dir=local_dir)
 		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
@@ -174,63 +194,77 @@ class TETextEdit(QtGui.QTextEdit):
 			self.highlighter = TEHighlighter(document,self.language,
 												list_spelling=list_spelling)
 
-			
+
 		if type=='plain' 	: cursor.insertText(text)
 		elif type=='html' 	: cursor.insertHtml (text)
-		elif type=='xml' 	: 
+		elif type=='xml' 	:
 			cursor.insertText(text)
 			TSManager.fromXml(document)
 		cursor.setPosition(0)
-		
+
 		# Recheck the document typography if necessary
 		if TEPreferences["RECHECK_TEXT_OPEN"]:
 			self.language.cheak_after_paste(cursor)
-		
+
 		self.blockSignals (True)
 		self.setDocument(document)
-		self.document().clearUndoRedoStacks() # It will empty the history (no 
+		self.document().clearUndoRedoStacks() # It will empty the history (no
 															# "undo" before)
 		self.blockSignals (False)
 
-		self.setTextCursor(cursor)	
-		
-		
-	
+		self.setTextCursor(cursor)
+
+
+	def setProfileEnabled(self):
+		"""
+		Set the profile action not enabeled.
+		"""
+		for k,act in list(self.actionProfileDict.items()):
+			if self.language.profile == k:
+				act.setEnabled(False)
+			else:
+				act.setEnabled(True)
+
+
+
+
 	################################# SLOTS ###################################
-			
+
 	def SLOT_cursorPositionChanged(self):
 		"""Method that is called when the cursor position has just changed."""
-		self.blockSignals (True) #allow the method to move the cursor in the 
+		self.blockSignals (True) #allow the method to move the cursor in the
 									# method without calling itself one again.
-									
+
 		if self.old_cursor_position>=self.document().characterCount():
-			# If we were at the end of the document and suppress the end, it 
+			# If we were at the end of the document and suppress the end, it
 			# does then nothing.
 			self.old_cursor_position=self.textCursor().position()
 			self.blockSignals (False)
 			return self.old_cursor_position
-		
+
+
+
 		modification = False
 		if TEPreferences["AUTO_CORRECTION"]:
-			# If we have just written a word (by a space, or a ponctuation) it 
+			# If we have just written a word (by a space, or a ponctuation) it
 			# makes the auto-correction of the word.
 			cursor=self.textCursor()
 			last_char=self.language.lastChar(cursor)
-			list_word_break = [u' ',u'\u00A0',u'\n',u';',u':',u'!',u'?',u',',
-					u'.',u"'",u'-']
+			list_word_break = [' ','\u00A0','\n',';',':','!','?',',',
+					'.',"'",'-']
 			if last_char in list_word_break:
 				# if we just finished writting a word
 				position_0 = cursor.position()
 				replace = self.language.afterWordWritten(cursor)
 				if replace :
-					# We update the position in order to make the good 
+					# We update the position in order to make the good
 					# typography correction just afterwards
 					position_gap = self.textCursor().position()-position_0
-					self.old_cursor_position += position_gap # we move the 
+					self.old_cursor_position += position_gap # we move the
 								# previous position from the corresponding gap
 					assert 0<= self.old_cursor_position <\
-							self.document().characterCount() 
-				
+							self.document().characterCount()
+
 		if TEPreferences["DO_TYPOGRAPHY"]:
 			# We check the typography at the site we just left
 			cursor=QtGui.QTextCursor(self.document())
@@ -238,62 +272,84 @@ class TETextEdit(QtGui.QTextEdit):
 			cursor.setPosition(self.old_cursor_position)
 			cursor.beginEditBlock()
 			modification=self.language.correct_between_chars(cursor)
+
+			i=0
+			while modification and i<TEPreferences["LIM_RECURSIV_UNDO"]:
+				modification=self.language.correct_between_chars(cursor)
+				i+=1
+				if i==TEPreferences["LIM_RECURSIV_UNDO"]:
+					print ("Reach LIM_RECURSIV_UNDO in "
+							"SLOT_cursorPositionChanged")
 			cursor.endEditBlock()
 
-		
+
 		self.blockSignals (False)
 		if modification:
-			self.emit(QtCore.SIGNAL("typographyModification (PyQt_PyObject)"), 
+			self.typographyModification .emit(
 					modification)
-		self.old_cursor_position=self.textCursor().position() #update the 
+
+		self.old_cursor_position=self.textCursor().position() #update the
 															# cursor position
+
+
 		return self.old_cursor_position
-	
+
 	def SLOT_textChanged(self):
 		block_id = self.textCursor().blockFormat().property(
 												QtGui.QTextFormat.UserProperty)
-		block_id = block_id.toPyObject() 
+		# # block_id = block_id.toPyObject()
 		if block_id!=None and TSManager.dictStyle[block_id].protected :
 			self.blockSignals (True)
 			self.undo()
 			self.blockSignals (False)
-			self.emit(QtCore.SIGNAL("protectedStyleModification ( PyQt_PyObject)"), 
+			self.protectedStyleModification .emit(
 				"Try to modify a protected block (use Ctrl+L to delete it).")
-		
+
 	def SLOT_pluggins(self,iterator):
 		"""Launch the pluggin corresponding to the iterator"""
 		function=self.dico_pluggins[iterator]
 		function(cursor=self.textCursor())
-		
-		
+
+
+	@QtCore.pyqtSlot()
 	def SLOT_actionLaunchCharWidgetTable(self):
 		"""Slot that is called when we have to display the char table"""
 		self.charWidgetTable.setVisible(True)
-		
+
+	@QtCore.pyqtSlot()
 	def SLOT_actionLaunchFindDialog(self):
-		"""Slot that is called when we have to display the search dialog 
+		"""Slot that is called when we have to display the search dialog
 		window."""
 		self.findDialog.setVisible(True)
 
+	@QtCore.pyqtSlot()
 	def SLOT_actionFindNext	(self):
-		"""Slot that is called when we have to display the next occurence of 
+		"""Slot that is called when we have to display the next occurence of
 		the search dialog window"""
 		self.findDialog.activate_next()
-		
+
+	@QtCore.pyqtSlot()
 	def SLOT_actionFindPrevious	(self):
-		"""Slot that is called when we have to display the previous occurence 
+		"""Slot that is called when we have to display the previous occurence
 		of the search dialog window"""
 		self.findDialog.activate_previous()
-	
-	def SLOT_actionRecheckTypography(self):
+
+	@QtCore.pyqtSlot()
+	def SLOT_actionRecheckTypography(self,ask=False):
 		"""Quick method that check and correct all the typography of the text.
 		TODO : some summuary window of all the corrections.
+		if ask, will ask fot the check of typography
 		"""
+		if ask:
+			r = QtWidgets.QMessageBox.question(self, "Recheck Typography",
+				"Do you want to import the recheck the typography ?",
+				QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+			if r== QtWidgets.QMessageBox.No:
+				return False
 		cursor=self.textCursor()
 		cursor.setPosition(0)
 		self.language.cheak_after_paste(cursor)
-		
-		
+
 	def SLOT_correctWord(self,word):
 		"""
 		Replaces the selected text with word.
@@ -303,29 +359,28 @@ class TETextEdit(QtGui.QTextEdit):
 
 		cursor.removeSelectedText()
 		cursor.insertText(word)
-		
+
 		self.language.cheak_after_paste(cursor,len(word) )
 
 		cursor.endEditBlock()
-	
-	
+
+
 	def SLOT_addWordSpelling(self,word,where='local'):
 		"""
 		Add the word into the configuration file of the spelling
 		"""
 		# to replace curved apostroph by stright ones
 		word = self.highlighter.toRawWord(word)
-		
 		local_dir = self.get_local_dir()
-		
+
 		try :
 			CLSpelling.add_words(words=[word],where=where,local_dir=local_dir)
 			self.highlighter.dict.add(word)
 			self.highlighter.rehighlight ()
-			
-		except IOError,e:
-			QtGui.QMessageBox.critical(self,'Input error',e)
-	
+
+		except IOError as e:
+			QtWidgets.QMessageBox.critical(self,'Input error',e)
+
 	def SLOT_setStyle(self,style_id):
 		cursor=self.textCursor()
 		cursor.beginEditBlock()
@@ -334,8 +389,9 @@ class TETextEdit(QtGui.QTextEdit):
 		cursor.endEditBlock()
 		self.setTextCursor(cursor)
 		self.blockSignals (False)
-		QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
+		self.somethingChanged .emit()
 
+	@QtCore.pyqtSlot()
 	def SLOT_actionResetStyle(self):
 		cursor=self.textCursor()
 		cursor.beginEditBlock()
@@ -345,8 +401,9 @@ class TETextEdit(QtGui.QTextEdit):
 		finally:
 			self.blockSignals (False)
 			cursor.endEditBlock()
-		QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
-		
+		self.somethingChanged .emit()
+
+	@QtCore.pyqtSlot()
 	def SLOT_actionInsertImage(self):
 		if self.parent()!=None:
 			dft_opening_site = self.parent().get_default_opening_saving_site()
@@ -357,17 +414,17 @@ class TETextEdit(QtGui.QTextEdit):
 		filepath = FMFileManagement.open_gui_filepath(
 					dft_opening_site ,
 					self,filter="Image Files (*.png *.jpg *.bmp *.gif)")
-		
+
 		if filepath:
 			d,f = os.path.split(filepath)
-			assert os.path.isabs(d) 
-			
+			assert os.path.isabs(d)
+
 			if local_dir and d!=os.path.abspath(local_dir):
 				assert os.path.isabs(local_dir)
-				r = QtGui.QMessageBox.question(self, "Local importation", 
+				r = QtWidgets.QMessageBox.question(self, "Local importation",
 					"Do you want to import the file locally ?",
-					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No)
-				if r== QtGui.QMessageBox.Yes:
+					QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+				if r== QtWidgets.QMessageBox.Yes:
 					newfilepath = os.path.join(local_dir,f)
 					newfilepath = FMFileManagement.exists(newfilepath)
 					if not newfilepath:
@@ -376,57 +433,81 @@ class TETextEdit(QtGui.QTextEdit):
 					tmp,newfilepath = os.path.split(newfilepath) #local path
 			elif not local_dir:
 				newfilepath = filepath
-				r = QtGui.QMessageBox.question(self, "Local importation", 
+				r = QtWidgets.QMessageBox.question(self, "Local importation",
 					"Since you did not saved the file, the absolute path "+\
 					"will be displayed. For import the file localy, save "+\
 					"first",
-					QtGui.QMessageBox.Yes|QtGui.QMessageBox.Cancel)
-				if r== QtGui.QMessageBox.Cancel:
+					QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.Cancel)
+				if r== QtWidgets.QMessageBox.Cancel:
 					return False
 			else :
-				tmp,newfilepath = os.path.split(filepath)	#local path		
-			
+				tmp,newfilepath = os.path.split(filepath)	#local path
+
 			# self.SLOT_setFormating(TSStyleImage.userPropertyId)
 			self.blockSignals(True)
-			
+
 			cursor=self.textCursor()
 			cursor.clearSelection()
 			block_id = cursor.blockFormat().property(
 												QtGui.QTextFormat.UserProperty)
-			block_id = block_id.toPyObject() 
+			# # block_id = block_id.toPyObject()
 			if block_id==TSStyleImage.userPropertyId :
 				# if there is an image, we remove the previous one
 				TSManager.inverseStyle(cursor,block_id)
-			TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)				
+			TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)
 			cursor.beginEditBlock()
 			cursor.insertText(newfilepath)
 			cursor.endEditBlock()
 			self.blockSignals(False)
-			QtCore.QObject.emit(self,QtCore.SIGNAL("somethingChanged ()"))
-			
+			self.somethingChanged .emit()
+
 			return filepath
 		return False
 
+	@QtCore.pyqtSlot()
+	def SLOT_actionGuessLanguage(self):
+		v = TLGuessLanguages(self.toPlainText())
+		r = QtWidgets.QMessageBox.question(self, "Guess Language",
+				"The new language detected is "+v+"; change the language?",
+				QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
+		if r== QtWidgets.QMessageBox.Yes:
+			if self.parent()!=None:
+				self.parent().metadata.update({"language":v})
+			self.changeLanguage(v,gui=True)
+
+
+
+	def SLOT_changeProfile(self,i):
+		old_i = self.language.profile
+		self.language.profile = i
+		self.setProfileEnabled()
+
+		print("self.language.profile : ",self.language.profile)
+		if i < old_i:
+			self.SLOT_actionRecheckTypography(ask=True)
+		self.somethingChanged .emit()
+
+
 
 	def insertFromMimeData(self,source ):
-		"""A re-implementation of insertFromMimeData. We have to check the 
+		"""A re-implementation of insertFromMimeData. We have to check the
 		typography of what we have just paste.
 		TODO : some summary window of all the corrections.
 		"""
-		
+
 		self.blockSignals (True)
 		cursor=self.textCursor()
 		cursor_pos=cursor.position()
 		if source.html()==self.lastCopy[0].html():
 			# if the pasted thing comes from the document itself
 			cursor.insertFragment(self.lastCopy[1])
-			size = self.lastCopy[1].toPlainText().size()
-		else : 
+			size = len(self.lastCopy[1].toPlainText())
+		else :
 			text=source.text()
-			text.replace(QtCore.QString("\t"), QtCore.QString(" "))
+			text.replace("\t", " ")
 			cursor.insertText(text)
-			size = text.size()
-			
+			size = len(text)
+
 		cursor.setPosition(cursor_pos)
 		if TEPreferences["DO_TYPOGRAPHY"]:
 			self.language.cheak_after_paste(cursor,size)
@@ -439,69 +520,75 @@ class TETextEdit(QtGui.QTextEdit):
 		TSManager.recheckBlockStyle(cursor)
 		TSManager.recheckCharStyle(cursor)
 		self.blockSignals (False)
-	
-	
+
+
 	def copy(self):
-		"""A reimplementation of copy in order to remember what was the last 
+		"""A reimplementation of copy in order to remember what was the last
 		copy"""
 		self.lastCopy = (self.createMimeDataFromSelection(),
 						self.textCursor().selection() )
-		QtGui.QTextEdit.copy(self)
-		
+		QtWidgets.QTextEdit.copy(self)
+
 	def cut(self):
-		"""A reimplementation of cut in order to remember what was the last 
+		"""A reimplementation of cut in order to remember what was the last
 		copy"""
 		self.lastCopy = (self.createMimeDataFromSelection(),
 						self.textCursor().selection() )
-		QtGui.QTextEdit.cut(self)
-		
-	def changeLanguage(self,language_name=None):
-		print ('TO CHECK : we indeed changed the local dir before changing '+\
-			'the language.')
+		QtWidgets.QTextEdit.cut(self)
+
+	def changeLanguage(self,language_name=None,profile=None,gui=False):
+		"""
+		- language_name: the name of the language, should be in TLDico.keys()
+		- profile: the typography profile to use for the document
+		- gui: if true, will propose to check the typography
+		"""
+		print(('TO CHECK : we indeed changed the local dir before changing '+\
+			'the language.'))
 		local_dir = self.get_local_dir()
-			
+
 		# fill self.language according to the language in entry
 		if language_name==None:
 			lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-			self.language=lang(self.dict_autocorrection)
+			self.language=lang(self.dict_autocorrection,profile=profile)
 		else :
 			# FUTURE to change  merge TLDico and choice
-			if not TLDico.has_key(unicode(language_name)):
+			if str(language_name) not in TLDico:
 				lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-				self.language=lang(self.dict_autocorrection)
+				self.language=lang(self.dict_autocorrection,profile=profile)
 				raise WWError("Do not have the typography for the language "+\
 																language_name)
 			else:
 				lang = TLDico[language_name]
-				self.language = lang(self.dict_autocorrection)		
-				
-		## PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS		
-		# add the language insert shortcuts to the class 
+				self.language = lang(self.dict_autocorrection,profile=profile)
+				profile = self.language.profile
+
+
+		## PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS
+		# add the language insert shortcuts to the class
 		dico = self.language.shortcuts_insert
 		mapper = QtCore.QSignalMapper(self)
-		for k in dico.keys():
-			short=QtGui.QShortcut(QtGui.QKeySequence(*k),self)
-			QtCore.QObject.connect(short,QtCore.SIGNAL("activated ()"), mapper,
-														QtCore.SLOT("map()"))
+		for k in list(dico.keys()):
+			short=QtWidgets.QShortcut(QtGui.QKeySequence(*k),self)
+			short.activated .connect( mapper.map)
 			short.setContext(QtCore.Qt.WidgetShortcut)
 			mapper.setMapping(short, dico[k])
-		self.connect(mapper, QtCore.SIGNAL("mapped(const QString &)"), 
-														self.insertPlainText )
-		
-		# add the language pluggins to the class 
+		# mapper.mapped.connect( self.insertPlainText ) # TR:todelete
+		mapper.mapped[str].connect( self.insertPlainText)
+
+		# add the language pluggins to the class
 		dico=self.language.shortcuts_correction_plugins
 		self.dico_pluggins={}
 		mapper = QtCore.QSignalMapper(self)
 		for i,k in enumerate(dico.keys()):
-			short=QtGui.QShortcut(QtGui.QKeySequence(*k),self)
-			QtCore.QObject.connect(short,QtCore.SIGNAL("activated ()"), mapper,
-														QtCore.SLOT("map()"))
+			short=QtWidgets.QShortcut(QtGui.QKeySequence(*k),self)
+			short.activated .connect( mapper.map)
 			short.setContext(QtCore.Qt.WidgetShortcut)
-			
+
 			self.dico_pluggins[i]=dico[k]
-			mapper.setMapping(short, i)		
-		self.connect(mapper, QtCore.SIGNAL("mapped(int)"), self.SLOT_pluggins )
-		
+			mapper.setMapping(short, i)
+		# mapper.mapped.connect( self.SLOT_pluggins )# TR:todelete
+		mapper.mapped[int].connect( self.SLOT_pluggins)
+
 		# Change the Highlighter for the new language
 		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
 			if local_dir!=None:
@@ -511,19 +598,22 @@ class TETextEdit(QtGui.QTextEdit):
 			self.highlighter = TEHighlighter(self.document(),self.language,
 												list_spelling=list_spelling)
 			self.highlighter.rehighlight ()
-	
+
+		if gui:
+			self.SLOT_actionRecheckTypography(ask=True)
+
 	def undo(self):
 		"""
 		This method do the usual undo, except in the case it has there has be a
-		typography correction, in which case it comes back to the state before 
+		typography correction, in which case it comes back to the state before
 		the events that trigger the correction:
 		exemple:
-		"Hello,<space>you!"       
+		"Hello,<space>you!"
 			-----     suppress coma     ----->       "Hello<space>you!"
-			-----     another space     ----->       "Hello<space><space>you!"       
+			-----     another space     ----->       "Hello<space><space>you!"
 			----- typography correction ----->       "Hello<space>you!"
 			-----        Ctrl-Z         ----->       "Hello,<space>you!"
-		
+
 		"""
 		self.blockSignals (True)
 		if TEPreferences["DO_TYPOGRAPHY"]:
@@ -531,21 +621,23 @@ class TETextEdit(QtGui.QTextEdit):
 			do_again=True
 			while do_again and i<TEPreferences["LIM_RECURSIV_UNDO"]:
 				for j in range(i):
-					QtGui.QTextEdit.undo(self)
+					QtWidgets.QTextEdit.undo(self)
 				cursor=self.textCursor()
 				cursor.clearSelection()
 				do_again=self.language.correct_between_chars(cursor)
 				i+=1
-			self.old_cursor_position = self.textCursor().position() # update 
+			if i==TEPreferences["LIM_RECURSIV_UNDO"]:
+				print("Reach LIM_RECURSIV_UNDO in undo")
+			self.old_cursor_position = self.textCursor().position() # update
 					# the cursor position
 		else:
-			QtGui.QTextEdit.undo(self)
+			QtWidgets.QTextEdit.undo(self)
 		self.blockSignals (False)
-	
-		
+
+
 	def keyPressEvent(self,event):
 		"""
-		This action grab the Undo KeySequence to execute the special function 
+		This action grab the Undo KeySequence to execute the special function
 		self.undo, self.copy, self.cut.
 		"""
 		if (event.matches(QtGui.QKeySequence.Undo)):
@@ -557,36 +649,36 @@ class TETextEdit(QtGui.QTextEdit):
 		elif (event.matches(QtGui.QKeySequence.Cut)):
 			self.cut()
 		else:
-			QtGui.QTextEdit.keyPressEvent(self,event)
-	
-	
-		
+			QtWidgets.QTextEdit.keyPressEvent(self,event)
+
+
+
 	def toPlainText(self):
 		"""
-		Re-implementation of toplaintext in order to have the inbrekable spaces 
-		(for an unkown reason it is not suported by the QTextEdit.toPlainText 
+		Re-implementation of toplaintext in order to have the inbrekable spaces
+		(for an unkown reason it is not suported by the QTextEdit.toPlainText
 		function).
 		"""
 		cursor = QtGui.QTextCursor(self.document())
 		cursor.select(QtGui.QTextCursor.Document)
-		s = unicode(cursor.selectedText())
-		s = s.replace(u'\u2029','\n')
+		s = str(cursor.selectedText())
+		s = s.replace('\u2029','\n')
 		return s
-		
-		
+
+
 	def toXml(self):
 		newText=self.toPlainText()
 		newText=TSManager.toXml(newText,self.document())
 		return newText
-		
+
 	def contextMenuEvent(self, event):
 		cursor = QtGui.QTextCursor(self.document())
 		cursor = self.cursorForPosition(event.pos())
-		self.setTextCursor(cursor)		
-		
-		popup_menu = QtGui.QMenu(self)
-		
-		
+		self.setTextCursor(cursor)
+
+		popup_menu = QtWidgets.QMenu(self)
+
+
 		if TEPreferences['SPELL_CHECK'] and TEHasEnchant:
 			# Select the word under the cursor.
 			cursor = self.textCursor()
@@ -596,80 +688,70 @@ class TETextEdit(QtGui.QTextEdit):
 			# Check if the selected word is misspelled and offer spelling
 			# suggestions if it is.
 			if self.textCursor().hasSelection():
-				text = unicode(self.textCursor().selectedText())
+				text = str(self.textCursor().selectedText())
 				text = self.highlighter.toRawWord(text)
 				if not self.highlighter.dict.check(text):
-					spell_menu = QtGui.QMenu('Spelling Suggestions')
+					spell_menu = QtWidgets.QMenu('Spelling Suggestions')
 
 					# Add wordcorrection to the mapper
 					mapper = QtCore.QSignalMapper(self)
 					for word in self.highlighter.dict.suggest(text):
-						act = QtGui.QAction(word, spell_menu)
-						
-						QtCore.QObject.connect(
-							act,
-							QtCore.SIGNAL("triggered ()"), 
-							mapper, 
-							QtCore.SLOT("map()")
-							)
+						act = QtWidgets.QAction(word, spell_menu)
+
+						act.triggered .connect( mapper.map)
 						mapper.setMapping(act, word)
 						spell_menu.addAction(act)
-						
-					self.connect(
-						mapper, 
-						QtCore.SIGNAL("mapped(const QString &)"), 
-						self.SLOT_correctWord 
-						)
-					
+
+					# mapper.mapped.connect( self.SLOT_correctWord )# TR:todelete
+					mapper.mapped[str].connect( self.SLOT_correctWord)
+
 					# Only add the spelling suggests to the menu if there are
 					# suggestions.
 					if len(spell_menu.actions()) != 0:
 						spell_menu.addSeparator()
-						act_loc = QtGui.QAction('Add word to local dict',
+						act_loc = QtWidgets.QAction('Add word to local dict',
 																	spell_menu)
-						act_usr = QtGui.QAction('Add word to user dict',
+						act_usr = QtWidgets.QAction('Add word to user dict',
 																	spell_menu)
-						act_glo = QtGui.QAction('Add word to global dict',
+						act_glo = QtWidgets.QAction('Add word to global dict',
 																	spell_menu)
-						
+
 						spell_menu.addAction(act_loc)
 						spell_menu.addAction(act_usr)
 						spell_menu.addAction(act_glo)
-						
+
 						if self.parent()==None or self.parent().filepath==None:
 							act_loc.setEnabled(False)
-						
-						# Add word dictionary add to the mapper
-						mapper = QtCore.QSignalMapper(self)
-						c = QtCore.QObject.connect
-						trig = QtCore.SIGNAL("triggered ()")
-						
+
+						# c = QtCore.QObject.connect # TR:todelete
+						# trig = QtCore.SIGNAL("triggered ()")# TR:todelete
+
 						slot_loc = lambda : self.SLOT_addWordSpelling(text,'local')
 						slot_usr = lambda : self.SLOT_addWordSpelling(text,'user')
 						slot_glo = lambda : self.SLOT_addWordSpelling(text,'global')
-						
-						c(act_loc,trig, slot_loc)
-						c(act_usr,trig, slot_usr)
-						c(act_glo,trig, slot_glo)
-						
+
+						act_loc.triggered.connect( slot_loc)
+						act_usr.triggered.connect( slot_usr)
+						act_glo.triggered.connect( slot_glo)
+
 						# map = QtCore.SLOT("map()")
-						# c(act_loc,trig, mapper, map)
+						# act_loc.triggered.connect( mapper, map)
 						# mapper.setMapping(act, text,'local'))
-						# c(act_usr,trig, mapper, map)
+						# act_usr.triggered.connect( mapper, map)
 						# mapper.setMapping(act, text))
-						# c(act_glo,trig, mapper, map)
+						# act_glo.triggered.connect( mapper, map)
 						# mapper.setMapping(act, text))
-						
-						
+
+
 						# self.connect(
-							# mapper, 
-							# QtCore.SIGNAL("mapped(const QString &)"), 
+							# mapper,
+							# QtCore.SIGNAL("mapped(const QString &)"),
 							# self.SLOT_addWordSpelling
 							# )
-						
+
 						popup_menu.addSeparator()
 						popup_menu.addMenu(spell_menu)
-						
+
 		popup_menu.addAction(self.actionUndo)
 		popup_menu.addAction(self.actionRedo)
 		popup_menu.addSeparator()
@@ -678,66 +760,66 @@ class TETextEdit(QtGui.QTextEdit):
 		popup_menu.addAction(self.actionPaste)
 
 		popup_menu.exec_(event.globalPos())
-		
+
 	def setDocumentFormat(self,document):
-		if TSPreferences['DEFAULT_STYLE'].has_key("alignment"):
-				
+		if "alignment" in TSPreferences['DEFAULT_STYLE']:
+
 			align_name = TSPreferences['DEFAULT_STYLE']["alignment"]
-			if TSStyleClassBlock.dict_align.has_key(align_name):
+			if align_name in TSStyleClassBlock.dict_align:
 				obt=QtGui.QTextOption(TSStyleClassBlock.dict_align[align_name])
 				document.setDefaultTextOption(obt)
 			else :
 				KeyError('Unknown key for the alignement : '+align_name)
-				
+
 		font = document.defaultFont()
-		if TSPreferences['DEFAULT_STYLE'].has_key("font_name"):
+		if "font_name" in TSPreferences['DEFAULT_STYLE']:
 			font.setFamily(TSPreferences['DEFAULT_STYLE']["font_name"])
-		if TSPreferences['DEFAULT_STYLE'].has_key("font_size"):
+		if "font_size" in TSPreferences['DEFAULT_STYLE']:
 			font.setPointSize(int(TSPreferences['DEFAULT_STYLE']["font_size"]))
 		document.setDefaultFont(font)
-		
+
 		cursor=QtGui.QTextCursor(document)
 		format_block=cursor.blockFormat()
-		
-		
+
+
 		if TEPreferences['TEXT_INDENT']>0:
 			format_block.setTextIndent (TEPreferences['TEXT_INDENT'])
 
 		if TEPreferences['TEXT_LINE_HEIGHT']>0:
-			format_block.setLineHeight (TEPreferences['TEXT_LINE_HEIGHT'], 
+			format_block.setLineHeight (TEPreferences['TEXT_LINE_HEIGHT'],
 									QtGui.QTextBlockFormat.ProportionalHeight)
-			
+
 		if TEPreferences['TEXT_MARGIN']>0:
 			document.setDocumentMargin(TEPreferences['TEXT_MARGIN'])
-			
+
 		# Putting the cursor at the good format
 		cursor.setBlockFormat(format_block)
 
 		self.defaultBlockFormat = format_block
 		self.defaultCharFormat = cursor.charFormat()
 		self.defaultCharFormat.setFont(font)
-		
-		return cursor,document
-					
-	def emit_typographyModification(self):
-		QtCore.QObject.emit(self,QtCore.SIGNAL("typographyModification ()"))
-				
 
-		
+		return cursor,document
+
+	def emit_typographyModification(self):
+		self.typographyModification .emit()
+
+
+
 if __name__ == '__main__':
 
 	import sys
-	
-	app = QtGui.QApplication(sys.argv)
-	
+
+	app = QtWidgets.QApplication(sys.argv)
+
 	textedit = TETextEdit(language_name='French',parent=None)
-	# button_refresh	 	= QtGui.QPushButton('Stupidity')
+	# button_refresh	 	= QtWidgets.QPushButton('Stupidity')
 	# textedit.connect(textedit,QtCore.SIGNAL('typographyModification ()'), stupidity)
 	# textedit.emit_typographyModification()
-	# QtCore.QObject.connect(button_refresh,QtCore.SIGNAL('clicked ()'), textedit.toPlainText1)
+	# button_refresh.clicked .connect( textedit.toPlainText1)
 	# textedit.typographyModification.connect(stupidity)
 	textedit.show()
 	# button_refresh.show()
-	
-	
+
+
 	sys.exit(app.exec_())

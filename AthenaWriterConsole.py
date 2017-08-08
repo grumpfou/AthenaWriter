@@ -17,6 +17,10 @@ class AWConsoleError (Exception):
 
 		
 class AWConsole (AWCore):
+	"""
+	Will be the console version of the software, it uses the function 
+	contained in AWCore to open, save, export etc. the files
+	"""
 	def __init__(self):
 		AWCore.__init__(self)
 		self.argv =	sys.argv
@@ -95,14 +99,14 @@ class AWConsole (AWCore):
 	def print_args(self):
 		
 		"""For debugging reasons"""
-		print 'self.args.console',self.args.console,type(self.args.console)
-		print 'self.args.file',self.args.file,type(self.args.file)
-		print 'self.args.importt',self.args.importt,type(self.args.importt)
-		print 'self.args.export',self.args.export,type(self.args.export)
-		print 'self.args.outdir',self.args.outdir,type(self.args.outdir)
-		print 'self.args.recheck',self.args.recheck,type(self.args.recheck)
-		print 'self.args.last_file',self.args.last_file,type(self.args.last_file)
-		print 'self.args.l',self.args.l,type(self.args.l)
+		print('self.args.console',self.args.console,type(self.args.console))
+		print('self.args.file',self.args.file,type(self.args.file))
+		print('self.args.importt',self.args.importt,type(self.args.importt))
+		print('self.args.export',self.args.export,type(self.args.export))
+		print('self.args.outdir',self.args.outdir,type(self.args.outdir))
+		print('self.args.recheck',self.args.recheck,type(self.args.recheck))
+		print('self.args.last_file',self.args.last_file,type(self.args.last_file))
+		print('self.args.l',self.args.l,type(self.args.l))
 		
 		
 
@@ -133,14 +137,14 @@ class AWConsole (AWCore):
 		useful to compte the lines we have to skip in the file.
 		"""
 		arg_dict = self.get_sub_options(self.args.importt)
-		for k,v in arg_dict.items():
+		for k,v in list(arg_dict.items()):
 			if k == 'skip_lines':
 				to_skip=[]
 				list_fig=v.split(';')
 				for val in list_fig:
 					A = re.match('^(-?[0-9]+)-(-?[0-9]+)$',val)
 					if A!=None:
-						to_skip+=range(int(A.group()[0]),int(A.group()[1]))
+						to_skip+=list(range(int(A.group()[0]),int(A.group()[1])))
 					elif re.match('^[0-9]+$',val)!=None:
 						to_skip+=[int(val)]
 					else:
@@ -167,12 +171,12 @@ class AWConsole (AWCore):
 		if self.args.list_last_files:# if we export the file, the console mode 
 							# is disabled
 			self.args.console = True
-			print 'self.lastFiles : ',self.lastFiles
+			print('self.lastFiles : ',self.lastFiles)
 			
 			lf = self.lastFiles.list_files
 			if len(lf)>9: lf = lf[:9]
-			print "=== Last files list ==="
-			print '\n'.join([str(i+1)+'- '+v for i,v in enumerate(lf)])
+			print("=== Last files list ===")
+			print('\n'.join([str(i+1)+'- '+v for i,v in enumerate(lf)]))
 			
 		self.filepath = self.args.file
 		############# importation #############
@@ -196,13 +200,13 @@ class AWConsole (AWCore):
 			# We determine what should be the output path for the file
 			arg_dict = self.get_sub_options(self.args.importt)
 			
-			if arg_dict.has_key('filepath'):
+			if 'filepath' in arg_dict:
 				filepath = arg_dict['filepath']
 			else :
 				filepath,ext = os.path.splitext(self.args.file)
 				filepath += '.athw'
 
-			if arg_dict.has_key('outdir'):
+			if 'outdir' in arg_dict:
 				dir,filepath = os.path.split(filepath)
 				filepath = os.path.join(arg_dict['outdir'],filepath)
 			
@@ -225,7 +229,7 @@ class AWConsole (AWCore):
 			if self.args.file==None : 
 				raise AWConsoleError('Please specify the file to export.')
 			export_args = self.get_sub_options(self.args.export)
-			if not export_args.has_key('format'):
+			if 'format' not in export_args:
 				raise AWConsoleError(
 					'You should give the format of exportation.\n'+\
 					'Example : format=txt')
@@ -239,13 +243,13 @@ class AWConsole (AWCore):
 				self.textEdit.actionRecheckTypography.trigger()
 			
 			# We determine what should be the output path for the file
-			if export_args.has_key('filepath'):
+			if 'filepath' in export_args:
 				filepath = export_args.pop('filepath')
 			else :
 				filepath,ext = os.path.splitext(self.args.file)
 				filepath += '.'+format
 			
-			if export_args.has_key('outdir'):
+			if 'outdir' in export_args:
 				dir,filepath = os.path.split(filepath)
 				filepath = os.path.join(export_args['outdir'],filepath)
 				
@@ -276,7 +280,7 @@ class AWConsole (AWCore):
 #		
 #
 		if not self.args.console:
-			# app = QtGui.QApplication(sys.argv)
+			# app = QtWidgets.QApplication(sys.argv)
 			writerText = AWWriterText()
 			if self.filepath !=None :
 				writerText.SLOT_actionFileOpen(filepath=self.filepath)
@@ -284,12 +288,12 @@ class AWConsole (AWCore):
 			return writerText
 			# sys.exit(writerText.exec_())
 		if self.args.version:
-			print "Version : ",__version__
+			print("Version : ",__version__)
 		return None
 			
 	
 if __name__ == '__main__':
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	cons = AWConsole()
 	writerText = cons.perfom_command()
 	if writerText!=None:

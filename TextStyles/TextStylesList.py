@@ -1,5 +1,5 @@
-from PyQt4 import QtGui, QtCore
-from TextStylesPreferences import TSPreferences
+from PyQt5 import QtGui, QtCore, QtWidgets
+from .TextStylesPreferences import TSPreferences
 
 # def problem with Ctrl+K
 
@@ -7,7 +7,7 @@ from TextStylesPreferences import TSPreferences
 def getCharId(cursor):
 	id = cursor.charFormat().property(QtGui.QTextFormat.UserProperty)
 	# if id != None:
-	id = id.toPyObject()
+	# id = id.toPyObject()()
 	return id
 	
 def getBlockId(cursor):
@@ -15,8 +15,8 @@ def getBlockId(cursor):
 		cursor = QtGui.QTextCursor(cursor)
 	id = cursor.blockFormat().property(QtGui.QTextFormat.UserProperty)
 	# if id != None:
-		# id = id.toPyObject()
-	id = id.toPyObject()
+		# # id = id.toPyObject()()
+	# id = id.toPyObject()()
 	return id
 
 class TSStyleClassAbstract:
@@ -110,7 +110,7 @@ class TSStyleClassChar (TSStyleClassAbstract):
 		# TSStyleClassChar.setStyleToQtFormatingStatic(qtFormating,
 														# self.constant,document)
 	def setStyleToQtFormating(self,qtFormating,document):
-		for k,v in self.constant.items():
+		for k,v in list(self.constant.items()):
 			if k == 'char_style':
 				if v == 'italic':
 					qtFormating.setFontItalic(True)
@@ -131,7 +131,7 @@ class TSStyleClassChar (TSStyleClassAbstract):
 			elif k == 'font_color':
 				try :
 					color= QtGui.QColor(QtCore.Qt.__dict__[v])
-				except KeyError,e:
+				except KeyError as e:
 					raise KeyError('Unknown color in QtCore.Qt.GlobalColor: '+\
 							"'"+v+"'.")
 				qtFormating.setForeground(color)
@@ -155,7 +155,7 @@ class TSStyleClassBlock (TSStyleClassAbstract):
 	def __init__(self,*arg,**kargs):
 		TSStyleClassAbstract.__init__(self,*arg,**kargs)
 		constant_sub = self.constant.copy()
-		for k,v in constant_sub.items():
+		for k,v in list(constant_sub.items()):
 			if k == 'alignment':
 				constant_sub.pop(k)
 		self.subCharFormat = TSStyleClassChar(constant=constant_sub)
@@ -181,7 +181,7 @@ class TSStyleClassBlock (TSStyleClassAbstract):
 		assert type(qtFormating)==list
 		constants = self.constant.copy()
 		qtFormating0 = qtFormating[0]
-		for k,v in self.constant.items():
+		for k,v in list(self.constant.items()):
 			if k == 'alignment':
 				qtFormating0.setProperty(QtGui.QTextFormat.BlockAlignment,
 															self.dict_align[v])
@@ -348,6 +348,8 @@ TSStyleHeader3 = TSStyleClassBlock(
 							'mkd':('### ',''),
 						}
 	)
+
+	
 	
 TSStyleCode = TSStyleClassBlock(
 	constant		=  TSPreferences['CODE_STYLE'],
@@ -389,3 +391,46 @@ TSStyleImage =  TSStyleClassImage(
 							'mkd' :('![image](',')'),
 						}
 	)
+
+
+TSStyleStyleColor1 = TSStyleClassChar(
+	constant		=  TSPreferences['COLOR1_STYLE'],
+	xmlMark			=  'span1',
+	userPropertyId	=  101,
+	name			=  'Color1',
+	shortcut		=  'Ctrl+P+3',
+	exportDict		=  {	'txt'  :('>',''),
+							'html' :('<span style="color:#0000FF"> ','</span>'),
+							'tex':(r'{\color{blue} ','}'),
+							'mkd':('<span style="color:#0000FF"> ','</span>'),
+						}
+	)
+
+TSStyleStyleColor2 = TSStyleClassChar(
+	constant		=  TSPreferences['COLOR2_STYLE'],
+	xmlMark			=  'span2',
+	userPropertyId	=  102,
+	name			=  'Color2',
+	shortcut		=  '',
+	exportDict		=  {	'txt'  :('>>',''),
+							'html' :('<span style="color:#FF0000"> ','</span>'),
+							'tex':(r'{\color{red} ','}'),
+							'mkd':('<span style="color:#FF0000"> ','</span>'),
+						}
+	)
+	
+TSStyleStyleColor3 = TSStyleClassChar(
+	constant		=  TSPreferences['COLOR3_STYLE'],
+	xmlMark			=  'span3',
+	userPropertyId	=  103,
+	name			=  'Color3',
+	shortcut		=  '',
+	exportDict		=  {	'txt'  :('>>>',''),
+							'html' :('<span style="color:#00FF00"> ','</span>'),
+							'tex':(r'{\color{green} ','}'),
+							'mkd':('<span style="color:#00FF00"> ','</span>'),
+						}
+	)
+	
+	
+	

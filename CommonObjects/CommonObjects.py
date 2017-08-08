@@ -1,4 +1,4 @@
-class COError (StandardError):pass
+class COError (Exception):pass
 
 class COContrainedDict(dict):
 	list_keys = []
@@ -9,7 +9,7 @@ class COContrainedDict(dict):
 		"""
 		dict.__init__(self)
 		if a ==None: a={}
-		for k,v in a.items():
+		for k,v in list(a.items()):
 			self.__setitem__(k,v)
 	
 	def __setitem__(self,k,v,protected=True):
@@ -29,7 +29,7 @@ class COOrderedDict(dict):
 	def __init__(self,a=None):
 		if a!=None:
 			if type(a)==dict:
-				self.list_keys = a.keys()
+				self.list_keys = list(a.keys())
 			elif type(a)==list:
 				self.list_keys = [v[0] for v in a]
 			dict.__init__(self,a)
@@ -41,11 +41,11 @@ class COOrderedDict(dict):
 		return self.list_keys
 		
 	def items(self):
-		for k in self.keys():
+		for k in list(self.keys()):
 			yield k,self[k]
 	
 	def __setitem__(self,k,v):
-		if k not in self.keys():
+		if k not in list(self.keys()):
 			self.list_keys.append(k)
 		dict.__setitem__(self,k,v)
 		
@@ -84,8 +84,8 @@ class COChoice:
 		in which case, the string 'None' will return the good value).
 		"""
 		if fromString:
-			dd = {unicode(k):k for k in self.elements_list}
-			if value not in dd.keys():
+			dd = {str(k):k for k in self.elements_list}
+			if value not in list(dd.keys()):
 				raise ValueError('the value is not in the elements list')
 			self.active_element = dd[value]
 		else:
@@ -104,7 +104,7 @@ class COChoice:
 		return not self.__eq__(other)
 	
 	def __str__(self):
-		return unicode(self.active_element)
+		return str(self.active_element)
 		
 	def __hash__(self):
 		return self.active_element.__hash__()

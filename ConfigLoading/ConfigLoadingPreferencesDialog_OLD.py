@@ -1,4 +1,4 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import copy
 
 # DEBUG TO CHANGE !!!!
@@ -11,21 +11,21 @@ from ConfigLoadingPreferencesManagement import CLPreferencesManagement
 
 	
 
-class CLPreferencesDialog (QtGui.QDialog):
+class CLPreferencesDialog (QtWidgets.QDialog):
 	def __init__(self,dict_preference, file_manager=None, *args,**kargs):
 		"""
 				- file_manager : FMFileConstants instance
 		"""
-		QtGui.QDialog.__init__(self,*args,**kargs)
+		QtWidgets.QDialog.__init__(self,*args,**kargs)
 		self.dict_preference 		= dict_preference
 		self.file_manager 	= file_manager
 		
 		
-		button_ok 		= QtGui.QPushButton('Save')
-		button_cancel	= QtGui.QPushButton('Cancel')
+		button_ok 		= QtWidgets.QPushButton('Save')
+		button_cancel	= QtWidgets.QPushButton('Cancel')
 		
-		tab_widget = QtGui.QTabWidget()
-		mainLayout = QtGui.QVBoxLayout()
+		tab_widget = QtWidgets.QTabWidget()
+		mainLayout = QtWidgets.QVBoxLayout()
 		mainLayout.addWidget(tab_widget)
 		mainLayout.addWidget(button_ok)
 		mainLayout.addWidget(button_cancel)
@@ -73,7 +73,7 @@ class CLPreferencesDialog (QtGui.QDialog):
 		result = dialog.exec_()
 		d = dialog.new_dict
 		
-		if result == QtGui.QDialog.Accepted:
+		if result == QtWidgets.QDialog.Accepted:
 			assert d!=None
 			return d
 		else:
@@ -90,7 +90,7 @@ if __name__ == '__main__':
 	except IOError:
 		pass
 	
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	writerText = CLPreferencesDialog(constants=AWConstants,parent=None)
 	writerText.show()
 	# print 'self.dictionnary : ',writerText.dictionnary.keys()

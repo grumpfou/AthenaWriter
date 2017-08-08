@@ -1,9 +1,9 @@
 import os
 import codecs
 
-from PyQt4 import QtGui,QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
-from DocPropertiesPreferences import *
+from .DocPropertiesPreferences import *
 
 class DPStatistics:
 	"""
@@ -133,14 +133,14 @@ class DPStatistics:
 		in the function stats.
 		"""
 		lines = DPStatistics.lines_in_book(text)
-		result=u""
+		result=""
 		for block in lines:
 			result+=' '*DPPreferences['NB_CHAR_PER_INDENT']
 			for line in block:
-				result+=u' '.join(line)+u'\n'
+				result+=' '.join(line)+'\n'
 		return result
 		
-class DPStatisticsDialog(QtGui.QDialog):
+class DPStatisticsDialog(QtWidgets.QDialog):
 	def __init__(self,textedit=False,text=False,*args,**kargs):
 		"""
 		This is a display dialog window to show the statistics of the text.
@@ -149,11 +149,11 @@ class DPStatisticsDialog(QtGui.QDialog):
 			contained in text.
 		- *args,**kargs: argument putted in the constructor of QDialog.
 		"""
-		QtGui.QDialog.__init__(self,*args,**kargs)
+		QtWidgets.QDialog.__init__(self,*args,**kargs)
 		assert textedit or text, "Either <textedit> or <text> should contain something"
 		
-		button_quit 		= QtGui.QPushButton('Quit')
-		button_refresh	 	= QtGui.QPushButton('Refresh')
+		button_quit 		= QtWidgets.QPushButton('Quit')
+		button_refresh	 	= QtWidgets.QPushButton('Refresh')
 		self.textedit=textedit
 		
 		self.info =   [	'nb_pages', 
@@ -171,7 +171,7 @@ class DPStatisticsDialog(QtGui.QDialog):
 					'Number of chars (with spaces)',
 					]
 				
-		self.table = QtGui.QTableWidget(len(self.info), 2, parent =self)
+		self.table = QtWidgets.QTableWidget(len(self.info), 2, parent =self)
 		self.table.verticalHeader().setVisible(False)
 		self.table.horizontalHeader().setVisible(False)
 		if not self.textedit:
@@ -180,13 +180,13 @@ class DPStatisticsDialog(QtGui.QDialog):
 			self.refresh()
 		
 		
-		main_layout=QtGui.QVBoxLayout()
+		main_layout=QtWidgets.QVBoxLayout()
 		main_layout.addWidget(self.table	)
 		main_layout.addWidget(button_quit	)
 		main_layout.addWidget(button_refresh)
 		
-		self.connect(button_quit	, QtCore.SIGNAL('clicked()'), self.accept)
-		self.connect(button_refresh , QtCore.SIGNAL('clicked()'), self.refresh)
+		button_quit	.clicked.connect( self.accept)
+		button_refresh .clicked.connect( self.refresh)
 		self.setLayout(main_layout)
 		
 		if not self.textedit:
@@ -196,7 +196,7 @@ class DPStatisticsDialog(QtGui.QDialog):
 		margins = self.contentsMargins()
 		w = self.table.horizontalHeader().length()
 		w += margins.left() + margins.right()
-		QtGui.QDialog.show(self)
+		QtWidgets.QDialog.show(self)
 		size = self.size()
 		size.setWidth (w)
 		self.resize(size)		
@@ -215,12 +215,12 @@ class DPStatisticsDialog(QtGui.QDialog):
 		if text:
 			res = DPStatistics.stats(text,self.info)
 		else :
-			res = DPStatistics.stats(unicode(self.textedit.toPlainText()),self.info)
+			res = DPStatistics.stats(str(self.textedit.toPlainText()),self.info)
 			
 		
 		for i,(self.title, val) in enumerate(zip(self.titles,res)):
-			self.table.setItem(i,0,QtGui.QTableWidgetItem(self.title))		
-			self.table.setItem(i,1,QtGui.QTableWidgetItem(str(val)))
+			self.table.setItem(i,0,QtWidgets.QTableWidgetItem(self.title))		
+			self.table.setItem(i,1,QtWidgets.QTableWidgetItem(str(val)))
 		self.table.resizeColumnsToContents()
 		
 		
@@ -235,7 +235,7 @@ if __name__ == '__main__':
 	file.close()
 	# print TSTextStatistics.shape_book(text).encode('ascii','replace')
 	
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	writerText = DSDialogManager(text=text,parent=None)
 	writerText.show()
 	if len(sys.argv)>1:

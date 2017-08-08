@@ -8,14 +8,14 @@ make a better variable change by looking the type
 
 """
 
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
 import xml.dom.minidom as XML
 from TextLanguages.TextLanguages import TLChoice
 from ConstantsManager.ConstantsManager import CMConstantsManager
 from TextLanguages.TextLanguages import TLChoice
 from TextLanguages.TextLanguagesPreferences import TLPreferences
-from DocPropertiesPreferences import DPPreferences
+from .DocPropertiesPreferences import DPPreferences
 
 # These functions are added to the XML.Node structure :
 def getFirstElementsByTagName(node,name):
@@ -31,14 +31,15 @@ def getFirstElementsByTagName(node,name):
 
 class DPMetaData(CMConstantsManager):
 	start_defaults 	= dict(
-		author = (unicode,DPPreferences['DEFAULT_AUTHOR']),
-		date = (unicode,''),
+		author = (str,DPPreferences['DEFAULT_AUTHOR']),
+		date = (str,''),
 		language = (TLChoice,TLPreferences['DFT_WRITING_LANGUAGE']),
 		version = (float,-1),
 		lastpos = (int,-1),
+		profile = (int,0),
 		)
 		
-	keys_protected = {'lastpos'}
+	keys_protected = {'lastpos','profile'}
 	
 	constrains = dict(
 		version = {'min':-1},
@@ -54,7 +55,7 @@ class DPMetaData(CMConstantsManager):
 		
 		element_dict = {}
 		res = DPMetaData()
-		for element,v in res.start_defaults.items():
+		for element,v in list(res.start_defaults.items()):
 			type_ = v[0]
 			node	= getFirstElementsByTagName(node_structure,element)
 			if node!=None and node.hasChildNodes():
@@ -62,8 +63,8 @@ class DPMetaData(CMConstantsManager):
 					information = type_(node.childNodes[0].toxml())
 					element_dict[element]=information
 				except ValueError:
-					print "Warning, metadata <"+element+\
-							"> do not fit the format"
+					print("Warning, metadata <"+element+\
+							"> do not fit the format")
 		res.update(element_dict,protected=False)
 		return res
 		
@@ -71,9 +72,9 @@ class DPMetaData(CMConstantsManager):
 		doc = XML.Document()
 		structure_node=doc.createElement('structure')
 		
-		for k in self.keys(skip_same_as_dft=True,protected=False):
+		for k in self.keys(skip_same_as_dft=False,protected=False):
 			node=doc.createElement(k)
-			text_node = doc.createTextNode(unicode(self[k]))
+			text_node = doc.createTextNode(str(self[k]))
 			node.appendChild(text_node)
 			structure_node.appendChild(node)
 
@@ -98,7 +99,7 @@ class DPMetaData(CMConstantsManager):
 		"""
 		indent='  '
 		uglyXml = xml_node.toxml()
-		prettyXml =u''
+		prettyXml =''
 		
 		i=0
 		for text_xlm_element in self.keys(protected=False) :
@@ -131,15 +132,15 @@ class DPMetaData(CMConstantsManager):
 if __name__ == '__main__':
 	import sys
 	import os
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	to_analyse="""<?xml version="1.0" ?>
 					<structure>
 					<author>Renovatio</author>
 					<title>Renovatio</title>
 					<version>1</version>
 					</structure>"""
-	print "type(to_analyse) : ", type(to_analyse)
+	print("type(to_analyse) : ", type(to_analyse))
 	mtdt = MDMetaData()
 	gui = MDMetaDataDialog(metadata=mtdt)
 	gui.show()
-	print "mtdt.toxml()  :  ",mtdt.toxml()
+	print("mtdt.toxml()  :  ",mtdt.toxml())

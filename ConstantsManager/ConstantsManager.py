@@ -25,7 +25,8 @@ class CMConstantsManager (dict):
 	constrains ={} #{key:{'min':foo1,'max':foo2}}
 	
 	def __init__(self,a=None):
-		self.update({k:v[1] for k,v in self.start_defaults.items() },
+		
+		self.update({k:v[1] for k,v in list(self.start_defaults.items()) },
 															protected=False)
 		if a.__class__ == self.__class__ or type(a)==dict:
 			self.update(a)
@@ -40,15 +41,23 @@ class CMConstantsManager (dict):
 		etc.
 		return the suclass, not the instance.
 		"""
+		for k,v in list(start_defaults.items()):
+			if type(k)!=str: raise TypeError('Every key of start_defaults should be a str') 
+		for k,v in list(start_defaults.items()):
+			if len(v)!=2 or type(v[0])!=type:
+				start_defaults = {k:(v.__class__,v) for k,v in list(start_defaults.items())}
+				break
 		d = {'start_defaults':start_defaults}
+		
 		if descriptions != None : d['descriptions']=descriptions
 		else: d['descriptions']={}
 		if keys_list != None : d['keys_list']=keys_list
-		else: d['keys_list']={}
+		else: d['keys_list']=[]
 		if keys_protected != None : d['keys_protected']=keys_protected
 		else: d['keys_protected']=set()
 		sb = type('special', (CMConstantsManager,), d)
 		return sb
+		
 	
 	def __setitem__(self,k,v,protected=True):
 		"""
@@ -59,23 +68,27 @@ class CMConstantsManager (dict):
 		elif protected and k in self.keys_protected:
 			raise KeyError('The key '+k+' is protected for '+\
 														str(self.__class__))
+		self.start_defaults[k][0](v)
 		vv = self.start_defaults[k][0](v)
-		if k in self.constrains.keys():
+		if k in list(self.constrains.keys()):
 			assert issubclass( self.start_defaults[k][0],int) or \
 								issubclass( self.start_defaults[k][0],float)
-			if self.constrains[k].has_key('min'):
+			if 'min' in self.constrains[k]:
 				if vv<self.constrains[k]['min']:
 					raise ValueError('The value for the key '+k+ 'should be '+\
-						'higher than '+ unicode(self.constrains[k]['min']))
-			if self.constrains[k].has_key('max'):
+						'higher than '+ str(self.constrains[k]['min']))
+			if 'max' in self.constrains[k]:
 				if vv>self.constrains[k]['max']:
 					raise ValueError('The value for the key '+k+ 'should be '+\
-						'lower than '+ unicode(self.constrains[k]['max']))
+						'lower than '+ str(self.constrains[k]['max']))
 		return dict.__setitem__(self,k,vv)
 		
 		
 	def update(self,a,protected=True,skip_key_error=False):
-		for k,v in a.items():
+		"""
+		protected : if True, will not able the modification of a protected key
+		"""	
+		for k,v in list(a.items()):
 			if skip_key_error:
 				try:
 					self.__setitem__(k,v,protected=protected)
@@ -113,7 +126,7 @@ class CMConstantsManager (dict):
 		res = self.__class__(dict.copy(self))
 		if replace_defaults:
 			res.start_defaults = res.start_defaults.copy()
-			for k,v in 	res.start_defaults.items():
+			for k,v in 	list(res.start_defaults.items()):
 				res.start_defaults[k] = (v[0],self[k])
 		return res
 	
@@ -230,14 +243,14 @@ class CMConstantsManager (dict):
 	def str_to_dict(value,type_to_perform):
 		"""if we should create a dictionary"""
 		res = {}
-		type_to_perform_key		= type_to_perform.keys()[0]
-		type_to_perform_value	= type_to_perform.values()[0]
+		type_to_perform_key		= list(type_to_perform.keys())[0]
+		type_to_perform_value	= list(type_to_perform.values())[0]
 		
 		if type(value)==dict:
 			return {
 					CMConstantsAbstarct.set_type(type_to_perform_key,key) : \
 					CMConstantsAbstarct.set_type(type_to_perform_value,val) \
-					for key, val in value.items()
+					for key, val in list(value.items())
 					}
 		elif type(value)!=list:
 			value=[value]
@@ -254,7 +267,7 @@ class CMConstantsManager (dict):
 	@staticmethod
 	def str_to_bool(value):
 		""" if we should create a boolean"""
-		if type(value)==str or type(value)==unicode:
+		if type(value)==str or type(value)==str:
 			if value.lower()=='true':
 				return True
 			elif value.lower()=='false' :

@@ -1,6 +1,6 @@
-from PyQt4 import QtGui,QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 
-from TextEditPreferences 	import *
+from .TextEditPreferences 	import *
 from CommonObjects.CommonObjectsWord		import COWordTools
 
 
@@ -12,61 +12,61 @@ def isChecked_WW(self):
 		return True
 	else :
 		return False
-QtGui.QCheckBox.isChecked=isChecked_WW
+QtWidgets.QCheckBox.isChecked=isChecked_WW
 
-class TEFindDialog(QtGui.QDialog):
+class TEFindDialog(QtWidgets.QDialog):
 	def __init__(self,textedit,*args,**kargs):
 		"""
 		This function will display a window to find for partern in the textedit file.
 		textedit : the textedit instance in which we have to find
 		"""
-		QtGui.QDialog.__init__(self,parent=textedit,*args,**kargs)
+		QtWidgets.QDialog.__init__(self,parent=textedit,*args,**kargs)
 		self.textedit = textedit
 		
-		self.find_line		= QtGui.QLineEdit ()
-		self.replace_line	= QtGui.QLineEdit ()
+		self.find_line		= QtWidgets.QLineEdit ()
+		self.replace_line	= QtWidgets.QLineEdit ()
 		
 		# Options check boxes:
-		self.casse_checkbox = QtGui.QCheckBox()
-		self.regexp_checkbox = QtGui.QCheckBox()
-		self.entireword_checkbox = QtGui.QCheckBox()
+		self.casse_checkbox = QtWidgets.QCheckBox()
+		self.regexp_checkbox = QtWidgets.QCheckBox()
+		self.entireword_checkbox = QtWidgets.QCheckBox()
 		
-		find_button = QtGui.QPushButton("&Find")
-		replace_button = QtGui.QPushButton("&Replace")
-		replaceall_button = QtGui.QPushButton("&Replace All")
+		find_button = QtWidgets.QPushButton("&Find")
+		replace_button = QtWidgets.QPushButton("&Replace")
+		replaceall_button = QtWidgets.QPushButton("&Replace All")
 		# find_button.setIcon(QtGui.QIcon(os.path.join(abs_path_icon,"find.png")))
 		
 		# The table were the results are displayed
-		self.tableResults = QtGui.QTableWidget(0,1)
+		self.tableResults = QtWidgets.QTableWidget(0,1)
 		# self.tableResults.setHorizontalHeaderLabels([u"Line",u"Context"])
-		self.tableResults.setSelectionBehavior (QtGui.QAbstractItemView.SelectRows)
+		self.tableResults.setSelectionBehavior (QtWidgets.QAbstractItemView.SelectRows)
 		self.tableResults.horizontalHeader ().setVisible(False)
 		self.tableResults.horizontalHeader ().setStretchLastSection(True)
 		
-		main_layout=QtGui.QFormLayout()
+		main_layout=QtWidgets.QFormLayout()
 		main_layout.addRow(self.find_line,find_button)
 		main_layout.addRow(self.replace_line ,replace_button)
 		main_layout.addRow(None ,replaceall_button)
-		main_layout.addRow(u"Casse sensitive",self.casse_checkbox)
-		main_layout.addRow(u"Regular expression",self.regexp_checkbox)
-		main_layout.addRow(u"Entire word",self.entireword_checkbox)
+		main_layout.addRow("Casse sensitive",self.casse_checkbox)
+		main_layout.addRow("Regular expression",self.regexp_checkbox)
+		main_layout.addRow("Entire word",self.entireword_checkbox)
 		main_layout.addRow(self.tableResults)
 		
 		self. setLayout ( main_layout )
 
 		# Connections:
-		self.connect(find_button, QtCore.SIGNAL("clicked()"), self.SLOT_find)
-		self.connect(self.find_line, QtCore.SIGNAL('returnPressed  ()'), self.SLOT_find)
-		self.connect(replace_button, QtCore.SIGNAL("clicked()"), self.SLOT_replace)
-		self.connect(replaceall_button, QtCore.SIGNAL("clicked()"), self.SLOT_replaceall)
-		self.connect(self.tableResults,QtCore.SIGNAL('itemActivated   ( QTableWidgetItem * )'), self.SLOT_activated)
+		find_button.clicked.connect( self.SLOT_find)
+		self.find_line.returnPressed  .connect( self.SLOT_find)
+		replace_button.clicked.connect( self.SLOT_replace)
+		replaceall_button.clicked.connect( self.SLOT_replaceall)
+		self.tableResults.itemActivated   .connect( self.SLOT_activated)
 		
 		self.results_list=[]
 		
 	def SLOT_find(self):
 		
-		pattern=unicode(self.find_line.text())
-		if pattern==u"": return False
+		pattern=str(self.find_line.text())
+		if pattern=="": return False
 		
 		if self.regexp_checkbox.isChecked() :
 			pattern = QtCore.QRegExp(pattern)
@@ -128,9 +128,9 @@ class TEFindDialog(QtGui.QDialog):
 			item = self.tableResults.currentItem()
 			cursor = self.results_list[self.tableResults.row(item)][0]
 			if cursor.hasSelection():
-				next_text = unicode(self.replace_line.text())
+				next_text = str(self.replace_line.text())
 				if not self.casse_checkbox.isChecked():
-					previous_text = unicode(cursor.selection().toPlainText())
+					previous_text = str(cursor.selection().toPlainText())
 					id = COWordTools.whatID(previous_text)
 					next_text = COWordTools.toID(next_text,id)				
 				cursor.insertText(next_text)
@@ -141,8 +141,8 @@ class TEFindDialog(QtGui.QDialog):
 	def SLOT_replaceall(self):
 		self.SLOT_find()
 		if self.tableResults.rowCount()==0:
-			msg= 'No occurance of "'+unicode(self.find_line.text())+'" found.'
-			dia = QtGui.QMessageBox.information ( 
+			msg= 'No occurance of "'+str(self.find_line.text())+'" found.'
+			dia = QtWidgets.QMessageBox.information ( 
 							self, 
 							"Exportation" , 
 							msg)
@@ -155,9 +155,9 @@ class TEFindDialog(QtGui.QDialog):
 		for i in range(rcount):
 			self.SLOT_replace()
 	
-		msg= '"'+unicode(self.find_line.text())+'" has been replaced '+\
+		msg= '"'+str(self.find_line.text())+'" has been replaced '+\
 				str(rcount)+' times in the document.'
-		dia = QtGui.QMessageBox.information ( 
+		dia = QtWidgets.QMessageBox.information ( 
 						self, 
 						"Exportation" , 
 						msg)
@@ -171,7 +171,7 @@ class TEFindDialog(QtGui.QDialog):
 		self.tableResults.clearContents  ()	
 		self.tableResults.setRowCount(len(self.results_list))
 		for i,res in enumerate(self.results_list):
-			item_context = QtGui.QTableWidgetItem (unicode(u"..."+res[1]+u"... "))
+			item_context = QtWidgets.QTableWidgetItem (str("..."+res[1]+"... "))
 			item_context .setFlags(QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable)
 			self.tableResults.setItem(i,0,item_context )
 		self.tableResults.resizeColumnsToContents()
@@ -197,16 +197,16 @@ class TEFindDialog(QtGui.QDialog):
 		self.activate_next(count=-1)
 	
 if __name__ == '__main__':
-	from TextEdit import *
+	from .TextEdit import *
 	
-	app = QtGui.QApplication(sys.argv)
+	app = QtWidgets.QApplication(sys.argv)
 	
 	textedit = TETextEdit(parent=None)
 	find  = TEFindDialog(textedit=textedit)
 	
 	# textedit.connect(textedit,QtCore.SIGNAL('typographyModification ()'), stupidity)
 	# textedit.emit_typographyModification()
-	# QtCore.QObject.connect(textedit,QtCore.SIGNAL('typographyModification ()'), stupidity)
+	# textedit.typographyModification .connect( stupidity)
 	# textedit.typographyModification.connect(stupidity)
 	textedit.show()
 	find.show()

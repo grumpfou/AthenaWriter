@@ -15,8 +15,8 @@ class TSStyleAttr (COContrainedDict):
 	the styles"""
 	list_keys = ["char_style","font_size","font_name","alignment","font_color"]
 	def __init__(self,a=None):
-		if type(a)==list or type(a)==unicode:
-			a = CMConstantsManager.str_to_dict(a,{unicode:unicode})
+		if type(a)==list or type(a)==str:
+			a = CMConstantsManager.str_to_dict(a,{str:str})
 		COContrainedDict.__init__(self,a)
 		
 		
@@ -46,8 +46,14 @@ class TSPreferencesAbstarct (CMConstantsManager):
 			TSStyleAttr({	"font_color":"red",
 							"char_style":"bold",
 							"font_size":"10",
-							"alignment":"center"})),					
-		SEPARATOR_MOTIF	= (unicode,"***"),
+							"alignment":"center"})),	
+		COLOR1_STYLE 	= (TSStyleAttr,
+			TSStyleAttr({"font_color":"blue"})),				
+		COLOR2_STYLE 	= (TSStyleAttr,
+			TSStyleAttr({"font_color":"red"})),				
+		COLOR3_STYLE 	= (TSStyleAttr,
+			TSStyleAttr({"font_color":"green"})),				
+		SEPARATOR_MOTIF	= (str,"***"),
 				
 		)
 
@@ -64,6 +70,9 @@ class TSPreferencesAbstarct (CMConstantsManager):
 		SEPARATOR_STYLE	= "The style of the separator (for the different"+\
 			"options see TEFormatClass description)",
 		IMAGE_STYLE		= "The style of the image block",
+		COLOR1_STYLE 	= 'The style of the color1',
+		COLOR2_STYLE 	= 'The style of the color2',
+		COLOR3_STYLE 	= 'The style of the color3',
 		SEPARATOR_MOTIF	= "The string that will represent the separators",
 						
 				
@@ -82,7 +91,7 @@ class TSError (BaseException):
 		"""
 		self.raison	= raison
 		self.position	= position
-		print self
+		print(self)
 	def __str__(self):
 		res=""
 		if self.position:

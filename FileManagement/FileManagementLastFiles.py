@@ -1,5 +1,5 @@
-from FileManagement import FMFileManagement
-from FileManagementPreferences import *
+from .FileManagement import FMFileManagement
+from .FileManagementPreferences import *
 
 import os
 
@@ -7,7 +7,7 @@ class FMLastFilesFile:
 	
 	@staticmethod
 	def open(filepath=None):
-		print "TODO : depricated !!!!"
+		print("TODO : depricated !!!!")
 		if filepath==None:
 			filepath = os.path.expanduser(
 									FMPreferences['LAST_FILES_FILE_PATH'])

@@ -9,24 +9,24 @@ file_dir = os.path.realpath(os.path.dirname(__file__))
 p = os.path.join(file_dir,'../')
 sys.path.append(p)
 ###############################################################################
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 from ConstantsManager.ConstantsManager import CMConstantsManager
 
 
 class TEPreferencesAbstarct (CMConstantsManager):
 	start_defaults 	= dict(
-	
+
 		RECHECK_TEXT_OPEN 	 = (bool,False),
 		DO_TYPOGRAPHY		 = (bool,True),
-		AUTO_CORRECTION      = (bool,True), 
+		AUTO_CORRECTION      = (bool,True),
 		LIM_RECURSIV_UNDO    = (int	,100),
 		FIND_LEN_CONTEXT 	 = (int	,10),
-		SPELL_CHECK 		 = (bool,True),	
+		SPELL_CHECK 		 = (bool,True),
 		TEXT_INDENT		 	 = (int,50),
 		TEXT_LINE_HEIGHT	 = (int,100),
 		TEXT_MARGIN		 	 = (float,50),
 			)
-	descriptions 	= dict(		
+	descriptions 	= dict(
 		RECHECK_TEXT_OPEN 	 = "Will recheck the typography of the file "+\
 			"when opening",
 		DO_TYPOGRAPHY		 = "Will perform the typography checking while "+\
@@ -45,15 +45,15 @@ class TEPreferencesAbstarct (CMConstantsManager):
 						)
 TEPreferences=TEPreferencesAbstarct()
 
-	
+
 def yieldBlockInSelection_WW(self,direction=1):
 	"""
-	- direction : if positive, then will go forward otherwise, it will go 
+	- direction : if positive, then will go forward otherwise, it will go
 			backward.
 	"""
 	pos1=self.selectionStart()
 	pos2=self.selectionEnd ()
-	
+
 	startCursor=QtGui.QTextCursor(self)
 	endCursor=QtGui.QTextCursor(self)
 	startCursor.setPosition(pos1)
@@ -74,7 +74,7 @@ def yieldBlockInSelection_WW(self,direction=1):
 		yield bl
 QtGui.QTextCursor.yieldBlockInSelection=yieldBlockInSelection_WW
 
-	
+
 class TextEditFormatError (BaseException):
 	def __init__(self,raison,position=False):
 		"""
@@ -82,12 +82,20 @@ class TextEditFormatError (BaseException):
 		"""
 		self.raison	= raison
 		self.position	= position
-		print self
+		print(self)
 	def __str__(self):
 		res=""
 		if self.position:
 			res+="In position "+str(self.position)+": "
-		
+
 		res+=self.raison
-		
+
 		return res.encode('ascii','replace')
+
+TEHasEnchant = True
+
+try :
+	import enchant
+except ImportError as e:
+	print("Module Enchant not found !!!")
+	TEHasEnchant = False

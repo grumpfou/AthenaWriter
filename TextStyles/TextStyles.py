@@ -1,8 +1,8 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import copy
 
-from TextStylesPreferences import TSPreferences
-from TextStylesList import *
+from .TextStylesPreferences import TSPreferences
+from .TextStylesList import *
 
 
 
@@ -75,7 +75,7 @@ class TSClassManager:
 			newText = newText[:pos+gap]+entry+newText[pos+gap:]
 			gap+=len(entry)
 		
-		newText=unicode(newText)
+		newText=str(newText)
 		# We remove the TSPreferences['SEPARATOR_MOTIF']
 		for style in self.listBlockStyle: 
 			if isinstance(style,TSStyleClassSeparator):
@@ -110,8 +110,8 @@ class TSClassManager:
 			
 			qtBlockFormat = cursor.blockFormat()
 			userId = qtBlockFormat.property(QtGui.QTextFormat.UserProperty)
-			userId = userId.toPyObject()
-			if userId!=None and self.dictBlockStyle.has_key(userId):
+			# userId = userId.toPyObject()
+			if userId!=None and userId in self.dictBlockStyle:
 				# if the style exists
 				style = self.dictBlockStyle[userId]
 				style_block_structure.append(
@@ -126,9 +126,9 @@ class TSClassManager:
 				cursor.movePosition(QtGui.QTextCursor.Right)
 				qtCharFormat = cursor.charFormat()
 				userId = qtCharFormat.property(QtGui.QTextFormat.UserProperty)
-				userId = userId.toPyObject()
+				# userId = userId.toPyObject()
 				
-				if self.dictCharStyle.has_key(userId):
+				if userId in self.dictCharStyle:
 				# 	style = self.dictCharStyle[userId]
 				# 	# if cursor.atBlockStart()
 				# 		# pos = cursor.position()
@@ -173,7 +173,7 @@ class TSClassManager:
 		d = {}
 		for style,start,end in style_char_structure:
 			d[start] = d.get(start,'')+'<'+style.xmlMark+'>' 
-			assert not d.has_key(end)
+			assert end not in d
 			d[end] = '</'+style.xmlMark+'>' 
 		for style,start,end in style_block_structure :
 			# if isinstance(style,TSFormatClassSeparator):
@@ -181,7 +181,7 @@ class TSClassManager:
 			# else : 
 			d[start] = '<'+style.xmlMark+'>' + d.get(start,'') 
 			d[end] =  d.get(end,'') + '</'+style.xmlMark+'>' 
-		list_keys = d.keys()
+		list_keys = list(d.keys())
 		list_keys.sort()
 		place_to_mark = [(i,d[i]) for i in list_keys]
 		return place_to_mark
@@ -222,7 +222,7 @@ class TSClassManager:
 			
 			qtCharFormat_id = getCharId(cursor1)
 			qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)				
-			if qtCharFormat_id in self.dictCharStyle.keys():
+			if qtCharFormat_id in list(self.dictCharStyle.keys()):
 				style = self.dictCharStyle[qtCharFormat_id]
 				style.setStyleToQtFormating(qtCharFormat,cursor1.document())
 				
@@ -249,7 +249,7 @@ class TSClassManager:
 		Will inverse the style on the cursor's selection according to the syle
 		corresponding to style_id
 		"""
-		if style_id in self.dictBlockStyle.keys():
+		if style_id in list(self.dictBlockStyle.keys()):
 			# cursor1 = QtGui.QTextCursor(cursor)
 			style = self.dictBlockStyle[style_id]
 			res = style.inverseId(cursor)
@@ -259,7 +259,7 @@ class TSClassManager:
 				self.recheckCharStyle(cursor1)
 			
 				
-		elif style_id in self.dictCharStyle.keys():
+		elif style_id in list(self.dictCharStyle.keys()):
 			style = self.dictCharStyle[style_id]
 			res = style.inverseId(cursor)
 			if cursor.hasSelection():
@@ -341,7 +341,7 @@ class TSClassManager:
 		
 		if cursor != None:
 			bl_id = getBlockId(cursor)
-			if bl_id in self.dictBlockStyle.keys():
+			if bl_id in list(self.dictBlockStyle.keys()):
 				style_bl = self.dictBlockStyle[bl_id]
 				style_bl.setStyleToQtFormating([qtBlockFormat,qtCharFormat],
 																cursor.document())
@@ -359,13 +359,13 @@ class TSClassManager:
 		for block,cursor1 in yieldBlock(cursor):
 			qtBlockFormat_id = getBlockId(cursor1)
 	
-			if qtBlockFormat_id in self.dictBlockStyle.keys():
+			if qtBlockFormat_id in list(self.dictBlockStyle.keys()):
 				self.inverseStyle(cursor1,qtBlockFormat_id)
 				res2 = True
 		
 		## Let's remove then all the styles in the selection
 		if cursor.hasSelection():
-			print "coucou"
+			print("coucou")
 			cursor1 = QtGui.QTextCursor(cursor.document())
 			cursor1.setPosition(cursor.selectionStart())
 			cursor1.movePosition(QtGui.QTextCursor.Right)
@@ -375,8 +375,8 @@ class TSClassManager:
 				new_id = getCharId(cursor1)
 				if new_id!=last_id:
 					if last_id!=None:
-						print "cursor1.position() : ",cursor1.position()
-						print "st_pos : ",st_pos
+						print("cursor1.position() : ",cursor1.position())
+						print("st_pos : ",st_pos)
 						cursor2 = QtGui.QTextCursor(cursor1.document())
 						cursor2.setPosition(st_pos)
 						cursor2.setPosition(cursor1.position()-1,
@@ -409,5 +409,5 @@ TSManager = TSClassManager(
 	listBlockStyle = [	TSStyleSeparator,TSStyleHeader1,
 						TSStyleHeader2,TSStyleHeader3,TSStyleCode,
 						TSStylePhantom,TSStyleImage],
-	listCharStyle = [TSStyleEmphasize])
+	listCharStyle = [TSStyleEmphasize,TSStyleStyleColor1,TSStyleStyleColor2,TSStyleStyleColor3])
 	

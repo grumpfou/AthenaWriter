@@ -9,9 +9,9 @@ from ConstantsManager.ConstantsManager import CMConstantsManager
 
 class CLPreferencesAbstarct (CMConstantsManager):
 	start_defaults=  dict(	
-		GLOBAL_DIR  				= (unicode,'./config/'),
-		USER_DIR	 				= (unicode,'~/.athena/'),
-		LOCAL_DIR	 				= (unicode,'.'),
+		GLOBAL_DIR  				= (str,'./config/'),
+		USER_DIR	 				= (str,'~/.athena/'),
+		LOCAL_DIR	 				= (str,'.'),
 		LAST_FILE_LENGTH			= (int,10),
 		LAST_FILE_SKIP_NON_EXISTING	= (bool	,False),
 				)

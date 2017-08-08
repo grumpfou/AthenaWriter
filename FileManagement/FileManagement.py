@@ -1,10 +1,10 @@
-from PyQt4 import QtGui, QtCore
+from PyQt5 import QtGui, QtCore, QtWidgets
 import codecs
 import os.path
 import math
 
 class FMFileManagement:
-	
+
 	@staticmethod
 	def save(text,filepath,encoding='utf-8',mode='w'):
 		""" Function that will save the information contained in text into
@@ -18,10 +18,10 @@ class FMFileManagement:
 			fid.write(text)
 		finally:
 			fid.close()
-			
+
 		return True
-	
-		
+
+
 	@staticmethod
 	def save_gui(text,dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to save the file.
@@ -32,15 +32,15 @@ class FMFileManagement:
 		- extension: the extension to consider
 		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
-		dialog= QtGui.QFileDialog(parent)
+		dialog= QtWidgets.QFileDialog(parent)
 		filepath = dialog.getSaveFileName(parent,"Select the file to save",
-										dft_opening_saving_site,filter=filter)
+										dft_opening_saving_site,filter=filter)[0]
 		if filepath:
-			filepath=unicode(filepath)
+			filepath=str(filepath)
 			FMFileManagement.save(text,filepath,*args,**kargs)
 			return filepath
 		return False
-		
+
 	@staticmethod
 	def save_gui_filepath(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to get a filepath.
@@ -50,25 +50,25 @@ class FMFileManagement:
 		- extension: the extension to consider
 		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
-		dialog= QtGui.QFileDialog(parent)
+		dialog= QtWidgets.QFileDialog(parent)
 		filepath = dialog.getSaveFileName(parent,"Select the file to save",
-									dft_opening_saving_site,filter=filter)
+									dft_opening_saving_site,filter=filter)[0]
 		if filepath:
 			return filepath
 		return False
-	
+
 	@staticmethod
-	def open(filepath,with_codecs=True,output='read',mode='r',encoding='utf-8'):
+	def open(filepath,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
 		"""
 		- filepath : the path of the file to open
 		- with_codecs : if true, will give a utf-8 string
 		- output : if output=='read' --> .read()
 		           if output=='readlines' (or other) --> .readlines()
-		- mode : the mode option in codecs.open function			
-		- encoding: the encoding option in codecs.open function 
+		- mode : the mode option in codecs.open function
+		- encoding: the encoding option in codecs.open function
 					(only if with_codecs is True)
 		"""
-		filepath = os.path.expanduser(filepath)		
+		filepath = os.path.expanduser(filepath)
 		if with_codecs:
 			fid = codecs.open(filepath, encoding=encoding, mode=mode)
 		else :
@@ -78,11 +78,11 @@ class FMFileManagement:
 				res = fid.read()
 			else:
 				res = fid.readlines()
-				
+
 		finally:
 			fid.close()
 		return res
-		
+
 	@staticmethod
 	def open_gui(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to open a file.
@@ -91,18 +91,18 @@ class FMFileManagement:
 		- parent: the parent widget (for the dialog window to be modal)
 		Return	(filepath, text ):
 		- filepath : the path to the file that is opened
-		- text : the unicode string contained in the file		
-		"""		
+		- text : the unicode string contained in the file
+		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
-		dialog= QtGui.QFileDialog(parent)
+		dialog= QtWidgets.QFileDialog(parent)
 		filepath = dialog.getOpenFileName(parent,"Select the file to open",
-										dft_opening_saving_site,filter=filter)
+										dft_opening_saving_site,filter=filter)[0]
 		if filepath:
-			filepath=unicode(filepath)
+			filepath=str(filepath)
 			res = FMFileManagement.open(filepath,*args,**kargs)
 			return filepath,res
 		return False
-		
+
 	@staticmethod
 	def open_gui_filepath(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to get a filepath to open.
@@ -111,21 +111,22 @@ class FMFileManagement:
 		- parent: the parent widget (for the dialog window to be modal)
 		Return	filepath:
 		- filepath : the path to the file that is opened
-		"""		
+		"""
 		if dft_opening_saving_site==None: dft_opening_saving_site='.'
-		dialog= QtGui.QFileDialog(parent)
-		filepath = dialog.	getOpenFileName(parent,"Select the file to open",
-										dft_opening_saving_site,filter=filter)
+		dialog= QtWidgets.QFileDialog(parent)
+		filepath = dialog.getOpenFileName(parent,"Select the file to open",
+										dft_opening_saving_site,filter=filter)[0]
+
 		if filepath:
-			filepath=unicode(filepath)
+			filepath=str(filepath)
 			return filepath
 		return False
-		
+
 	@staticmethod
 	def exists(filepath):
 		"""Look if the file exists, and if do propose to rename it.
 		Return the new filepath (False is canceled)"""
-		
+
 		if not os.path.exists(filepath):
 			return filepath
 
@@ -138,16 +139,16 @@ class FMFileManagement:
 			filepath = f+str(i).zfill(int(math.log10(max_ite)))+'.'+ext
 		tmp, ffs = os.path.split(filepath_start)
 		tmp, ff  = os.path.split(filepath)
-		
-		r = QtGui.QMessageBox.question(self, "Rename files ?", 
+
+		r = QtWidgets.QMessageBox.question(self, "Rename files ?",
 					"The file "+ ffs+" already exists. Change its name in "+\
 					ff+"?",
-					QtGui.QMessageBox.Yes|QtGui.QMessageBox.No|\
-					QtGui.QMessageBox.Cancel)
-		
-		if r== QtGui.QMessageBox.Yes:
+					QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No|\
+					QtWidgets.QMessageBox.Cancel)
+
+		if r== QtWidgets.QMessageBox.Yes:
 			return filepath
-		elif r== QtGui.QMessageBox.No:
+		elif r== QtWidgets.QMessageBox.No:
 			return filepath_start
 		else:
 			return False

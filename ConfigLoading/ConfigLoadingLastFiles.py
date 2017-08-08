@@ -1,4 +1,4 @@
-from ConfigLoadingPreferences import CLPreferences
+from .ConfigLoadingPreferences import CLPreferences
 
 import os
 
@@ -21,7 +21,7 @@ class CLLastFiles:
 			self.list_files=self.list_files[:CLPreferences['LAST_FILE_LENGTH']]
 		
 	def check_existing(self):
-		for i in (range(len(self.list_files)))[::-1]:
+		for i in (list(range(len(self.list_files))))[::-1]:
 			if not os.path.exists(self.list_files[i]):
 				self.list_files.pop(i)
 	

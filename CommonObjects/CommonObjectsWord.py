@@ -38,9 +38,9 @@ class COWordTools:
 		# return a correspondant version of the word the corresponding ID
 		# Deals with composed word, for instance:
 		# COWordTools.toID("jean-louis",COWordTools.IND_FIRST_CAP) gives "Jean-Louis"
-		word=unicode(word)
+		word=str(word)
 		if id==COWordTools.IND_FIRST_CAP:
-			word=string.capwords(word,sep=u'-')
+			word=string.capwords(word,sep='-')
 
 				
 		elif id==COWordTools.IND_ALL_CAP:
@@ -62,22 +62,22 @@ class COWordDico (dict):
 	def update(self,d):
 		if not isinstance(d,dict):
 			d=dict(d)
-		for k,v in d.items():
+		for k,v in list(d.items()):
 			self[k] = v
 	
 	def __setitem__(self,k,v,id = None):
-		k = unicode(k)
-		v = unicode(v)
+		k = str(k)
+		v = str(v)
 		self.addWord(k,v)
 		
 	def addWord(self,k,v,id=None):
-		v=unicode(v).lower()
+		v=str(v).lower()
 		if id==None:
 			id = COWordTools.whatID(k)
 			if id == COWordTools.IND_LOWER:
 				id=COWordTools.IND_ALL
 		
-		k = unicode(k).lower()
+		k = str(k).lower()
 		
 		dict.__setitem__(self,k,(v,id))
 	
@@ -88,7 +88,7 @@ class COWordDico (dict):
 			return d
 			
 	def __getitem__(self,word):
-		word=unicode(word)
+		word=str(word)
 		word_tmp=word.lower()	
 		res = dict.__getitem__(self,word_tmp)
 	
@@ -99,7 +99,7 @@ class COWordDico (dict):
 			raise KeyError(word)
 	
 	def input_from_dict(self,data_dict):
-		for key,value in data_dict.items():
+		for key,value in list(data_dict.items()):
 			self[key]=value
 			
 	def has_key(self,k):
@@ -332,16 +332,16 @@ class COWordDico (dict):
 if __name__=='__main__':
 	d = COWordDico({'Toto':'totoro','titi':'Titiri'})
 	
-	print 'Tests Dict'
-	print "1",d["Toto"]=='Totoro'
+	print('Tests Dict')
+	print("1",d["Toto"]=='Totoro')
 	# print 'd["Toto"] : ',d["Toto"]
-	print "2",d.has_key("toto")==False
-	print "3",d.has_key("Toto")==True
-	print "4",d.has_key("titi")==True
-	print "5",d.has_key("Titi")==True
-	print "6",d["Titi"]=='Titiri'
-	print "7",d["titi"]=='titiri'
-	print "8",d["TITI"]=='TITIRI'
+	print("2",("toto" in d)==False)
+	print("3",("Toto" in d)==True)
+	print("4",("titi" in d)==True)
+	print("5",("Titi" in d)==True)
+	print("6",d["Titi"]=='Titiri')
+	print("7",d["titi"]=='titiri')
+	print("8",d["TITI"]=='TITIRI')
 	
 	
 	# s = COWordSet(['toto','tata','Titi'])

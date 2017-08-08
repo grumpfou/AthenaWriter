@@ -9,8 +9,8 @@ from ConstantsManager.ConstantsManager import CMConstantsManager
 
 class FMPreferencesAbstarct (CMConstantsManager):
 	start_defaults 	= dict(
-		AUROCORRECTION_FILE_PATH = (unicode ,"~/.athena/autocorrection.txt"),
-		LAST_FILES_FILE_PATH = (unicode	,"~/.athena/last_files.txt"),
+		AUROCORRECTION_FILE_PATH = (str ,"~/.athena/autocorrection.txt"),
+		LAST_FILES_FILE_PATH = (str	,"~/.athena/last_files.txt"),
 		MAX_FILES_NUMBER	 = (int,1000,),
 			
 			)
