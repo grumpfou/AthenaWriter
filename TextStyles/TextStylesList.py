@@ -4,12 +4,20 @@ from .TextStylesPreferences import TSPreferences
 # def problem with Ctrl+K
 
 
+TSFontSizeAdjusmentDict={
+	 "small" : 0 ,
+	 "medium" : 1 ,
+	 "large" : 2 ,
+	 "x-large" : 3 ,
+	 "xx-large" : 4 ,
+	}
+
 def getCharId(cursor):
 	id = cursor.charFormat().property(QtGui.QTextFormat.UserProperty)
 	# if id != None:
 	# id = id.toPyObject()()
 	return id
-	
+
 def getBlockId(cursor):
 	if isinstance(cursor,QtGui.QTextBlock):
 		cursor = QtGui.QTextCursor(cursor)
@@ -24,19 +32,18 @@ class TSStyleClassAbstract:
 	def __init__(self,constant=None,xmlMark=None,userPropertyId=None,name=None,
 		shortcut=None,exportDict=None):
 		"""
-		- constant_name : the name of the constant style to consider 
+		- constant_name : the name of the constant style to consider
 			It will be a dictionary with the following key-value :
 			- char_style : 'italic' or 'bold' or 'underline'
-			- char_color : 'black' or 'red' or 'blue' or all other colours of 
-				Qt
 			- font_name : 'times' or 'courrier' or all other font name
-			- font_size : "10" or all other string that represent an int
+			- font_size : relative size of the font should be in
+							{"small", "medium", "large", "x-large", "xx-large"}
 			- font_color : a color in Qt.GlobalColor
 		- xmlMark : the name to put into the xml sign
 		- userPropertyId : the number that will represent the style
 		- name : the name of the format, if by default ""
 		- shortcut: the shortcut to apply to set the style
-		- exportDict: the dictionnary to apply to make the exportation under 
+		- exportDict: the dictionnary to apply to make the exportation under
 			the form: {"html":("<h1>","</h1>"),"txt":("==","==")}
 		"""
 		if name==None:
@@ -50,47 +57,53 @@ class TSStyleClassAbstract:
 		if exportDict==None: self.exportDict={}
 		else: self.exportDict     = exportDict
 
-	
+
 	def inverseId(self,cursor):
-		"""This function will reverse the userPropertyId"""
+		"""This function will reverse the userPropertyId
+		Return res,cursor1:
+			- res: True if we assigned the style, False if it has been removed.
+			- cursor1: where the canges applied
+		"""
 		raise NotImplementedError
-	
+
 	def setStyleToQtFormating(self,qtFormating,document):
-		"""This will apply the style to the corresponding qtFormat"""
+		"""This will apply the style to the corresponding qtFormat
+		- qtCharFormat: either a QTextCharFormat or a QTextBlockFormat
+		"""
 		raise NotImplementedError
-		
+
 	def setIdFromXml(self,document):
-		""" Will replace the XML elements of the text in the QTextEdit in the 
+		""" Will replace the XML elements of the text in the QTextEdit in the
 		good userPropertyId """
 		cursor_begin=QtGui.QTextCursor(document)
 		cursor_begin.setPosition(0)
-		
+
 		# FIRST : we set the good format to what is inside the XML elements
 		# Regular expression that will find the corresponding XML element :
 		regexp_begin = QtCore.QRegExp('<'+self.xmlMark+'>')
 		regexp_end   = QtCore.QRegExp('</'+self.xmlMark+'>')
 
 		cursor_begin=document.find(regexp_begin,cursor_begin)
-		while not cursor_begin.isNull(): 
+		while not cursor_begin.isNull():
 			cursor_end = document.find(regexp_end,cursor_begin)
 			if cursor_end.isNull():
 				raise TSError("The open tag is not closed",cursor_begin.position())
 			cursor_begin.setPosition(cursor_end.position(),QtGui.QTextCursor.KeepAnchor)
-			res = self.inverseId(cursor_begin)
+			res,cursor = self.inverseId(cursor_begin)
 			assert res
 			cursor_begin=document.find(regexp_begin,cursor_begin)
 		# SECOND : we remove all the XML elements
 		cursor=QtGui.QTextCursor(document)
 		cursor.setPosition(0)
-		while not cursor.isNull(): 
+		while not cursor.isNull():
 			cursor=document.find('<'+self.xmlMark+'>',cursor)
 			cursor.deleteChar ()
 			cursor=document.find('</'+self.xmlMark+'>',cursor)
-			cursor.deleteChar ()	
+			cursor.deleteChar ()
 
 class TSStyleClassChar (TSStyleClassAbstract):
-	"""A class that should be instanced with the corresponding glyphs in 
-	order to have the good format.	
+	"""A class that should be instanced with the corresponding glyphs in
+	order to have the good format.
 	"""
 	def inverseId(self,cursor):
 		"""Set or unset th id to the selection under the cursor.
@@ -105,11 +118,15 @@ class TSStyleClassChar (TSStyleClassAbstract):
 														self.userPropertyId)
 			res = True
 		cursor.setCharFormat(qtFormating)
-		return res
+		return res,cursor
 		# def setStyleToQtFormating(self,qtFormating,document):
 		# TSStyleClassChar.setStyleToQtFormatingStatic(qtFormating,
 														# self.constant,document)
 	def setStyleToQtFormating(self,qtFormating,document):
+		"""
+		- qtCharFormat: either a QTextCharFormat or a QTextBlockFormat
+		"""
+
 		for k,v in list(self.constant.items()):
 			if k == 'char_style':
 				if v == 'italic':
@@ -120,11 +137,11 @@ class TSStyleClassChar (TSStyleClassAbstract):
 					qtFormating.setFontUnderline(True)
 				elif v == 'bold':
 					qtFormating.setFontWeight(QtGui.QFont.Bold)
-			
+
 			elif k == 'font_size':
-				v= int(v)
-				qtFormating.setProperty(QtGui.QTextFormat.FontPointSize,v)		
-				
+				v = TSFontSizeAdjusmentDict[v]
+				qtFormating.setProperty(QtGui.QTextFormat.FontSizeAdjustment,v)
+
 			elif k == 'font_name':
 				qtFormating.setProperty(QtGui.QTextFormat.FontFamily,v)
 
@@ -135,7 +152,7 @@ class TSStyleClassChar (TSStyleClassAbstract):
 					raise KeyError('Unknown color in QtCore.Qt.GlobalColor: '+\
 							"'"+v+"'.")
 				qtFormating.setForeground(color)
-				
+
 			else:
 				raise ValueError("Unknown parameter for char formating :",k)
 		qtFormating.setProperty(QtGui.QTextFormat.UserProperty,
@@ -143,15 +160,15 @@ class TSStyleClassChar (TSStyleClassAbstract):
 
 
 class TSStyleClassBlock (TSStyleClassAbstract):
-	"""A class that should be instanced with the corresponding glyphs in 
-	order to have the good format.	
+	"""A class that should be instanced with the corresponding glyphs in
+	order to have the good format.
 	"""
-	
+
 	dict_align = {	'center': QtCore.Qt.AlignHCenter,
 					'right':QtCore.Qt.AlignRight,
 					'left':QtCore.Qt.AlignLeft,
 					'justify':QtCore.Qt.AlignJustify}
-					
+
 	def __init__(self,*arg,**kargs):
 		TSStyleClassAbstract.__init__(self,*arg,**kargs)
 		constant_sub = self.constant.copy()
@@ -159,7 +176,7 @@ class TSStyleClassBlock (TSStyleClassAbstract):
 			if k == 'alignment':
 				constant_sub.pop(k)
 		self.subCharFormat = TSStyleClassChar(constant=constant_sub)
-	
+
 	def inverseId(self,cursor):
 		"""Set or unset th id to the selection under the cursor.
 		"""
@@ -174,9 +191,9 @@ class TSStyleClassBlock (TSStyleClassAbstract):
 														self.userPropertyId)
 			res = True
 		cursor.setBlockFormat(qtFormating)
-		return res
+		return res,cursor
 
-	
+
 	def setStyleToQtFormating(self,qtFormating,document):
 		assert type(qtFormating)==list
 		constants = self.constant.copy()
@@ -190,47 +207,46 @@ class TSStyleClassBlock (TSStyleClassAbstract):
 		if len(qtFormating)>=2:
 			qtFormating1 = qtFormating[1]
 			self.subCharFormat.setStyleToQtFormating(qtFormating1,document)
-		
+
 
 class TSStyleClassSeparator (TSStyleClassBlock):
 	"""Will deal with the separator class"""
 	protected = True
-	
+
 	def inverseId(self,cursor):
-		# cursor1 = QtGui.QTextCursor(cursor)
-		# qtFormating = self.getQtFormating(cursor1)
+		"""
+		Return res,cursor1:
+			- res: True if we assigned the style, False if it has been removed.
+			- cursor1: where the changes applies
+		"""
 		id_ = getBlockId(cursor)
 		if id_ != self.userPropertyId:
-			cursor.insertBlock()
+			if cursor.hasSelection() :
+				cursor.removeSelectedText()
+			if cursor.block().text().strip()!='':
+				cursor.insertBlock()
 			cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
 			pos = cursor.position()
-			cursor.insertBlock()
+			if cursor.atEnd() or (not cursor.atBlockEnd()):
+				cursor.insertBlock()
 			cursor.setPosition(pos,QtGui.QTextCursor.MoveAnchor)
-			res = TSStyleClassBlock.inverseId(self,cursor)
-			# cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor)
-			# assert res == True
-			res = True
-			
+			res,cursor = TSStyleClassBlock.inverseId(self,cursor)
+			cursor1 = QtGui.QTextCursor(cursor)
+			cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor)
+			return res,cursor1
 		else:
 			cursor.select(QtGui.QTextCursor.BlockUnderCursor)
 			cursor.deleteChar()
 			res = False
-
-		
-		# pass
-		# if res:
-			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF']+'\n')
-			
-		return res
+			return res, cursor
 
 
-	
 	def setIdFromXml(self,document):
-		""" Will replace the XML elements of the text in the QTextEdit in the 
+		""" Will replace the XML elements of the text in the QTextEdit in the
 		good formating (for now, only work with emphasize) """
 		cursor=QtGui.QTextCursor(document)
 		cursor.setPosition(0)
-		
+
 		# Regular expression that will find the corresponding XML element :
 		# regexp = QtCore.QRegExp(r'[\n]?<'+self.xmlMark+r'/>[\n]?')# TODO
 		exp = r'<'+self.xmlMark+r'/>'# TODO
@@ -246,12 +262,12 @@ class TSStyleClassSeparator (TSStyleClassBlock):
 			if cursor1.atBlockEnd():
 				cursor1.movePosition(QtGui.QTextCursor.Right,
 						QtGui.QTextCursor.KeepAnchor)
-			
+
 			self.inverseId(cursor1)
-			
+
 			cursor=document.find(exp,cursor)
-			
-			
+
+
 class TSStyleClassImage (TSStyleClassBlock):
 	protected = True
 	def inverseId(self,cursor):
@@ -259,30 +275,34 @@ class TSStyleClassImage (TSStyleClassBlock):
 		# qtFormating = self.getQtFormating(cursor1)
 		id_ = getBlockId(cursor)
 		if id_ != self.userPropertyId:
-			pass
-			if not cursor.hasSelection():
+			if cursor.hasSelection() :
+				cursor.clearSelection()
+			if cursor.block().text().strip()!='':
 				cursor.insertBlock()
-				# cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
-				pos = cursor.position()
+			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
+			pos = cursor.position()
+			if cursor.atEnd() or (not cursor.atBlockEnd()):
 				cursor.insertBlock()
-				cursor.setPosition(pos,QtGui.QTextCursor.MoveAnchor)
-			res = TSStyleClassBlock.inverseId(self,cursor)
-			
-			# cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor)
-			# assert res == True
+			cursor.setPosition(pos,QtGui.QTextCursor.MoveAnchor)
+
+			res,cursor = TSStyleClassBlock.inverseId(self,cursor)
+
+			cursor1 = QtGui.QTextCursor(cursor)
+			cursor.movePosition(QtGui.QTextCursor.Right,QtGui.QTextCursor.MoveAnchor)
 			res = True
-			
+			return res,cursor1
+
 		else:
 			cursor.select(QtGui.QTextCursor.BlockUnderCursor)
 			cursor.deleteChar()
 			res = False
-		
+
 		# pass
 		# if res:
 			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF']+'\n')
-			
-		return res
-		
+
+		return res,cursor
+
 TSStyleEmphasize = TSStyleClassChar(
 	constant		=  TSPreferences['EMPHASIZE_STYLE'],
 	xmlMark			=  'e',
@@ -290,7 +310,7 @@ TSStyleEmphasize = TSStyleClassChar(
 	name			=  'Emphasize',
 	shortcut		=  'Ctrl+E',
 	exportDict		=  {	'txt'  :('*','*'),
-							'html' :('<i>', '</i>') ,
+							'html' :('<em>', '</em>') ,
 							'tex':(r'\emph{',r'}'),
 							'mkd':('*','*'),
 						}
@@ -335,7 +355,7 @@ TSStyleHeader2 = TSStyleClassBlock(
 							'mkd':('## ',''),
 						}
 	)
-	
+
 TSStyleHeader3 = TSStyleClassBlock(
 	constant		=  TSPreferences['HEADER3_STYLE'],
 	xmlMark			=  'h3',
@@ -349,12 +369,12 @@ TSStyleHeader3 = TSStyleClassBlock(
 						}
 	)
 
-	
-	
+
+
 TSStyleCode = TSStyleClassBlock(
 	constant		=  TSPreferences['CODE_STYLE'],
 	xmlMark			=  'code',
-	userPropertyId	=  6,	
+	userPropertyId	=  6,
 	name			=  'Code',
 	# shortcut		=  'Ctrl+R',
 	shortcut		=  '',
@@ -364,7 +384,7 @@ TSStyleCode = TSStyleClassBlock(
 							'mkd'  :('```','```'),
 						}
 	)
-	
+
 TSStylePhantom = TSStyleClassBlock(
 	constant		=  TSPreferences['PHANTOM_STYLE'],
 	xmlMark			=  'phantom',
@@ -377,14 +397,14 @@ TSStylePhantom = TSStyleClassBlock(
 							'mkd' :(' <font color="gray">','</font>'),
 						}
 	)
-	
+
 TSStyleImage =  TSStyleClassImage(
 	constant		=  TSPreferences['IMAGE_STYLE'],
 	xmlMark			=  'img',
 	userPropertyId	=  8,
 	name			=  'Image',
 	# shortcut		=  'Ctrl+R',
-	exportDict		=  {	
+	exportDict		=  {
 							'txt'  :('[[File:',']]'),
 							'html' :('<center><img src="','" width="685" /></img></center>'),
 							'tex'  :(r'\begin{center}\includegraphics[width=10cm]{','}\end{center}'),
@@ -418,7 +438,7 @@ TSStyleStyleColor2 = TSStyleClassChar(
 							'mkd':('<span style="color:#FF0000"> ','</span>'),
 						}
 	)
-	
+
 TSStyleStyleColor3 = TSStyleClassChar(
 	constant		=  TSPreferences['COLOR3_STYLE'],
 	xmlMark			=  'span3',
@@ -431,6 +451,3 @@ TSStyleStyleColor3 = TSStyleClassChar(
 							'mkd':('<span style="color:#00FF00"> ','</span>'),
 						}
 	)
-	
-	
-	

@@ -17,10 +17,11 @@ from CommonObjects.CommonObjects import COOrderedDict
 
 import os
 import sys
+import pathlib
 
 class AWPreferencesAbstract (CMConstantsManager):
 	start_defaults 	= dict(
-			DLT_OPEN_SAVE_SITE 			= (str,'~'),
+			DLT_OPEN_SAVE_SITE 			= (pathlib.Path,'~'),
 			INIT_SIZE_X		 			= (int,750),
 			INIT_SIZE_Y		 			= (int,500),
 			TIME_STATUS_MESSAGE			= (int,3000),

@@ -5,11 +5,12 @@ import sys
 import shutil
 import os
 
-from .TextEditCharTable 					import *
+from .TextEditCharTable 				import *
 from .TextEditPreferences 				import *
 from .TextEditFindReplace 				import *
 from .TextEditHighlighter				import *
 from TextStyles.TextStyles				import *
+from TextStyles.TextStylesList			import TSStyleClassChar,TSStyleClassBlock,TSFontSizeAdjusmentDict
 from TextLanguages.TextLanguages		import *
 from CommonObjects.CommonObjects		import COOrderedDict
 from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
@@ -28,10 +29,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 		"""
 		QtWidgets.QTextEdit.__init__(self,parent=None)
 
-		self.cursorPositionChanged.connect(
-											self.SLOT_cursorPositionChanged)
-		self.textChanged .connect(
-											self.SLOT_textChanged)
+		self.cursorPositionChanged.connect( self.SLOT_cursorPositionChanged)
+		self.textChanged .connect( self.SLOT_textChanged)
 
 		self.setup_actions()
 		self.setup_connections()
@@ -49,7 +48,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.charWidgetTable	= TECharWidgetTable(linked_text_widget=self)
 
 		# self.isInsertingSeparator = False #TODO
-		self.setText()
 
 		# UGLY !!!!
 		TSManager.textedit=self
@@ -57,8 +55,9 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
 
 
-
-
+		# Let's set the first zoom
+		self.SLOT_defaultZoom()
+		self.setText()
 
 	def setup_actions(self):
 		Act = QtWidgets.QAction
@@ -79,11 +78,21 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.actionResetStyle				= Act("&Reset Style",self)
 		self.actionInsertImage				= Act("&Insert Image",self)
 		self.actionGuessLanguage			= Act("Guess Language",self)
+		self.actionZoomIn					= Act("Zoom In",self)
+		self.actionZoomOut					= Act("Zoom Out",self)
+		self.actionZoomNormal				= Act("Reset Zoom",self)
 
 		self.actionProfileDict				= COOrderedDict()
 		self.actionProfileDict[0]=Act("Strict profile",self) # profile = 0
 		self.actionProfileDict[1]=Act("Medium profile",self) # profile = 1
 		self.actionProfileDict[10]=Act("Loose profile",self) # profile = 10
+		actionProfileGroup = QtWidgets.QActionGroup(self)
+		for act in self.actionProfileDict.values():
+			actionProfileGroup.addAction(act)
+			act.setCheckable(True)
+
+
+
 
 		KS = QtGui.QKeySequence
 		self.actionCopy				 		.setShortcuts(KS.Copy		)
@@ -99,10 +108,16 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.actionLaunchFindDialog	 	    .setShortcuts(KS.Find )
 		self.actionFindNext			 	    .setShortcuts(KS.FindNext )
 		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )
+		self.actionFindPrevious		 	    .setShortcuts(KS.FindPrevious )
 		# self.actionResetFormat		 	    .setShortcuts(KS.FindPrevious )
+		# self.actionZoomIn		 	    	.setShortcuts(KS("Ctrl+D") )
+		# self.actionZoomOut		 	    	.setShortcuts(KS("Ctrl+M") )
+		self.actionZoomNormal		 	    .setShortcuts(KS("Ctrl+0") )
 
 
 		self.actionStylesDict = COOrderedDict()
+		charActionGroup = QtWidgets.QActionGroup(self)
+		blockActionGroup = QtWidgets.QActionGroup(self)
 		for style in TSManager.listCharStyle + TSManager.listBlockStyle :
 			if not isinstance(style,TSStyleClassImage):
 				if style.name!="":
@@ -113,7 +128,11 @@ class TETextEdit(QtWidgets.QTextEdit):
 					act.setShortcuts(QtGui.QKeySequence(style.shortcut))
 
 				self.actionStylesDict[style.userPropertyId] = act
-
+				if style in TSManager.listCharStyle:
+					charActionGroup.addAction(act)
+				elif style in TSManager.listBlockStyle:
+					blockActionGroup.addAction(act)
+				act.setCheckable(True)
 
 
 	def setup_connections(self):
@@ -137,7 +156,9 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.actionResetStyle.triggered.connect(self.SLOT_actionResetStyle)
 		self.actionInsertImage.triggered.connect(self.SLOT_actionInsertImage)
 		self.actionGuessLanguage.triggered.connect(self.SLOT_actionGuessLanguage)
-
+		self.actionZoomIn.triggered.connect(lambda  : self.zoomIn(TEPreferences["ZOOM_INCREMENT"]))
+		self.actionZoomOut.triggered.connect(lambda  : self.zoomOut(TEPreferences["ZOOM_INCREMENT"]))
+		self.actionZoomNormal.triggered.connect(self.SLOT_defaultZoom)
 
 		# add the formatting (emphasize, set tot tile etc.) shortcuts to the
 		mapper = QtCore.QSignalMapper(self)
@@ -180,7 +201,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		if new_language!=None :
 			if self.language.name!=new_language or self.language.profile!=profile:
 				self.changeLanguage(new_language,profile=profile)
-			self.setProfileEnabled()
+
 		# Creating the new document with the good default format and inserting
 		# the text in it
 		document=QtGui.QTextDocument(self)
@@ -208,23 +229,15 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		self.blockSignals (True)
 		self.setDocument(document)
+		# When you set a new document, for some reason, it lost the zoom
+		# just a small  In and Out and it reset the zoom
+		self.zoomIn(1)
+		self.zoomOut(1)
+
 		self.document().clearUndoRedoStacks() # It will empty the history (no
 															# "undo" before)
 		self.blockSignals (False)
-
 		self.setTextCursor(cursor)
-
-
-	def setProfileEnabled(self):
-		"""
-		Set the profile action not enabeled.
-		"""
-		for k,act in list(self.actionProfileDict.items()):
-			if self.language.profile == k:
-				act.setEnabled(False)
-			else:
-				act.setEnabled(True)
-
 
 
 
@@ -233,7 +246,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 	def SLOT_cursorPositionChanged(self):
 		"""Method that is called when the cursor position has just changed."""
 		self.blockSignals (True) #allow the method to move the cursor in the
-									# method without calling itself one again.
+									# method without calling itself once again.
 
 		if self.old_cursor_position>=self.document().characterCount():
 			# If we were at the end of the document and suppress the end, it
@@ -249,6 +262,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 			# If we have just written a word (by a space, or a ponctuation) it
 			# makes the auto-correction of the word.
 			cursor=self.textCursor()
+			cursor.beginEditBlock()
 			last_char=self.language.lastChar(cursor)
 			list_word_break = [' ','\u00A0','\n',';',':','!','?',',',
 					'.',"'",'-']
@@ -264,6 +278,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 								# previous position from the corresponding gap
 					assert 0<= self.old_cursor_position <\
 							self.document().characterCount()
+			cursor.endEditBlock()
+
 
 		if TEPreferences["DO_TYPOGRAPHY"]:
 			# We check the typography at the site we just left
@@ -273,13 +289,15 @@ class TETextEdit(QtWidgets.QTextEdit):
 			cursor.beginEditBlock()
 			modification=self.language.correct_between_chars(cursor)
 
-			i=0
-			while modification and i<TEPreferences["LIM_RECURSIV_UNDO"]:
-				modification=self.language.correct_between_chars(cursor)
-				i+=1
-				if i==TEPreferences["LIM_RECURSIV_UNDO"]:
-					print ("Reach LIM_RECURSIV_UNDO in "
-							"SLOT_cursorPositionChanged")
+			# i=0
+			# while modification and i<TEPreferences["LIM_RECURSIV_UNDO"]:
+			# 	modification=self.language.correct_between_chars(cursor)
+			# 	if i>1:
+			# 		print("modification",modification)
+			# 	i+=1
+			# 	if i==TEPreferences["LIM_RECURSIV_UNDO"]:
+			# 		print ("Reach LIM_RECURSIV_UNDO in "
+			# 				"SLOT_cursorPositionChanged")
 			cursor.endEditBlock()
 
 
@@ -290,6 +308,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		self.old_cursor_position=self.textCursor().position() #update the
 															# cursor position
+		self.checkStyleAction()
 
 
 		return self.old_cursor_position
@@ -304,6 +323,14 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.blockSignals (False)
 			self.protectedStyleModification .emit(
 				"Try to modify a protected block (use Ctrl+L to delete it).")
+		self.checkStyleAction()
+
+		# To avoid a strange bug: when suppressing everything, it tends to reset
+		# the font.
+		if block_id==None and self.document().isEmpty():
+			if "defaultCharFormat" in self.__dict__:
+				self.setCurrentCharFormat(self.defaultCharFormat)
+
 
 	def SLOT_pluggins(self,iterator):
 		"""Launch the pluggin corresponding to the iterator"""
@@ -389,6 +416,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		cursor.endEditBlock()
 		self.setTextCursor(cursor)
 		self.blockSignals (False)
+		self.checkStyleAction()
 		self.somethingChanged .emit()
 
 	@QtCore.pyqtSlot()
@@ -480,13 +508,16 @@ class TETextEdit(QtWidgets.QTextEdit):
 	def SLOT_changeProfile(self,i):
 		old_i = self.language.profile
 		self.language.profile = i
-		self.setProfileEnabled()
+		self.actionStylesDict[i].setEnabled(True)
+		# self.setProfileEnabled()
 
-		print("self.language.profile : ",self.language.profile)
 		if i < old_i:
 			self.SLOT_actionRecheckTypography(ask=True)
 		self.somethingChanged .emit()
 
+	def SLOT_defaultZoom(self):
+		f = self.document().defaultFont().pointSize()
+		self.zoom(TEPreferences['ZOOM_DEFAULT']-f)
 
 
 	def insertFromMimeData(self,source ):
@@ -522,6 +553,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.blockSignals (False)
 
 
+
 	def copy(self):
 		"""A reimplementation of copy in order to remember what was the last
 		copy"""
@@ -540,12 +572,12 @@ class TETextEdit(QtWidgets.QTextEdit):
 		"""
 		- language_name: the name of the language, should be in TLDico.keys()
 		- profile: the typography profile to use for the document
-		- gui: if true, will propose to check the typography
+		- gui: if true, will propose to check the typography is the document is
+			not empty
 		"""
 		print(('TO CHECK : we indeed changed the local dir before changing '+\
 			'the language.'))
 		local_dir = self.get_local_dir()
-
 		# fill self.language according to the language in entry
 		if language_name==None:
 			lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
@@ -562,6 +594,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 				self.language = lang(self.dict_autocorrection,profile=profile)
 				profile = self.language.profile
 
+		self.actionProfileDict[self.language.profile].setChecked(True)
 
 		## PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS
 		# add the language insert shortcuts to the class
@@ -599,7 +632,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 												list_spelling=list_spelling)
 			self.highlighter.rehighlight ()
 
-		if gui:
+		if gui and not self.document().isEmpty():
 			self.SLOT_actionRecheckTypography(ask=True)
 
 	def undo(self):
@@ -608,11 +641,10 @@ class TETextEdit(QtWidgets.QTextEdit):
 		typography correction, in which case it comes back to the state before
 		the events that trigger the correction:
 		exemple:
-		"Hello,<space>you!"
-			-----     suppress coma     ----->       "Hello<space>you!"
-			-----     another space     ----->       "Hello<space><space>you!"
-			----- typography correction ----->       "Hello<space>you!"
-			-----        Ctrl-Z         ----->       "Hello,<space>you!"
+		"Hello you.."
+			-----     add dot     		----->       "Hello you..."
+			----- typography correction ----->       "Hello you…"
+			-----        Ctrl-Z         ----->       "Hello you..."
 
 		"""
 		self.blockSignals (True)
@@ -771,13 +803,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 			else :
 				KeyError('Unknown key for the alignement : '+align_name)
 
-		font = document.defaultFont()
-		if "font_name" in TSPreferences['DEFAULT_STYLE']:
-			font.setFamily(TSPreferences['DEFAULT_STYLE']["font_name"])
-		if "font_size" in TSPreferences['DEFAULT_STYLE']:
-			font.setPointSize(int(TSPreferences['DEFAULT_STYLE']["font_size"]))
-		document.setDefaultFont(font)
-
 		cursor=QtGui.QTextCursor(document)
 		format_block=cursor.blockFormat()
 
@@ -797,13 +822,53 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		self.defaultBlockFormat = format_block
 		self.defaultCharFormat = cursor.charFormat()
-		self.defaultCharFormat.setFont(font)
+		if "font_name" in TSPreferences['DEFAULT_STYLE']:
+			self.defaultCharFormat.setFontFamily(
+								TSPreferences['DEFAULT_STYLE']["font_name"])
+		if "font_size" in TSPreferences['DEFAULT_STYLE']:
+			v = TSFontSizeAdjusmentDict[TSPreferences['DEFAULT_STYLE']["font_size"]]
+			self.defaultCharFormat.setProperty(
+									QtGui.QTextFormat.FontSizeAdjustment,v)
+		cursor.setCharFormat(self.defaultCharFormat)
+
 
 		return cursor,document
 
 	def emit_typographyModification(self):
 		self.typographyModification .emit()
 
+	def checkStyleAction(self):
+		"""Check whenether the action of the styles should be checked or not"""
+		# Enable the good action in the styles
+		cursor = self.textCursor()
+		charId = cursor.charFormat().property(QtGui.QTextFormat.UserProperty)
+		blockId = cursor.blockFormat().property(QtGui.QTextFormat.UserProperty)
+		for id,act in self.actionStylesDict.items():
+			if id in {charId,blockId}:
+				act.setChecked(True)
+			else:
+				act.setChecked(False)
+
+	def zoom(self,range=3):
+		"""
+		usefull discussion
+		https://stackoverflow.com/questions/8016530/no-effect-from-zoomin-in-qtextedit-after-font-size-change
+		"""
+
+		if range>0:
+			self.zoomIn(range=range)
+		elif range<0:
+			self.zoomOut(range=-range)
+
+
+
+	def wheelEvent(self, event):
+		if (event.modifiers() & QtCore.Qt.ControlModifier):
+			# (1, -1)[x < 0] elegant way to have sign
+			sign = lambda x : (x>0)-(x<0)
+			self.zoom(sign(event.angleDelta().y())*TEPreferences["ZOOM_INCREMENT"])
+		else:
+			QtWidgets.QTextEdit.wheelEvent(self, event)
 
 
 if __name__ == '__main__':

@@ -5,18 +5,18 @@ p = os.path.join(file_dir,'../')
 sys.path.append(p)
 ###############################################################################
 from ConstantsManager.ConstantsManager import CMConstantsManager
-
+import pathlib
 
 class CLPreferencesAbstarct (CMConstantsManager):
-	start_defaults=  dict(	
-		GLOBAL_DIR  				= (str,'./config/'),
-		USER_DIR	 				= (str,'~/.athena/'),
-		LOCAL_DIR	 				= (str,'.'),
+	start_defaults=  dict(
+		GLOBAL_DIR  				= (pathlib.Path,'./config/'),
+		USER_DIR	 				= (pathlib.Path,'~/.athena/'),
+		LOCAL_DIR	 				= (pathlib.Path,'.'),
 		LAST_FILE_LENGTH			= (int,10),
 		LAST_FILE_SKIP_NON_EXISTING	= (bool	,False),
 				)
-				
-	descriptions=  dict(		
+
+	descriptions=  dict(
 		GLOBAL_DIR  = 'The dirpath to the general configurtion files '+\
 			'(relative to the file AthenaWriterCore.py',
 		USER_DIR	 = 'The absolute dirpath to the user configuration files',
@@ -25,7 +25,7 @@ class CLPreferencesAbstarct (CMConstantsManager):
 		LAST_FILE_LENGTH	= 'The number of files to keep in memory.',
 		LAST_FILE_SKIP_NON_EXISTING	= 'If true, check if each file is '+\
 			'existing.'
-			
-			
+
+
 			)
 CLPreferences = CLPreferencesAbstarct()

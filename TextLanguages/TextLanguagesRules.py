@@ -9,10 +9,10 @@ class TLRuleAbstract:
 	def __init__(self,language):
 		self.language=language
 		pass
-	
+
 	def __str__(self):
 		return self.title+'\n'+self.description
-	
+
 	def correct(self,last_char,next_char,cursor):
 		raise NotImplementedError
 		return False
@@ -31,7 +31,7 @@ class TLRuleEnglish0001 (TLRuleAbstract):
 			cursor.deletePreviousChar()
 			return True
 		return False
-		
+
 class TLRuleEnglish0002 (TLRuleAbstract):
 	title="No space or unbreakable space after an unbreakable space"
 	description=	\
@@ -44,11 +44,11 @@ class TLRuleEnglish0002 (TLRuleAbstract):
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='\u00A0' and next_char in ['\u00A0',' ']:
 			cursor.deleteChar()
-		return False	
-		
+		return False
+
 class TLRuleEnglish0003 (TLRuleAbstract):
 	title="No space or break of line after a break of line. "
-		
+
 	description=	\
 		"It deletes the space or break of line after a break of line\n"+\
 		"example :	'end of block.\\n ' -> 'end of block.\\n'\n"+\
@@ -56,11 +56,11 @@ class TLRuleEnglish0003 (TLRuleAbstract):
 	profile = 0
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\n' and next_char in [' ','\n']:
+		if last_char=='\n' and next_char in [' ','\n'] and not cursor.atStart():
 			cursor.deleteChar()
 			return True
-		return False		
-		
+		return False
+
 class TLRuleEnglish0004 (TLRuleAbstract):
 	title="No space or unbreakable space before ',', ';', ':', '!', '?'"
 	description=	\
@@ -77,12 +77,12 @@ class TLRuleEnglish0004 (TLRuleAbstract):
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
 		if next_char in [',',';',':','!','?','\201d']:
-			if last_char==' ' or last_char=='\u00A0': 
+			if last_char==' ' or last_char=='\u00A0':
 				cursor.deletePreviousChar()
 				return True
-		return False	
-		
-		
+		return False
+
+
 class TLRuleEnglish0005 (TLRuleAbstract):
 	title="Replace the char [\"] by a opening or closing guillemet"
 	description=	\
@@ -104,8 +104,8 @@ class TLRuleEnglish0005 (TLRuleAbstract):
 				cursor.deleteChar()
 				cursor.insertText('\u201d')
 			return True
-	
-		return False		
+
+		return False
 
 class TLRuleEnglish0006 (TLRuleAbstract):
 	title="No space or unbreakable space after an opening guillemet."
@@ -118,11 +118,11 @@ class TLRuleEnglish0006 (TLRuleAbstract):
 	profile = 1
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='\u201c':
-			if next_char==' ' or next_char=='\u00AB': 
+			if next_char==' ' or next_char=='\u00AB':
 				cursor.deleteChar()
 				return True
 		return False
-		
+
 class TLRuleEnglish0007 (TLRuleAbstract):
 	title="No space or unbreakable space before an closing guillemet."
 	description=	\
@@ -134,13 +134,13 @@ class TLRuleEnglish0007 (TLRuleAbstract):
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
 		if next_char=='\u201d':
-			if last_char==' ' or last_char=='\u00AB': 
+			if last_char==' ' or last_char=='\u00AB':
 				cursor.deletePreviousChar()
 				return True
 		return False
-		
-				
-		
+
+
+
 class TLRuleEnglish0008 (TLRuleAbstract):
 	title="A space or a newline after ';', ':', '!' or '?' except if it a "+\
 		"closing guillemet (CG) or '!', '?'"
@@ -167,10 +167,10 @@ class TLRuleEnglish0008 (TLRuleAbstract):
 			if next_char== '\u00A0':
 				cursor.deleteChar()
 			cursor.insertText(' ')
-			return True	
-				
+			return True
+
 		return False
-		
+
 class TLRuleEnglish0009 (TLRuleAbstract):
 	title="A space or a newline after '.' or ',' except if it is a figure "+\
 		"or a closing guillemet (CG) or another dot"
@@ -192,8 +192,8 @@ class TLRuleEnglish0009 (TLRuleAbstract):
 			if next_char== '\u00A0':
 				cursor.deleteChar()
 			cursor.insertText(' ')
-			return True	
-				
+			return True
+
 		return False
 
 class TLRuleEnglish0010 (TLRuleAbstract):
@@ -207,8 +207,8 @@ class TLRuleEnglish0010 (TLRuleAbstract):
 		if next_char=="'":
 			cursor.deleteChar()
 			cursor.insertText('\u2019')
-		return False	
-		
+		return False
+
 class TLRuleEnglish0011 (TLRuleAbstract):
 	title="Replace 3 consecutive points by an ellipsis."
 	description=	\
@@ -218,16 +218,16 @@ class TLRuleEnglish0011 (TLRuleAbstract):
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='.' and next_char=='.':
-			
+
 			if self.language.lastChar(cursor,n=2)=='.':
 				cursor.deleteChar()
 				cursor.deletePreviousChar()
 				cursor.deletePreviousChar()
 				cursor.insertText('\u2026')
 				return True
-		return False		
-		
-		
+		return False
+
+
 class TLRuleFrench0001 (TLRuleAbstract):
 	title="No space before a space or a break of line"
 	description=	\
@@ -258,7 +258,7 @@ class TLRuleFrench0002 (TLRuleAbstract):
 
 class TLRuleFrench0003 (TLRuleAbstract):
 	title="No space, unbreakable space or break of line after a break of line."
-		
+
 	description=	\
 		"It deletes the space or break of line after a break of line\n"+\
 		"example :	'end of block.\\n ' -> 'end of block.\\n'\n"+\
@@ -283,16 +283,16 @@ class TLRuleFrench0004 (TLRuleAbstract):
 		"			'Bonjour: ' -> 'Bonjour[US]:'\n"+\
 		"			'Bonjour? ' -> 'Bonjour[US]?'\n"+\
 		"			'Bonjour ! ' -> 'Bonjour[US]!'\n"+\
-		"			'Bonjour ? ' -> 'Bonjour[US]?'"	
+		"			'Bonjour ? ' -> 'Bonjour[US]?'"
 	profile = 1
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if next_char in [';',':','!','?','\u00BB']:
-			if last_char==' ': 
+			if last_char==' ':
 				cursor.deletePreviousChar()
 				cursor.insertText('\u00A0')
 				return True
-			if last_char!='\u00A0': 
+			if last_char!='\u00A0':
 				cursor.insertText('\u00A0')
 				return True
 		return False
@@ -308,7 +308,7 @@ class TLRuleFrench0005 (TLRuleAbstract):
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='\u00AB':
-			if next_char==' ': 
+			if next_char==' ':
 				cursor.deleteChar()
 				cursor.insertText('\u00A0')
 				return True
@@ -336,10 +336,10 @@ class TLRuleFrench0006 (TLRuleAbstract):
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='\u00A0' and (next_char not in \
 											[';',':','!','?','\u00BB']+\
-											[str(i) for i in range(10)]): 
+											[str(i) for i in range(10)]):
 			last_last_char=self.language.lastChar(cursor,n=2)
 			# we cheak it caused by an oppening "guillemet":
-			if last_last_char not in ['\u00AB' , '\u2014']: 
+			if last_last_char not in ['\u00AB' , '\u2014']:
 				cursor.deletePreviousChar()
 				cursor.insertText(' ')
 				return True
@@ -376,8 +376,8 @@ class TLRuleFrench0008 (TLRuleAbstract):
 			if next_char== '\u00A0':
 				cursor.deleteChar()
 			cursor.insertText(' ')
-			return True	
-				
+			return True
+
 		return False
 
 class TLRuleFrench0009 (TLRuleAbstract):
@@ -414,7 +414,7 @@ class TLRuleFrench0010 (TLRuleAbstract):
 				cursor.deleteChar()
 				cursor.insertText('\u00A0\u00BB')
 			return True
-	
+
 		return False
 
 class TLRuleFrench0011 (TLRuleAbstract):
@@ -423,7 +423,7 @@ class TLRuleFrench0011 (TLRuleAbstract):
 	in_languges=['French']
 	profile = 1
 	def correct(self,last_char,next_char,cursor):
-		
+
 		if last_char=='"':
 			if next_char==' ':
 				cursor.deletePreviousChar()
@@ -431,7 +431,7 @@ class TLRuleFrench0011 (TLRuleAbstract):
 			else :
 				cursor.deletePreviousChar()
 				cursor.insertText('\u00AB\u00A0')
-			return True	
+			return True
 		return False
 
 class TLRuleFrench0012 (TLRuleAbstract):
@@ -443,7 +443,7 @@ class TLRuleFrench0012 (TLRuleAbstract):
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='.' and next_char=='.':
-			
+
 			if self.language.lastChar(cursor,n=2)=='.':
 				cursor.deleteChar()
 				cursor.deletePreviousChar()
@@ -463,22 +463,22 @@ class TLRuleFrench0013 (TLRuleAbstract):
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if last_char=='\u2014' and next_char!='\u00A0':
-			if next_char==' ': 
+			if next_char==' ':
 				cursor.deleteChar()
 				cursor.insertText('\u00A0')
 				return True
-			if next_char!='\u00A0': 
+			if next_char!='\u00A0':
 				cursor.insertText('\u00A0')
 				return True
 		return False
-		
+
 class TLWordCorrectionRuleFrench0001 (TLRuleAbstract):
 	title="Replace the 'oe' by 'u'\u0153''"
 	description=	\
 		"In French, most of the word with 'oe' have an elision"
 	profile = 1
 	in_languges=['French']
-	
+
 	def correct(self,last_word,cursor):
 		if last_word.find('oe')!=-1:
 			if last_word not in ['moelle']:

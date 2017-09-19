@@ -28,7 +28,7 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 
 	def highlightBlock(self, text):
 		if TEPreferences['SPELL_CHECK'] :
-			self.spellCheakHighlight(text)
+			self.spellCheckHighlight(text)
 
 	def getDefaultCharFormat(self,id=0):
 		qtFormat = self.parent.defaultBlockFormat
@@ -40,7 +40,8 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 		qtFormat.setProperty(QtGui.QTextFormat.UserProperty,id)
 		return qtFormat
 
-	def spellCheakHighlight(self,text):
+
+	def spellCheckHighlight(self,text):
 		if not self.dict :
 			return None
 
@@ -56,6 +57,8 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 			if not self.dict.check(word):
 				self.setFormat(word_object.start(),
 					word_object.end() - word_object.start(), format)
+
+
 
 	def toRawWord(self,word):
 		"""This function is needed to change the word of AthW to a word

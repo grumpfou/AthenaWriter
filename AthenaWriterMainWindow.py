@@ -1,7 +1,7 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
 
 from AthenaWriterPreferences import *
-from AthenaWriterCore import AWCore
+from AthenaWriterCore import AWCore,AWAbout
 # from ConfigLoading.ConfigLoadingLastFiles import CLLastFiles
 from ConfigLoading.ConfigLoadingPreferencesDialog import CLPreferencesDialog
 from ConstantsManager.ConstantsManagerWidget import CMDialog
@@ -84,7 +84,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		self.actionViewFullScreen	= QtWidgets.QAction("FullScreen"	,self)
 
 		self.actionAboutHelp	= QtWidgets.QAction("Help"			,self)
-		self.actionAboutAbout	= QtWidgets.QAction("About WolfText",self)
+		self.actionAboutAbout	= QtWidgets.QAction("About Athena Writer",self)
 
 		self.actionFileSave.setShortcuts(QtGui.QKeySequence.Save)
 		self.actionFileSaveAs.setShortcuts(QtGui.QKeySequence("Ctrl+Shift+S")) #TODO for Windows
@@ -101,17 +101,16 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 
 	def setup_connections(self):
-		
-		self.actionFileSave	.triggered.connect(self.SLOT_actionFileSave	)
+
+		self.actionFileSave		.triggered.connect(self.SLOT_actionFileSave)
 		self.actionFileSaveAs	.triggered.connect(self.SLOT_actionFileSaveAs)
-		self.actionFileNew		.triggered.connect(self.SLOT_actionFileNew	)
-		self.actionFileOpen	.triggered.connect(self.SLOT_actionFileOpen	)
+		self.actionFileNew		.triggered.connect(self.SLOT_actionFileNew)
+		self.actionFileOpen		.triggered.connect(self.SLOT_actionFileOpen)
 		self.actionFileImport	.triggered.connect(self.SLOT_actionFileImport)
 		self.actionFileExport	.triggered.connect(self.SLOT_actionFileExport)
-		self.actionFileStats	.triggered.connect(self.SLOT_actionFileStats	)
-		self.actionFileMetaData.triggered.connect(self.SLOT_actionFileMetaData)
-		self.actionFileQuit	.triggered.connect(self.close				)
-
+		self.actionFileStats	.triggered.connect(self.SLOT_actionFileStats)
+		self.actionFileMetaData	.triggered.connect(self.SLOT_actionFileMetaData)
+		self.actionFileQuit		.triggered.connect(self.close)
 		self.actionSendToExternalSoftware.triggered.connect(
 				self.SLOT_actionSendToExternalSoftware)
 		self.actionEditPreferences.triggered.connect(
@@ -214,6 +213,9 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 
 		menuView = self.menuBar().addMenu ( "View" )
+		menuView.addAction(self.textEdit.actionZoomIn)
+		menuView.addAction(self.textEdit.actionZoomOut)
+		menuView.addAction(self.textEdit.actionZoomNormal)
 		menuView.addAction(self.actionViewFullScreen)
 
 
@@ -241,14 +243,16 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 	################################## SLOTS ##################################
 	@QtCore.pyqtSlot()
-	def SLOT_actionFileSave(self):
+	def SLOT_actionFileSave(self,force_ask=False):
 		"""
 		Slot used when saving the current file.
+		force_ask : if True, will force asking for the new filepath
 		"""
-		if self.filepath==None:
+		if self.filepath==None or force_ask:
 			filepath = FMFileManagement.save_gui_filepath(
 					self.get_default_opening_saving_site(),
-					self,filter="AthW files (*.athw);; All files (*.*)")
+					self,filter="AthW files (*.athw);; All files (*.*)",
+					ext=".athw")
 		else:
 			filepath = self.filepath
 		if filepath :
@@ -310,17 +314,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		"""
 		Slot used when saving as the current file.
 		"""
-		filepath = FMFileManagement.save_gui_filepath(
-				self.get_default_opening_saving_site(),
-				self,filter="AthW files (*.athw);; All files (*.*)")
-		if filepath :
-			self.clean_tmp_files() # we remove the previous tmp files
-			self.CMD_FileSave(filepath=str(filepath))
-			self.actionFileSave.setEnabled(False)
-			self.setWindowTitle("AthenaWriter : "+self.filepath)
-			tmp,filename = os.path.split(self.filepath)
-			self.changeMessageStatusBar("Has saved "+filename)
-			self.lastFiles.addFile(self.filepath)
+		self.SLOT_actionFileSave(force_ask=True)
 
 	@QtCore.pyqtSlot()
 	def SLOT_actionFileNew(self):
@@ -353,7 +347,6 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			filepath = FMFileManagement.open_gui_filepath(
 					self.get_default_opening_saving_site(),
 					self,filter="AthW files (*.athw);; All files (*.*)")
-			print(("filepath",filepath))
 		else :
 			filepath=str(filepath)
 		if filepath:
@@ -403,11 +396,8 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			filepath=str(filepath)
 		if filepath:
 			self.clean_tmp_files() # we remove the previous tmp files
-			print(("filepath",filepath))
 			path,e = os.path.splitext(filepath)
-			print(("e",e))
 			e = e[1:]#the [1:] is to skip the dot in the extension
-			print(("e",e))
 			self.CMD_FileImport(filepath=filepath,format_name=e)
 
 			self.actionFileSave.setEnabled(True)
@@ -481,7 +471,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 					)
 		if d and len(d)>0 :
 			self.metadata.update(d)
-			if 'language' in list(d.keys()) and not self.textEdit.document().isEmpty():
+			if 'language' in list(d.keys()):
 				self.textEdit.changeLanguage(
 					language_name = str(d['language']),gui=True)
 
@@ -514,12 +504,20 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 					QtCore.Qt.ScrollBarAsNeeded)
 			self.menuBar().setHidden(False)
 			self.fullScreened=False
+
 	@QtCore.pyqtSlot()
 	def SLOT_actionAboutHelp(self):
 		pass
+
 	@QtCore.pyqtSlot()
 	def SLOT_actionAboutAbout(self):
-		pass
+
+		text = AWAbout.split("\n\n")
+		text = [' '.join(a.split('\n')) for a in text]
+		text = '\n\n'.join(text)
+		text = text.strip()
+		QtWidgets.QMessageBox.about(self, "About Athena Writer",text)
+
 	def SLOT_somethingChanged(self):
 		self.actionFileSave.setEnabled(True)
 		if self.filepath==None:
@@ -604,7 +602,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		should begin :
 		"""
 		if self.filepath== None:
-			return os.path.expanduser(AWPreferences['DLT_OPEN_SAVE_SITE'])
+			return str(AWPreferences['DLT_OPEN_SAVE_SITE'].expanduser())
 		else :
 			res,tmp=os.path.split(self.filepath)
 			return res

@@ -25,6 +25,8 @@ class TEPreferencesAbstarct (CMConstantsManager):
 		TEXT_INDENT		 	 = (int,50),
 		TEXT_LINE_HEIGHT	 = (int,100),
 		TEXT_MARGIN		 	 = (float,50),
+		ZOOM_INCREMENT	 	 = (int,3),
+		ZOOM_DEFAULT	 	 = (int,20),
 			)
 	descriptions 	= dict(
 		RECHECK_TEXT_OPEN 	 = "Will recheck the typography of the file "+\
@@ -41,6 +43,8 @@ class TEPreferencesAbstarct (CMConstantsManager):
 		TEXT_INDENT		     = "Indentation width of the text in the TextEdit",
 		TEXT_LINE_HEIGHT	 = "Height of the interline in the TextEdit",
 		TEXT_MARGIN		     = "Margin of the text edit",
+		ZOOM_INCREMENT		 = "How much the zoom be increamented per action",
+		ZOOM_DEFAULT		 = "The default font size of the normal text",
 
 						)
 TEPreferences=TEPreferencesAbstarct()

@@ -12,6 +12,7 @@ from FileManagement.FileManagement import FMFileManagement
 ##############################################################################
 
 from .ConfigLoadingPreferences import CLPreferences
+import pathlib
 
 def get_file_list(filepath,where='all',local_dir=None):
 	"""
@@ -20,20 +21,24 @@ def get_file_list(filepath,where='all',local_dir=None):
 	res = []
 	if where=='all' or where == 'global':
 		d,f = os.path.split(__file__)
-		p_g = os.path.abspath(os.path.join(d,'..',CLPreferences['GLOBAL_DIR'],
-																	filepath))
-		res.append((p_g,os.path.exists(p_g)))
+		p_g = pathlib.Path(d)/'..'/CLPreferences['GLOBAL_DIR']/filepath
+		# os.path.abspath(os.path.join(d,'..',
+		# 							str(CLPreferences['GLOBAL_DIR']), filepath))
+		res.append((str(p_g),p_g.exists()))
 
 	if where=='all' or where == 'user':
-		p_u = os.path.expanduser(os.path.join(CLPreferences['USER_DIR'],
-																	filepath))
-		res.append((p_u,os.path.exists(p_u)))
+		p_u = CLPreferences['USER_DIR']/filepath
+		p_u = p_u.expanduser()
+		# os.path.expanduser(os.path.join(str(CLPreferences['USER_DIR']),
+		# 															filepath))
+		res.append((str(p_u),p_u.exists()))
 
 	if where=='all' or where == 'local':
 		if local_dir!=None:
-			p_l = os.path.abspath(os.path.join(local_dir,
-											CLPreferences['LOCAL_DIR'],filepath))
-			res.append((p_l,os.path.exists(p_l)))
+			p_l = pathlib.Path(local_dir)/CLPreferences['LOCAL_DIR']/filepath
+			# os.path.abspath(os.path.join(local_dir,
+			# 								CLPreferences['LOCAL_DIR'],filepath))
+			res.append((str(p_l),p_l.exists()))
 		else:
 			res.append((None,False))
 	return res

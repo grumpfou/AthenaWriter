@@ -2,6 +2,7 @@ import os
 from .DocExportPreferences import *
 from TextStyles.TextStylesList import TSStyleClassSeparator,TSStylePhantom
 from FileManagement.FileManagement import FMFileManagement
+from pathlib import Path
 
 def cm_add(A,start_defaults,descriptions={}):
 	dict_add = lambda AA,BB : dict(list(AA.items())+list(BB.items()))
@@ -483,7 +484,7 @@ class DEExportEpub(DEExportExternal):
 	intermediate_export_class =  DEExportHtml
 	doc_opt = cm_add(intermediate_export_class.doc_opt,
 			start_defaults= dict(
-				cover_file 	= (str,"")
+				cover_file 	= (Path,"")
 				),
 			descriptions=dict(
 				cover_file 	= ("cover of the file, if None, Calibre will "

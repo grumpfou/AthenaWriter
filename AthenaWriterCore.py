@@ -1,5 +1,16 @@
 __version__ = "1.1beta"
 
+AWAbout = """
+Athena Writer (version %s) is a software written by Renaud Dessalles (Grumpfou).
+It is deseigned as a companion for the writting of short stories. It is
+distrationless and helps to respect the typography.
+
+It is published under the license under the license GNU General Public License
+v3.0.
+
+See https://github.com/grumpfou/AthenaWriter .
+"""%__version__
+
 from PyQt5 import QtGui, QtCore, QtWidgets
 
 from AthenaWriterPreferences import *
@@ -20,7 +31,6 @@ import time
 import codecs
 import subprocess
 import itertools
-
 
 class AWCore:
 	class Error (Exception):
@@ -96,6 +106,8 @@ class AWCore:
 		self.textEdit.setText(text,type='xml',new_language=language,
 															profile=profile)
 		if lastpos != None:
+			if lastpos==-1:
+				lastpos = self.textEdit.document().characterCount()
 			cur = self.textEdit.textCursor()
 			cur.setPosition(lastpos)
 			self.textEdit.setTextCursor(cur)
