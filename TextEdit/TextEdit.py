@@ -525,15 +525,33 @@ class TETextEdit(QtWidgets.QTextEdit):
 		typography of what we have just paste.
 		TODO : some summary window of all the corrections.
 		"""
-
+		print("insertFromMimeData")
 		self.blockSignals (True)
 		cursor=self.textCursor()
 		cursor_pos=cursor.position()
-		if source.html()==self.lastCopy[0].html():
-			# if the pasted thing comes from the document itself
-			cursor.insertFragment(self.lastCopy[1])
-			size = len(self.lastCopy[1].toPlainText())
+		print("source.formats() ",source.formats() )
+		if source.hasFormat("text/athena"):
+			print('youpiiii')
+			xml = source.data("text/athena")
+			# 106 for the utf-8
+			xml = QtCore.QTextCodec.codecForMib(106).toUnicode(xml)
+			print("xml",xml)
+			document = QtGui.QTextDocument()
+			document.setPlainText(xml)
+			TSManager.fromXml(document)
+			cur = QtGui.QTextCursor(document)
+			cur.select(QtGui.QTextCursor.Document)
+			sel = cur.selection()
+			cursor.insertFragment(cur.selection())
+			size = len(sel.toPlainText())
+
+
+		# if source.html()==self.lastCopy[0].html():
+		# 	# if the pasted thing comes from the document itself
+		# 	cursor.insertFragment(self.lastCopy[1])
+		# 	size = len(self.lastCopy[1].toPlainText())
 		else :
+			print('ohhhh')
 			text=source.text()
 			text.replace("\t", " ")
 			cursor.insertText(text)
@@ -553,20 +571,18 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.blockSignals (False)
 
 
+	def createMimeDataFromSelection(self):
+		mimeData = QtWidgets.QTextEdit.createMimeDataFromSelection(self)
+		# we create a temporary document
+		document=QtGui.QTextDocument()
+		QtGui.QTextCursor(document).insertFragment(self.textCursor().selection())
 
-	def copy(self):
-		"""A reimplementation of copy in order to remember what was the last
-		copy"""
-		self.lastCopy = (self.createMimeDataFromSelection(),
-						self.textCursor().selection() )
-		QtWidgets.QTextEdit.copy(self)
-
-	def cut(self):
-		"""A reimplementation of cut in order to remember what was the last
-		copy"""
-		self.lastCopy = (self.createMimeDataFromSelection(),
-						self.textCursor().selection() )
-		QtWidgets.QTextEdit.cut(self)
+		# We create the  corresponding xml data
+		data = TSManager.toXml(document)
+		# mimeData = QtCore.QMimeData()
+		mimeData.setData("text/athena", data.encode('utf-8'))
+		mimeData.text() # For some reason, needs to call text in order to update the formats
+		return mimeData
 
 	def changeLanguage(self,language_name=None,profile=None,gui=False):
 		"""
@@ -699,8 +715,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 
 	def toXml(self):
-		newText=self.toPlainText()
-		newText=TSManager.toXml(newText,self.document())
+		newText=TSManager.toXml(self.document())
 		return newText
 
 	def contextMenuEvent(self, event):

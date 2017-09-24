@@ -62,11 +62,11 @@ class TSClassManager:
 		self.textedit = textedit
 
 
-	def toXml(self,plaintext,document):
+	def toXml(self,document):
 		"""Will return the text of the document with the XML balises for each
 		style.
 		"""
-		newText=plaintext[:]
+		newText = document.toPlainText()[:]
 		place_to_mark = self.get_place_to_mark(document)
 
 		# We add the XML elements in the string
