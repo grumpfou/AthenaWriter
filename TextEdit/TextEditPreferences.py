@@ -22,6 +22,7 @@ class TEPreferencesAbstarct (CMConstantsManager):
 		LIM_RECURSIV_UNDO    = (int	,100),
 		FIND_LEN_CONTEXT 	 = (int	,10),
 		SPELL_CHECK 		 = (bool,True),
+		SPECIAL_CHAR_DISPLAY = (bool,True),
 		TEXT_INDENT		 	 = (int,50),
 		TEXT_LINE_HEIGHT	 = (int,100),
 		TEXT_MARGIN		 	 = (float,50),
@@ -31,6 +32,8 @@ class TEPreferencesAbstarct (CMConstantsManager):
 	descriptions 	= dict(
 		RECHECK_TEXT_OPEN 	 = "Will recheck the typography of the file "+\
 			"when opening",
+		SPECIAL_CHAR_DISPLAY = ("Will display the non-breakable space with a "
+								"gray background."),
 		DO_TYPOGRAPHY		 = "Will perform the typography checking while "+\
 			"writing",
 		AUTO_CORRECTION      = "Will perform the word auto-correction while "+\

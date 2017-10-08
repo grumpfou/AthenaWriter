@@ -29,6 +29,8 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 	def highlightBlock(self, text):
 		if TEPreferences['SPELL_CHECK'] :
 			self.spellCheckHighlight(text)
+		if TEPreferences['SPECIAL_CHAR_DISPLAY'] :
+			self.specialCharHighlight(text)
 
 	def getDefaultCharFormat(self,id=0):
 		qtFormat = self.parent.defaultBlockFormat
@@ -57,6 +59,19 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 			if not self.dict.check(word):
 				self.setFormat(word_object.start(),
 					word_object.end() - word_object.start(), format)
+
+
+
+	def specialCharHighlight(self,text):
+		""" Will highlight the non-breakable spaces.
+		"""
+		format = QtGui.QTextCharFormat()
+		format.setBackground(QtGui.QBrush(QtCore.Qt.gray))
+		pos = text.find('\u00A0')
+
+		while pos>0:
+			self.setFormat(pos,1,format)
+			pos = text.find('\u00A0',pos+1)
 
 
 
