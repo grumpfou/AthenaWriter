@@ -195,10 +195,10 @@ class TSClassManager:
 											QtGui.QTextCursor.KeepAnchor)
 		for blocFormat in self.listBlockStyle:
 			blocFormat.setIdFromXml(document)
-			self.recheckBlockStyle(cursor)
+		self.recheckBlockStyle(cursor)
 		for charFormat in self.listCharStyle:
 			charFormat.setIdFromXml(document)
-			self.recheckCharStyle(cursor)
+		self.recheckCharStyle(cursor)
 
 
 
@@ -216,18 +216,29 @@ class TSClassManager:
 
 		cursor1 = QtGui.QTextCursor(cursor)
 		cursor1.setPosition(start)
+		pv_qtCharFormat_id = getCharId(cursor1)
+		style_begin_position = cursor1.position()
 		while cursor1.position()<end:
-			cursor1.movePosition(QtGui.QTextCursor.Right,
-												QtGui.QTextCursor.KeepAnchor)
-
+			cursor1.movePosition(QtGui.QTextCursor.Right)
 			qtCharFormat_id = getCharId(cursor1)
-			qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)
-			if qtCharFormat_id in list(self.dictCharStyle.keys()):
-				style = self.dictCharStyle[qtCharFormat_id]
-				style.setStyleToQtFormating(qtCharFormat,cursor1.document())
+			if pv_qtCharFormat_id!=qtCharFormat_id or cursor1.position()==end \
+													or cursor1.atBlockStart():
+				# If we change the style
+				cursor2 = QtGui.QTextCursor(cursor1.document())
+				cursor2.setPosition(style_begin_position)
+				style_end_position = cursor1.position()
+				if  not cursor1.position()==end:
+					style_end_position -= 1
+				cursor2.setPosition(style_end_position,
+										QtGui.QTextCursor.KeepAnchor)
 
-			cursor1.setCharFormat(qtCharFormat)
-			cursor1.clearSelection()
+				qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor2)
+				if pv_qtCharFormat_id in self.dictCharStyle.keys():
+					style = self.dictCharStyle[pv_qtCharFormat_id]
+					style.setStyleToQtFormating(qtCharFormat,cursor2.document())
+				cursor2.setCharFormat(qtCharFormat)
+				pv_qtCharFormat_id = qtCharFormat_id
+				style_begin_position = cursor1.position()-1
 
 	def recheckBlockStyle(self,cursor):
 		for block in cursor.yieldBlockInSelection():

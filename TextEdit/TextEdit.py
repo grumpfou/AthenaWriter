@@ -52,7 +52,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 		# UGLY !!!!
 		TSManager.textedit=self
 
-		self.lastCopy = (QtCore.QMimeData(),QtGui.QTextDocumentFragment ())
 
 
 		# Let's set the first zoom
@@ -310,7 +309,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 															# cursor position
 		self.checkStyleAction()
 
-
 		return self.old_cursor_position
 
 	def SLOT_textChanged(self):
@@ -525,17 +523,13 @@ class TETextEdit(QtWidgets.QTextEdit):
 		typography of what we have just paste.
 		TODO : some summary window of all the corrections.
 		"""
-		print("insertFromMimeData")
 		self.blockSignals (True)
 		cursor=self.textCursor()
 		cursor_pos=cursor.position()
-		print("source.formats() ",source.formats() )
 		if source.hasFormat("text/athena"):
-			print('youpiiii')
 			xml = source.data("text/athena")
 			# 106 for the utf-8
 			xml = QtCore.QTextCodec.codecForMib(106).toUnicode(xml)
-			print("xml",xml)
 			document = QtGui.QTextDocument()
 			document.setPlainText(xml)
 			TSManager.fromXml(document)
@@ -551,7 +545,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 		# 	cursor.insertFragment(self.lastCopy[1])
 		# 	size = len(self.lastCopy[1].toPlainText())
 		else :
-			print('ohhhh')
 			text=source.text()
 			text.replace("\t", " ")
 			cursor.insertText(text)
