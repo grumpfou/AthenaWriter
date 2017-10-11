@@ -8,6 +8,9 @@ class TLRuleAbstract:
 	in_languges=[]
 	def __init__(self,language):
 		self.language=language
+
+		# Non-breakable space:
+		self.nbs = self.language.dictCharReplace.get('\u00A0','\u00A0')
 		pass
 
 	def __str__(self):
@@ -42,7 +45,7 @@ class TLRuleEnglish0002 (TLRuleAbstract):
 	profile = 0
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\u00A0' and next_char in ['\u00A0',' ']:
+		if last_char==self.nbs and next_char in [self.nbs,' ']:
 			cursor.deleteChar()
 		return False
 
@@ -77,7 +80,7 @@ class TLRuleEnglish0004 (TLRuleAbstract):
 	in_languges=['English']
 	def correct(self,last_char,next_char,cursor):
 		if next_char in [',',';',':','!','?','\201d']:
-			if last_char==' ' or last_char=='\u00A0':
+			if last_char==' ' or last_char==self.nbs:
 				cursor.deletePreviousChar()
 				return True
 		return False
@@ -97,7 +100,7 @@ class TLRuleEnglish0005 (TLRuleAbstract):
 	profile = 1
 	def correct(self,last_char,next_char,cursor):
 		if next_char=='"':
-			if last_char in [' ','\n','\u00A0']:
+			if last_char in [' ','\n',self.nbs]:
 				cursor.deleteChar()
 				cursor.insertText('\u201c')
 			else :
@@ -164,7 +167,7 @@ class TLRuleEnglish0008 (TLRuleAbstract):
 											(next_char not in ['\n',' ']):
 			if next_char== '\u201d' or next_char== '?' or next_char== '!':
 				return False
-			if next_char== '\u00A0':
+			if next_char== self.nbs:
 				cursor.deleteChar()
 			cursor.insertText(' ')
 			return True
@@ -189,7 +192,7 @@ class TLRuleEnglish0009 (TLRuleAbstract):
 	def correct(self,last_char,next_char,cursor):
 		ch_list = ['\n',' ','\u201d','.']+[str(i) for i in range(10)]
 		if last_char in ['.',','] and (next_char not in ch_list):
-			if next_char== '\u00A0':
+			if next_char== self.nbs:
 				cursor.deleteChar()
 			cursor.insertText(' ')
 			return True
@@ -252,7 +255,7 @@ class TLRuleFrench0002 (TLRuleAbstract):
 	profile = 0
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\u00A0' and next_char in ['\u00A0',' ']:
+		if last_char==self.nbs and next_char in [self.nbs,' ']:
 			cursor.deleteChar()
 		return False
 
@@ -267,7 +270,7 @@ class TLRuleFrench0003 (TLRuleAbstract):
 	in_languges=['French']
 	profile = 0
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\n' and next_char in [' ','\n','\u00A0']:
+		if last_char=='\n' and next_char in [' ','\n',self.nbs]:
 			cursor.deleteChar()
 			return True
 		return False
@@ -290,10 +293,10 @@ class TLRuleFrench0004 (TLRuleAbstract):
 		if next_char in [';',':','!','?','\u00BB']:
 			if last_char==' ':
 				cursor.deletePreviousChar()
-				cursor.insertText('\u00A0')
+				cursor.insertText(self.nbs)
 				return True
-			if last_char!='\u00A0':
-				cursor.insertText('\u00A0')
+			if last_char!=self.nbs:
+				cursor.insertText(self.nbs)
 				return True
 		return False
 
@@ -310,10 +313,10 @@ class TLRuleFrench0005 (TLRuleAbstract):
 		if last_char=='\u00AB':
 			if next_char==' ':
 				cursor.deleteChar()
-				cursor.insertText('\u00A0')
+				cursor.insertText(self.nbs)
 				return True
-			if next_char!='\u00A0':
-				cursor.insertText('\u00A0')
+			if next_char!=self.nbs:
+				cursor.insertText(self.nbs)
 				return True
 		return False
 
@@ -334,7 +337,7 @@ class TLRuleFrench0006 (TLRuleAbstract):
 	profile = 1
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\u00A0' and (next_char not in \
+		if last_char==self.nbs and (next_char not in \
 											[';',':','!','?','\u00BB']+\
 											[str(i) for i in range(10)]):
 			last_last_char=self.language.lastChar(cursor,n=2)
@@ -355,7 +358,7 @@ class TLRuleFrench0007 (TLRuleAbstract):
 	profile = 0
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
-		if last_char in [' ', '\u00A0'] and next_char in ['.',',']:
+		if last_char in [' ', self.nbs] and next_char in ['.',',']:
 			cursor.deletePreviousChar()
 			return True
 		return False
@@ -373,7 +376,7 @@ class TLRuleFrench0008 (TLRuleAbstract):
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if last_char in [';',':'] and (next_char not in ['\n',' ']):
-			if next_char== '\u00A0':
+			if next_char== self.nbs:
 				cursor.deleteChar()
 			cursor.insertText(' ')
 			return True
@@ -407,12 +410,12 @@ class TLRuleFrench0010 (TLRuleAbstract):
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
 		if next_char=='"':
-			if last_char in [' ','\n','\u00A0']:
+			if last_char in [' ','\n',self.nbs]:
 				cursor.deleteChar()
-				cursor.insertText('\u00AB\u00A0')
+				cursor.insertText('\u00AB'+self.nbs)
 			else :
 				cursor.deleteChar()
-				cursor.insertText('\u00A0\u00BB')
+				cursor.insertText(self.nbs+'\u00BB')
 			return True
 
 		return False
@@ -427,10 +430,10 @@ class TLRuleFrench0011 (TLRuleAbstract):
 		if last_char=='"':
 			if next_char==' ':
 				cursor.deletePreviousChar()
-				cursor.insertText('\u00A0\u00BB')
+				cursor.insertText(self.nbs+'\u00BB')
 			else :
 				cursor.deletePreviousChar()
-				cursor.insertText('\u00AB\u00A0')
+				cursor.insertText('\u00AB'+self.nbs)
 			return True
 		return False
 
@@ -462,13 +465,13 @@ class TLRuleFrench0013 (TLRuleAbstract):
 	profile = 1
 	in_languges=['French']
 	def correct(self,last_char,next_char,cursor):
-		if last_char=='\u2014' and next_char!='\u00A0':
+		if last_char=='\u2014' and next_char!=self.nbs:
 			if next_char==' ':
 				cursor.deleteChar()
-				cursor.insertText('\u00A0')
+				cursor.insertText(self.nbs)
 				return True
-			if next_char!='\u00A0':
-				cursor.insertText('\u00A0')
+			if next_char!=self.nbs:
+				cursor.insertText(self.nbs)
 				return True
 		return False
 

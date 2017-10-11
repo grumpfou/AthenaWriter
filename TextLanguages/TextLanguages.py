@@ -37,7 +37,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from .TextLanguagesPreferences import *
 from .TextLanguagesRules import *
-from TextEdit.TextEditPreferences import TEHasEnchant
+from TextEdit.TextEditPreferences import TEHasEnchant, TEDictCharReplace
 from TextStyles.TextStyles import TSManager
 from CommonObjects.CommonObjectsWord import *
 from CommonObjects.CommonObjects import COChoice
@@ -61,6 +61,7 @@ class TLAbstract:
 		if profile == None:
 			profile = TLPreferences['DFT_TYPO_PROFILE']
 		self.profile = profile
+		self.dictCharReplace = TEDictCharReplace
 
 
 

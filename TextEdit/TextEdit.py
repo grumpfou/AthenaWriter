@@ -196,6 +196,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 				html
 		"""
 		if text==None: text=""
+		for k,v in TEDictCharReplace.items():
+			text = text.replace(k,v)
 		# We change the language if necessary
 		if new_language!=None :
 			if self.language.name!=new_language or self.language.profile!=profile:
@@ -265,6 +267,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 			last_char=self.language.lastChar(cursor)
 			list_word_break = [' ','\u00A0','\n',';',':','!','?',',',
 					'.',"'",'-']
+			list_word_break = [TEDictCharReplace.get(s,s) for s in
+															list_word_break]
 			if last_char in list_word_break:
 				# if we just finished writting a word
 				position_0 = cursor.position()
@@ -525,6 +529,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		"""
 		self.blockSignals (True)
 		cursor=self.textCursor()
+		cursor.beginEditBlock()
 		cursor_pos=cursor.position()
 		if source.hasFormat("text/athena"):
 			xml = source.data("text/athena")
@@ -561,6 +566,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		# self.setTextCursor(cursor)
 		TSManager.recheckBlockStyle(cursor)
 		TSManager.recheckCharStyle(cursor)
+		cursor.endEditBlock()
 		self.blockSignals (False)
 
 
@@ -709,6 +715,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 	def toXml(self):
 		newText=TSManager.toXml(self.document())
+		for k,v in TEDictCharReplace.items():
+			newText = newText.replace(v,k)
 		return newText
 
 	def contextMenuEvent(self, event):

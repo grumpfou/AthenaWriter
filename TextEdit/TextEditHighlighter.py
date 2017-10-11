@@ -9,7 +9,7 @@ import re
 
 from PyQt5 import QtGui, QtCore, QtWidgets
 from TextLanguages.TextLanguages import TLEnchantDico
-from .TextEditPreferences import TEPreferences,TEHasEnchant
+from .TextEditPreferences import TEPreferences,TEHasEnchant,TEDictCharReplace
 if TEHasEnchant :
 	import enchant
 
@@ -25,12 +25,11 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 		if list_spelling!=None:
 			for w in list_spelling:
 				self.dict.add(w)
-
+				
 	def highlightBlock(self, text):
 		if TEPreferences['SPELL_CHECK'] :
 			self.spellCheckHighlight(text)
-		if TEPreferences['SPECIAL_CHAR_DISPLAY'] :
-			self.specialCharHighlight(text)
+		self.specialCharHighlight(text)
 
 	def getDefaultCharFormat(self,id=0):
 		qtFormat = self.parent.defaultBlockFormat
@@ -62,16 +61,27 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 
 
 
-	def specialCharHighlight(self,text):
+	def specialCharHighlight(self,text,):
 		""" Will highlight the non-breakable spaces.
+
+
 		"""
+		try :
+			color= QtGui.QColor(QtCore.Qt.__dict__[TEPreferences['SPECIAL_CHAR_COLOR']])
+		except KeyError as e:
+			raise KeyError('Unknown color in QtCore.Qt.GlobalColor: '+\
+					"'"+TEPreferences['SPECIAL_CHAR_COLOR']+"'.")
+
 		format = QtGui.QTextCharFormat()
-		format.setBackground(QtGui.QBrush(QtCore.Qt.gray))
-		pos = text.find('\u00A0')
+		# format.setForeground(QtGui.QBrush(QtCore.Qt.lightGray))
+		format.setForeground(QtGui.QBrush(color))
+
+		nbs = TEDictCharReplace.get('\u00A0','\u00A0')
+		pos = text.find(nbs)
 
 		while pos>0:
 			self.setFormat(pos,1,format)
-			pos = text.find('\u00A0',pos+1)
+			pos = text.find(nbs,pos+1)
 
 
 

@@ -5,8 +5,6 @@ from .TextStylesPreferences import TSPreferences
 from .TextStylesList import *
 
 
-
-
 def yieldBlock(cursor):
 	"""return [block, cursor_with_selection]
 	- direction : if positive, then will go forward otherwise, it will go
@@ -85,6 +83,7 @@ class TSClassManager:
 													'</'+style.xmlMark+'>',
 					'<'+style.xmlMark+'/>')
 				break
+
 		return newText
 
 	def get_place_to_mark(self,document):
@@ -191,6 +190,7 @@ class TSClassManager:
 		"""Will replace the XML elements of the text in the QTextEdit in the
 		good formating """
 		cursor = QtGui.QTextCursor(document)
+
 		cursor.setPosition(document.characterCount()-1,
 											QtGui.QTextCursor.KeepAnchor)
 		for blocFormat in self.listBlockStyle:

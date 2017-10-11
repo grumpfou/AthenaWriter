@@ -52,7 +52,7 @@ class DPStatistics:
 				# if it ovetakes the line then
 				if counter==0: #if the word is bigger than the line
 					lines_to_add = []
-					for i in range(len(v)/(DPPreferences['NB_CHAR_PER_LINE']-1)+1):
+					for i in range(len(v)//(DPPreferences['NB_CHAR_PER_LINE']-1)+1):
 						# We count -1 for the size of the breakline
 						ii = i*(DPPreferences['NB_CHAR_PER_LINE']-1)
 						jj = min(len(v),
