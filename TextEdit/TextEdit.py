@@ -521,6 +521,9 @@ class TETextEdit(QtWidgets.QTextEdit):
 		f = self.document().defaultFont().pointSize()
 		self.zoom(TEPreferences['ZOOM_DEFAULT']-f)
 
+	def resizeEvent(self,event):
+		QtWidgets.QTextEdit.resizeEvent(self,event)
+		self.ensureCursorVisible()
 
 	def insertFromMimeData(self,source ):
 		"""A re-implementation of insertFromMimeData. We have to check the
@@ -544,7 +547,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 			cursor.insertFragment(cur.selection())
 			size = len(sel.toPlainText())
 
-
 		# if source.html()==self.lastCopy[0].html():
 		# 	# if the pasted thing comes from the document itself
 		# 	cursor.insertFragment(self.lastCopy[1])
@@ -552,6 +554,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 		else :
 			text=source.text()
 			text.replace("\t", " ")
+			for k,v in TEDictCharReplace.items():
+				text = text.replace(k,v)
 			cursor.insertText(text)
 			size = len(text)
 
@@ -571,10 +575,27 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 
 	def createMimeDataFromSelection(self):
+		selection = self.textCursor().selection()
+
 		mimeData = QtWidgets.QTextEdit.createMimeDataFromSelection(self)
-		# we create a temporary document
+		# Base mime data: create a temporary textedit (not very clean)
+		te = QtWidgets.QTextEdit()
+		document=te.document()
+		QtGui.QTextCursor(document).insertFragment(selection)
+
+		for k,v in TEDictCharReplace.items(): # replace the non-breakable spaces
+			cursor = document.find(v)
+			while not cursor.isNull():
+				cursor.insertText(k)
+				cursor = document.find(v,cursor.position()+1)
+		cursor = QtGui.QTextCursor(document)
+		cursor.select(QtGui.QTextCursor.Document)
+		te.setTextCursor(cursor)
+		mimeData = te.createMimeDataFromSelection()
+
+		# Athena Writer XML we create a temporary document
 		document=QtGui.QTextDocument()
-		QtGui.QTextCursor(document).insertFragment(self.textCursor().selection())
+		QtGui.QTextCursor(document).insertFragment(selection)
 
 		# We create the  corresponding xml data
 		data = TSManager.toXml(document)
@@ -695,6 +716,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.copy()
 		elif (event.matches(QtGui.QKeySequence.Cut)):
 			self.cut()
+		elif (event.key() == QtCore.Qt.Key_Tab):
+			pass # No tab…
 		else:
 			QtWidgets.QTextEdit.keyPressEvent(self,event)
 

@@ -193,14 +193,14 @@ class DPStatisticsDialog(QtWidgets.QDialog):
 			button_refresh.setEnabled(False)
 
 
-		margins = self.contentsMargins()
-		w = self.table.horizontalHeader().length()
-		w += margins.left() + margins.right()
-		QtWidgets.QDialog.show(self)
-		size = self.size()
-		size.setWidth (w)
-		self.resize(size)
-		# self.adjustSize()
+		# margins = self.contentsMargins()
+		# w = self.table.horizontalHeader().length()
+		# w += margins.left() + margins.right()
+		# QtWidgets.QDialog.show(self)
+		# size = self.size()
+		# size.setWidth (w)
+		# self.resize(size)
+		self.adjustSize()
 
 
 	def refresh(self,text=False):
