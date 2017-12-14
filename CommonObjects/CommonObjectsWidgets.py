@@ -1,10 +1,10 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
 from .CommonObjects import *
-from FileManagement.FileManagement import FMFileManagement
+from FileManagement.FileManagement import FMTextFileManagement
 from pathlib import Path
 
 class COWidgetBool(QtWidgets.QCheckBox):
-	def __init__(self,parent,value=True):
+	def __init__(self,parent=None,value=True):
 		QtWidgets.QCheckBox.__init__(self,parent=parent)
 
 		if value:
@@ -159,7 +159,7 @@ class COWidgetPath(QtWidgets.QWidget):
 		self.button.clicked.connect(self.browse)
 
 	def browse(self):
-		filepath = FMFileManagement.open_gui_filepath(
+		filepath = FMTextFileManagement.open_gui_filepath(
 			dft_opening_saving_site= self.lineEdit.text(),
 			**self.kargs_browse)
 		if filepath:

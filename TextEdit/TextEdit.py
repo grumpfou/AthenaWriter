@@ -1,5 +1,4 @@
 from PyQt5 import QtGui, QtCore, QtWidgets
-from PyQt5 import QtGui, QtCore, QtWidgets
 
 import sys
 import shutil
@@ -14,7 +13,7 @@ from TextStyles.TextStylesList			import TSStyleClassChar,TSStyleClassBlock,TSFon
 from TextLanguages.TextLanguages		import *
 from CommonObjects.CommonObjects		import COOrderedDict
 from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
-from FileManagement.FileManagement 		import FMFileManagement
+from FileManagement.FileManagement 		import FMTextFileManagement
 
 from TextStyles.TextStylesPreferences			import TSPreferences
 from TextLanguages.TextLanguagesPreferences		import TLPreferences
@@ -441,7 +440,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		else:
 			dft_opening_site ='.'
 			local_dir = False
-		filepath = FMFileManagement.open_gui_filepath(
+		filepath = FMTextFileManagement.open_gui_filepath(
 					dft_opening_site ,
 					self,filter="Image Files (*.png *.jpg *.bmp *.gif)")
 
@@ -456,7 +455,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 					QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.No)
 				if r== QtWidgets.QMessageBox.Yes:
 					newfilepath = os.path.join(local_dir,f)
-					newfilepath = FMFileManagement.exists(newfilepath)
+					newfilepath = FMTextFileManagement.exists(newfilepath)
 					if not newfilepath:
 						return False
 					shutil.copyfile(filepath,newfilepath)
@@ -718,6 +717,9 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.cut()
 		elif (event.key() == QtCore.Qt.Key_Tab):
 			pass # No tab…
+		elif (event.key() == QtCore.Qt.Key_Alt):
+			# if self.parent()!=None:
+			# 	self.parent().keyPressEvent(event)
 		else:
 			QtWidgets.QTextEdit.keyPressEvent(self,event)
 

@@ -1,8 +1,8 @@
-__version__ = "1.1beta"
+__version__ = "1.2beta"
 
 AWAbout = """
-Athena Writer (version %s) is a software written by Renaud Dessalles (Grumpfou).
-It is deseigned as a companion for the writting of short stories. It is
+Athena Writer (version %s) is a software written by Renaud Helbig (Grumpfou).
+It is designed as a companion for the writting of short stories. It is
 distrationless and helps to respect the typography.
 
 It is published under the license under the license GNU General Public License
@@ -16,7 +16,7 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 from AthenaWriterPreferences import *
 from TextEdit.TextEdit import TETextEdit
 from TextStyles.TextStyles import TSManager
-from FileManagement.FileManagement import FMFileManagement
+from FileManagement.FileManagement import FMTextFileManagement, FMZipFileManagement
 from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from DocExport.DocExport import DEList
@@ -31,6 +31,8 @@ import time
 import codecs
 import subprocess
 import itertools
+import zipfile
+import shutil
 
 class AWCore:
 	class Error (Exception):
@@ -55,23 +57,38 @@ class AWCore:
 			filepath = self.filepath
 		else:
 			self.filepath = filepath
-		res = FMFileManagement.save(str(self.textEdit.toXml()),filepath)
+		# filepath += 'ZIP'
+
+		tmpfile = False
+		if os.path.exists(filepath):
+			# For safety, we temporary copy the exixting file
+			tmpfile = os.path.join(os.path.split(filepath)[0],'~'+os.path.split(filepath)[1])
+			shutil.copyfile(filepath,tmpfile)
+
+		# we save the main file, the 'w' option is to erase existing files
+		res = FMZipFileManagement.save(str(self.textEdit.toXml()),
+						zipfilepath=filepath, filename = 'main.txt',modezip='w')
 
 		if res :
-			if not self.metadata.isEmpty():
-				# we will save the file .athw_meta as well
-				cur = self.textEdit.textCursor()
-				self.metadata.__setitem__('lastpos', int(cur.position()),
-															protected=False)
-				self.metadata['language'] = self.textEdit.language.name
-				self.metadata.__setitem__('profile',
-							self.textEdit.language.profile, protected=False)
+			# we will save the file .athw_meta as well
+			cur = self.textEdit.textCursor()
+			self.metadata.__setitem__('lastpos', int(cur.position()),
+														protected=False)
+			self.metadata['language'] = self.textEdit.language.name
+			self.metadata.__setitem__('profile',
+						self.textEdit.language.profile, protected=False)
 
-				to_save = self.metadata.toxml()
-				meta_filepath,tmp = os.path.splitext(self.filepath)
-				meta_filepath += '.athw_meta'
+			self.metadata['athw_version'] = __version__
 
-				res = FMFileManagement.save(to_save,meta_filepath)
+			to_save = self.metadata.toxml()
+			res = FMZipFileManagement.save(to_save,filepath,'meta.xml')
+
+		if tmpfile: #  We remove the temporary file
+			os.remove(tmpfile)
+			if os.path.exists(filepath+'_meta'):
+				# if there was a metadata file from previous version
+				os.remove(filepath+'_meta')
+
 
 	def	CMD_FileSaveCopy(self,filepath):
 		old_filepath = self.filepath
@@ -86,23 +103,26 @@ class AWCore:
 		else:
 			self.filepath=filepath
 
+		try:
+			text = FMZipFileManagement.open(self.filepath,'main.txt')
+			if 'meta.xml' in FMZipFileManagement.listFiles(self.filepath):
+				metadata=DPMetaData.init_from_xml_string(
+						FMZipFileManagement.open(self.filepath,'meta.xml'))
+			else:
+				metadata=DPMetaData()
 
-		# Get the text:
-		local_dir,tmp = os.path.split(self.filepath)
-		text = FMFileManagement.open(filepath)
+		except zipfile.BadZipFile:
+			text,metadata = self.CMD_FileOpen_version_1(filepath)
+		except KeyError as e:
+			raise IOError('Not a correct ATHW file'+str(e))
 
-		meta_filepath,tmp = os.path.splitext(self.filepath)
-		meta_filepath += '.athw_meta'
-		if os.path.exists(meta_filepath):
-			self.metadata=DPMetaData.init_from_xml_string(
-								FMFileManagement.open(meta_filepath))
-		else:
-			self.metadata=DPMetaData()
+		self.metadata =  metadata
 		language = self.metadata['language']
 		lastpos = self.metadata['lastpos']
 		profile = self.metadata['profile']
 		if profile == None:
 			profile = TLPreferences['DFT_TYPO_PROFILE']
+
 		self.textEdit.setText(text,type='xml',new_language=language,
 															profile=profile)
 		if lastpos != None:
@@ -113,6 +133,23 @@ class AWCore:
 			self.textEdit.setTextCursor(cur)
 
 		return True
+
+	def CMD_FileOpen_version_1(self,filepath):
+		"""
+		In order to open old Athw files that were not a zip file.
+		"""
+		# Get the text:
+		local_dir,tmp = os.path.split(self.filepath)
+		text = FMTextFileManagement.open(filepath)
+
+		meta_filepath,tmp = os.path.splitext(self.filepath)
+		meta_filepath += '.athw_meta'
+		if os.path.exists(meta_filepath):
+			metadata=DPMetaData.init_from_xml_string(
+								FMTextFileManagement.open(meta_filepath))
+		else:
+			metadata=DPMetaData()
+		return text,metadata
 
 	def CMD_FileImport(self,filepath,format_name,to_skip=None):
 		"""

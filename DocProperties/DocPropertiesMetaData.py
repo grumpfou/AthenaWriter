@@ -37,29 +37,30 @@ class DPMetaData(CMConstantsManager):
 		version = (float,-1),
 		lastpos = (int,-1),
 		profile = (int,0),
+		athw_version = (str,"Unknown"),
 		)
-		
+
 	keys_protected = {'lastpos','profile'}
-	
+
 	constrains = dict(
 		version = {'min':-1},
 		lastpos = {'min':-1},
 		)
-	
+
 	@staticmethod
 	def init_from_xml_string(xml_string=None):
 		"""Class that will interpret the text in order to get the informations"""
 		dom = XML.parseString(xml_string.encode('utf-8'))
-		
+
 		node_structure  = getFirstElementsByTagName(dom ,'structure')
-		
+
 		element_dict = {}
 		res = DPMetaData()
 		for element,v in list(res.start_defaults.items()):
 			type_ = v[0]
 			node	= getFirstElementsByTagName(node_structure,element)
 			if node!=None and node.hasChildNodes():
-				try : 
+				try :
 					information = type_(node.childNodes[0].toxml())
 					element_dict[element]=information
 				except ValueError:
@@ -67,11 +68,11 @@ class DPMetaData(CMConstantsManager):
 							"> do not fit the format")
 		res.update(element_dict,protected=False)
 		return res
-		
+
 	def toxml(self):
 		doc = XML.Document()
 		structure_node=doc.createElement('structure')
-		
+
 		for k in self.keys(skip_same_as_dft=False,protected=False):
 			node=doc.createElement(k)
 			text_node = doc.createTextNode(str(self[k]))
@@ -79,9 +80,9 @@ class DPMetaData(CMConstantsManager):
 			structure_node.appendChild(node)
 
 		doc.appendChild(structure_node)
-			
+
 		return self.toPrettyWithText(doc)
-	
+
 	def toPrettyWithText(self,xml_node):
 		"""
 		 allows to have a string representation of the XML structure that has the text node
@@ -100,13 +101,13 @@ class DPMetaData(CMConstantsManager):
 		indent='  '
 		uglyXml = xml_node.toxml()
 		prettyXml =''
-		
+
 		i=0
 		for text_xlm_element in self.keys(protected=False) :
-			opening  = '<'+text_xlm_element+'>' 
-			closing  = '</'+text_xlm_element+'>' 
+			opening  = '<'+text_xlm_element+'>'
+			closing  = '</'+text_xlm_element+'>'
 			j=	uglyXml.find(opening)
-			
+
 			while j!=-1:
 				# We add what was before the text node, in a pretty way
 				prettyXml+=(uglyXml[i:j+1]).replace('><','>\n<')
@@ -119,16 +120,14 @@ class DPMetaData(CMConstantsManager):
 				j =	uglyXml.find(opening,i)
 		# We add what remained of the XML in a pretty way
 		prettyXml+=uglyXml[i:].replace('><','>\n<')
-			
+
 		return prettyXml
 
-		
-		
-	def isEmpty(self):
-		return len([self[k] for k in self.keys(protected=False,skip_same_as_dft=True)])==0
 
 
-				
+
+
+
 if __name__ == '__main__':
 	import sys
 	import os

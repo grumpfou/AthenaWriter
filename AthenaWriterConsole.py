@@ -3,7 +3,6 @@ from AthenaWriterCore import __version__,AWCore,AWAbout
 from AthenaWriterMainWindow import AWWriterText
 from DocExport.DocExport import DEList
 from DocImport.DocImport import DIList
-from FileManagement.FileManagement import FMFileManagement
 
 import argparse
 import re
@@ -264,7 +263,7 @@ class AWConsole (AWCore):
 
 
 #
-#			xml_string = FMFileManagement.open(self.args.file)
+#			xml_string = FMTextFileManagement.open(self.args.file)
 #
 #			feexport_instance = FEList[list_extentions.index(format)](\
 #									textedit_formats=TextEdit.TextEditFormats)

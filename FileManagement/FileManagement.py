@@ -3,8 +3,10 @@ import codecs
 import os.path
 import math
 import pathlib
+import io
+import zipfile
 
-class FMFileManagement:
+class FMTextFileManagement:
 
 	@staticmethod
 	def save(text,filepath,encoding='utf-8',mode='w',ext=None):
@@ -39,13 +41,13 @@ class FMFileManagement:
 		- parent: the parent widget (for the dialog window to be modal)
 		- ext: if not False, will force this extension
 		"""
-		filepath = FMFileManagement.save_gui_filepath (
+		filepath = FMTextFileManagement.save_gui_filepath (
 				dft_opening_saving_site=dft_opening_saving_site,
 				parent=parent, ext=ext, filter=filter)
 
 		if filepath:
 			filepath=str(filepath)
-			FMFileManagement.save(text,filepath,*args,**kargs)
+			FMTextFileManagement.save(text,filepath,*args,**kargs)
 			return filepath
 		return False
 
@@ -127,13 +129,13 @@ class FMFileManagement:
 		- filepath : the path to the file that is opened
 		- text : the unicode string contained in the file
 		"""
-		filepath = FMFileManagement.open_gui_filepath(
+		filepath = FMTextFileManagement.open_gui_filepath(
 			dft_opening_saving_site=dft_opening_saving_site, parent=parent,
 			filter=filter)
 
 		if filepath:
 			filepath=str(filepath)
-			res = FMFileManagement.open(filepath,*args,**kargs)
+			res = FMTextFileManagement.open(filepath,*args,**kargs)
 			return filepath,res
 		return False
 
@@ -187,3 +189,76 @@ class FMFileManagement:
 			return filepath_start
 		else:
 			return False
+
+
+class FMZipFileManagement:
+
+	@staticmethod
+	def listFiles(filepath):
+		""" Will list all the files in the filepath.
+		- filepath : the path of the file to open
+		"""
+
+		zfile = zipfile.ZipFile(filepath, 'r')
+		try:
+			result = zfile.namelist()  # We list all the files in the zip file
+		finally:
+			zfile.close()
+
+		return result
+
+	@staticmethod
+	def open(zipfilepath,filename,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
+		"""
+		- zipfilepath : the path of the zipfile to open
+		- filename :  the name of the file to open inside the zipfile
+		- with_codecs : if true, will give a utf-8 string
+		- output : if output=='read' --> .read()
+		           if output=='readlines' (or other) --> .readlines()
+		- mode : the mode option in codecs.open function
+		- encoding: the encoding option in codecs.open function
+					(only if with_codecs is True)
+		"""
+		zipfilepath = str(zipfilepath) # if zipfilepath is a pathlib.Path
+
+		zipfilepath = os.path.expanduser(zipfilepath)
+		zf = zipfile.ZipFile(zipfilepath)
+
+		try:
+			data = zf.read(filename)
+		finally:
+			zf.close()
+
+		if with_codecs:
+			# data = io.TextIOWrapper(data, encoding)
+			data = data.decode('utf-8')
+
+		return data
+
+	@staticmethod
+	def save(text,zipfilepath,filename,with_codecs=True,encoding='utf-8',
+										modezip='a',ext=None):
+		""" Function that will save the information contained in text into
+		the file at filepath.
+		- text: the unicode string to save into the path
+		- zipfilepath: the path of the zip file
+		- filename: the filename inside the zipfile
+		- with_codecs : if True, will give a utf-8 string (or whatever is
+			specified in encoding)
+		- encoding: the encoding option in codecs.open function
+			(only if with_codecs is True)
+		- modezip : the open option of the the zipfile ('w' or 'a')
+		- ext: if not None, with ensure the extension (put the dot in front of
+			the extension)
+		"""
+		zipfilepath = os.path.expanduser(str(zipfilepath))
+		if ext != None and  os.path.splitext(filename)[1]!=ext:
+			filename = os.path.splitext(filename)[0]+ext
+
+		zf = zipfile.ZipFile(zipfilepath,mode=modezip)
+		try :
+			zf.writestr(filename, text)
+		finally:
+			zf.close()
+
+		return True

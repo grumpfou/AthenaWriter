@@ -1,7 +1,7 @@
 import os
 from .DocExportPreferences import *
 from TextStyles.TextStylesList import TSStyleClassSeparator,TSStylePhantom
-from FileManagement.FileManagement import FMFileManagement
+from FileManagement.FileManagement import FMTextFileManagement
 from pathlib import Path
 
 def cm_add(A,start_defaults,descriptions={}):
@@ -147,12 +147,12 @@ class DEExportGeneral:
 		"""
 		assert self.text, 'Yous should run self.export() before'
 		if filepath==None:#OLD!!!
-			res1 = FMFileManagement.save_gui(str(self.text),default_saving_site,#OLD!!!
+			res1 = FMTextFileManagement.save_gui(str(self.text),default_saving_site,#OLD!!!
 						extension=self.extension,parent=parent)
 		else:
 			filepath,e = os.path.splitext(filepath)
 			filepath += '.' + self.extension
-			res1 = FMFileManagement.save(str(self.text),filepath=filepath)
+			res1 = FMTextFileManagement.save(str(self.text),filepath=filepath)
 		return res1
 
 
@@ -387,7 +387,7 @@ class DEExportExternal (DEExportGeneral):
 															parent=None):
 		"""Returns (filepath_inter,dirpath_inter,filepath_final)"""
 		if filepath==None:
-			filepath_final = FMFileManagement.save_gui(str(self.text),
+			filepath_final = FMTextFileManagement.save_gui(str(self.text),
 					default_saving_site,extension=self.extension,parent=parent)
 			filepath_inter,e = os.path.splitext(filepath_final )
 			dirpath_inter,e = os.path.split(filepath_final )
@@ -400,7 +400,7 @@ class DEExportExternal (DEExportGeneral):
 			dirpath_inter,e = os.path.split(filepath_inter)
 			filepath_inter = filepath_inter+ '.' + \
 									self.intermediate_export_class.extension
-			FMFileManagement.save(str(self.text),filepath=filepath_inter)
+			FMTextFileManagement.save(str(self.text),filepath=filepath_inter)
 
 		return filepath_inter,dirpath_inter,filepath_final
 

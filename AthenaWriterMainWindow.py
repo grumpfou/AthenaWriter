@@ -10,7 +10,7 @@ from DocProperties.DocPropertiesStatistics import DPStatisticsDialog
 from DocProperties.DocPropertiesMetaData import DPMetaData
 from DocExport.DocExportDialog import DEDialog
 from DocImport.DocImport import DIDict
-from FileManagement.FileManagement import FMFileManagement
+from FileManagement.FileManagement import FMTextFileManagement
 from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from TextEdit.TextEdit import TETextEdit
 from TextLanguages.TextLanguages import TLDico
@@ -249,7 +249,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		force_ask : if True, will force asking for the new filepath
 		"""
 		if self.filepath==None or force_ask:
-			filepath = FMFileManagement.save_gui_filepath(
+			filepath = FMTextFileManagement.save_gui_filepath(
 					self.get_default_opening_saving_site(),
 					self,filter="AthW files (*.athw);; All files (*.*)",
 					ext=".athw")
@@ -344,7 +344,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		if (res != QtWidgets.QMessageBox.Yes) and (res != QtWidgets.QMessageBox.No):
 			return False
 		if filepath==None:
-			filepath = FMFileManagement.open_gui_filepath(
+			filepath = FMTextFileManagement.open_gui_filepath(
 					self.get_default_opening_saving_site(),
 					self,filter="AthW files (*.athw);; All files (*.*)")
 		else :
@@ -385,11 +385,11 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			return False
 		if filepath==None:
 			extensions = list(DIDict.keys())
-			filepath = FMFileManagement.open_gui_filepath(parent=self,
+			filepath = FMTextFileManagement.open_gui_filepath(parent=self,
 				dft_opening_saving_site = self.get_default_opening_saving_site(),
 				filter='*.'+ ' *.'.join(extensions))
 
-			# filepath = FMFileManagement.open_gui_filepath(
+			# filepath = FMTextFileManagement.open_gui_filepath(
 			# 		self.get_default_opening_saving_site(),
 			# 		self)
 		else :
@@ -483,8 +483,8 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 	def SLOT_actionViewFullScreen(self):
 		if not self.fullScreened:
 			self.showFullScreen()
-			self.textEdit.setVerticalScrollBarPolicy(
-					QtCore.Qt.ScrollBarAlwaysOff)
+			# self.textEdit.setVerticalScrollBarPolicy(
+			# 		QtCore.Qt.ScrollBarAlwaysOff)
 			self.menuBar().setHidden(True)
 			if AWPreferences['FULLSCREEN_CENTRAL_MAX_SIZE']>0:
 				rec = QtWidgets.QApplication.desktop().screenGeometry()
@@ -535,7 +535,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			direct,file=os.path.split(self.filepath)
 			tmp_filepath = os.path.join(direct,
 					AWPreferences['TMP_FILE_MARK']+file)
-			res = FMFileManagement.save(
+			res = FMTextFileManagement.save(
 					str(self.textEdit.toXml()),tmp_filepath)
 
 	@QtCore.pyqtSlot()
@@ -556,7 +556,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 															os.listdir('.'):
 			i+=1
 		name=AWPreferences['TMP_FILE_MARK']+"tmp"+str(i).zfill(3)+'.txt'
-		FMFileManagement.save(text,name, encoding='utf-8-sig', mode='w')
+		FMTextFileManagement.save(text,name, encoding='utf-8-sig', mode='w')
 		try:
 			s=subprocess.Popen(path+' '+os.path.abspath(name))
 		except OSError as e:
@@ -569,7 +569,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 
 			if (res == QtWidgets.QMessageBox.Yes) :
-				text = FMFileManagement.open(name, encoding='utf-8-sig', mode='rb')
+				text = FMTextFileManagement.open(name, encoding='utf-8-sig', mode='rb')
 				self.textEdit.setText(text,type='xml')
 
 	@QtCore.pyqtSlot()

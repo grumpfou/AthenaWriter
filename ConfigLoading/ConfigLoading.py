@@ -8,7 +8,7 @@ import sys,os
 d,f = os.path.split(__file__)
 sys.path.append(os.path.join(d,'../'))
 # sys.path.append('/home/dessalles/Programmation/Python/AthenaWriterNew1/FileManagement/')
-from FileManagement.FileManagement import FMFileManagement
+from FileManagement.FileManagement import FMTextFileManagement
 ##############################################################################
 
 from .ConfigLoadingPreferences import CLPreferences
@@ -66,7 +66,7 @@ class CLSpelling:
 
 		res=[]
 		# We read the config file
-		file=FMFileManagement.open(filepath,output='readlines')
+		file=FMTextFileManagement.open(filepath,output='readlines')
 
 		# We fill the res with the values contained into the file
 		for ligne in file:
@@ -81,7 +81,7 @@ class CLSpelling:
 		words = list(set(words))
 		to_save = '\n'.join(words)
 
-		file=FMFileManagement.save(to_save,filepath=filepath)
+		file=FMTextFileManagement.save(to_save,filepath=filepath)
 
 	@staticmethod
 	def add_words(words,where,local_dir=None):
@@ -119,11 +119,11 @@ class CLAutoCorrection:
 
 	@staticmethod
 	def open(filepath):
-		file=FMFileManagement.open(filepath,output='readlines')
+		file=FMTextFileManagement.open(filepath,output='readlines')
 
 		res={}
 		# We read the config file
-		file=FMFileManagement.open(filepath,output='readlines')
+		file=FMTextFileManagement.open(filepath,output='readlines')
 
 		# We fill the res with the values contained into the file
 		for ligne in file:
@@ -142,7 +142,7 @@ class CLAutoCorrection:
 		words = [(k,words[k]) for k in words_keys]
 		words = [' '.join(w) for w in words]
 		to_save = '\n'.join(words)
-		file=FMFileManagement.save(to_save,filepath=filepath)
+		file=FMTextFileManagement.save(to_save,filepath=filepath)
 
 	@staticmethod
 	def add_words(words,where,local_dir=None):
@@ -224,7 +224,7 @@ class CLPreferencesFiles:
 		result_dictionary={}
 
 		# We read the config.txt file
-		file=FMFileManagement.open(pathway,output='readlines')
+		file=FMTextFileManagement.open(pathway,output='readlines')
 
 		# We get rid of the comments and empty lines
 		file,equivalent_line = CLPreferencesFiles.clean_file(file)
@@ -342,7 +342,7 @@ class CLPreferencesFiles:
 				s += str(v)+'\n'
 
 
-		file=FMFileManagement.save(s,filepath=filepath)
+		file=FMTextFileManagement.save(s,filepath=filepath)
 
 	@staticmethod
 	def replace(where='user',**kargs):
