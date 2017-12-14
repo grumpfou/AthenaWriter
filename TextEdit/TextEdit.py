@@ -717,9 +717,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.cut()
 		elif (event.key() == QtCore.Qt.Key_Tab):
 			pass # No tab…
-		elif (event.key() == QtCore.Qt.Key_Alt):
-			# if self.parent()!=None:
-			# 	self.parent().keyPressEvent(event)
 		else:
 			QtWidgets.QTextEdit.keyPressEvent(self,event)
 
