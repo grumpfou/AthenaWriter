@@ -12,7 +12,6 @@ from TextStyles.TextStyles				import *
 from TextStyles.TextStylesList			import TSStyleClassChar,TSStyleClassBlock,TSFontSizeAdjusmentDict
 from TextLanguages.TextLanguages		import *
 from CommonObjects.CommonObjects		import COOrderedDict
-from ConfigLoading.ConfigLoading 		import CLSpelling,CLAutoCorrection
 from FileManagement.FileManagement 		import FMTextFileManagement
 
 from TextStyles.TextStylesPreferences			import TSPreferences
@@ -26,7 +25,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		"""
 		- parent : the parent widget
 		"""
-		QtWidgets.QTextEdit.__init__(self,parent=None)
+		QtWidgets.QTextEdit.__init__(self,parent=parent)
 
 		self.cursorPositionChanged.connect( self.SLOT_cursorPositionChanged)
 		self.textChanged .connect( self.SLOT_textChanged)
@@ -39,8 +38,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 				# corrections when it will move
 
 		local_dir = self.get_local_dir()
-		self.dict_autocorrection = CLAutoCorrection.get_values(
-														local_dir=local_dir)
+
 		self.changeLanguage(language_name)
 
 		self.findDialog 		= TEFindDialog(textedit=self)
@@ -185,7 +183,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 			local_dir,tmp = os.path.split(self.parent().filepath)
 		return local_dir
 
-	def setText(self,text=None,new_language=None,type='plain',profile=None):
+	def setText(self,text="",new_language=None,type='plain',profile=None):
 		"""This method will set the text contained in text (when changing the
 		active scene for instance.
 		- text : the text to insert (if None then it will insert u"")
@@ -194,9 +192,10 @@ class TETextEdit(QtWidgets.QTextEdit):
 		- type : 'plain' if raw text ; 'xml' if the personal format ; 'html' if
 				html
 		"""
-		if text==None: text=""
 		for k,v in TEDictCharReplace.items():
 			text = text.replace(k,v)
+
+
 		# We change the language if necessary
 		if new_language!=None :
 			if self.language.name!=new_language or self.language.profile!=profile:
@@ -208,13 +207,11 @@ class TETextEdit(QtWidgets.QTextEdit):
 		cursor , document= self.setDocumentFormat(document)
 		local_dir = self.get_local_dir()
 
-		self.dict_autocorrection = CLAutoCorrection.get_values(
-														local_dir=local_dir)
 		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
-			list_spelling = CLSpelling.get_values(local_dir=local_dir)
+			if self.parent()!=None:	list_spelling = self.parent().config_spelling.getValues()
+			else: list_spelling = []
 			self.highlighter = TEHighlighter(document,self.language,
 												list_spelling=list_spelling)
-
 
 		if type=='plain' 	: cursor.insertText(text)
 		elif type=='html' 	: cursor.insertHtml (text)
@@ -399,15 +396,15 @@ class TETextEdit(QtWidgets.QTextEdit):
 		"""
 		# to replace curved apostroph by stright ones
 		word = self.highlighter.toRawWord(word)
-		local_dir = self.get_local_dir()
 
 		try :
-			CLSpelling.add_words(words=[word],where=where,local_dir=local_dir)
-			self.highlighter.dict.add(word)
+			self.parent().config_spelling.update(words=[word],where=where)
+			self.highlighter.dict.add_to_session(word)
 			self.highlighter.rehighlight ()
 
-		except IOError as e:
-			QtWidgets.QMessageBox.critical(self,'Input error',e)
+		except Exception as e:
+			QtWidgets.QMessageBox.critical(self,'Could not add the word',str(e))
+			raise e
 
 	def SLOT_setStyle(self,style_id):
 		cursor=self.textCursor()
@@ -613,20 +610,26 @@ class TETextEdit(QtWidgets.QTextEdit):
 		print(('TO CHECK : we indeed changed the local dir before changing '+\
 			'the language.'))
 		local_dir = self.get_local_dir()
+
+		if self.parent()!=None :
+			dict_autocorrection = self.parent().config_autocor.getValues()
+		else:
+			dict_autocorrection = None
+
 		# fill self.language according to the language in entry
 		if language_name==None:
 			lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-			self.language=lang(self.dict_autocorrection,profile=profile)
+			self.language=lang(dict_autocorrection,profile=profile)
 		else :
 			# FUTURE to change  merge TLDico and choice
 			if str(language_name) not in TLDico:
 				lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-				self.language=lang(self.dict_autocorrection,profile=profile)
+				self.language=lang(dict_autocorrection,profile=profile)
 				raise WWError("Do not have the typography for the language "+\
 																language_name)
 			else:
 				lang = TLDico[language_name]
-				self.language = lang(self.dict_autocorrection,profile=profile)
+				self.language = lang(dict_autocorrection,profile=profile)
 				profile = self.language.profile
 
 		self.actionProfileDict[self.language.profile].setChecked(True)
@@ -659,10 +662,10 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		# Change the Highlighter for the new language
 		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
-			if local_dir!=None:
-				list_spelling = CLSpelling.get_values(local_dir=local_dir)
+			if self.parent()!=None:
+				list_spelling = self.parent().config_spelling.getValues()
 			else:
-				list_spelling=None
+				list_spelling = None
 			self.highlighter = TEHighlighter(self.document(),self.language,
 												list_spelling=list_spelling)
 			self.highlighter.rehighlight ()
@@ -779,6 +782,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 					# suggestions.
 					if len(spell_menu.actions()) != 0:
 						spell_menu.addSeparator()
+						act_fil = QtWidgets.QAction('Add word to the file',
+																	spell_menu)
 						act_loc = QtWidgets.QAction('Add word to local dict',
 																	spell_menu)
 						act_usr = QtWidgets.QAction('Add word to user dict',
@@ -786,23 +791,29 @@ class TETextEdit(QtWidgets.QTextEdit):
 						act_glo = QtWidgets.QAction('Add word to global dict',
 																	spell_menu)
 
+						spell_menu.addAction(act_fil)
 						spell_menu.addAction(act_loc)
 						spell_menu.addAction(act_usr)
 						spell_menu.addAction(act_glo)
 
-						if self.parent()==None or self.parent().filepath==None:
+						if self.parent()==None:
+							act_fil.setEnabled(False)
 							act_loc.setEnabled(False)
+							act_usr.setEnabled(False)
+							act_glo.setEnabled(False)
 
 						# c = QtCore.QObject.connect # TR:todelete
 						# trig = QtCore.SIGNAL("triggered ()")# TR:todelete
 
+						slot_fil = lambda : self.SLOT_addWordSpelling(text,'file')
 						slot_loc = lambda : self.SLOT_addWordSpelling(text,'local')
 						slot_usr = lambda : self.SLOT_addWordSpelling(text,'user')
 						slot_glo = lambda : self.SLOT_addWordSpelling(text,'global')
 
-						act_loc.triggered.connect( slot_loc)
-						act_usr.triggered.connect( slot_usr)
-						act_glo.triggered.connect( slot_glo)
+						act_fil.triggered.connect(slot_fil)
+						act_loc.triggered.connect(slot_loc)
+						act_usr.triggered.connect(slot_usr)
+						act_glo.triggered.connect(slot_glo)
 
 						# map = QtCore.SLOT("map()")
 						# act_loc.triggered.connect( mapper, map)

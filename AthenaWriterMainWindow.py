@@ -2,7 +2,6 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 from AthenaWriterPreferences import *
 from AthenaWriterCore import AWCore,AWAbout
-# from ConfigLoading.ConfigLoadingLastFiles import CLLastFiles
 from ConfigLoading.ConfigLoadingPreferencesDialog import CLPreferencesDialog
 from ConstantsManager.ConstantsManagerWidget import CMDialog
 from ConstantsManager.ConstantsManager import CMConstantsManager
@@ -11,7 +10,6 @@ from DocProperties.DocPropertiesMetaData import DPMetaData
 from DocExport.DocExportDialog import DEDialog
 from DocImport.DocImport import DIDict
 from FileManagement.FileManagement import FMTextFileManagement
-from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from TextEdit.TextEdit import TETextEdit
 from TextLanguages.TextLanguages import TLDico
 from TextStyles.TextStyles import TSManager
@@ -70,7 +68,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 		self.actionRecentFilesList = []
 		# dico=self.language.shortcuts_insert
-		for path in self.lastFiles.list_files:
+		for path in self.lastFiles.getValues():
 			#create the actions to open the last files
 			act = QtWidgets.QAction(path,self)
 			self.actionRecentFilesList.append(act)
@@ -118,7 +116,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 
 		# Add last file list
 		mapper = QtCore.QSignalMapper(self)
-		for path,act in zip(self.lastFiles.list_files,self.actionRecentFilesList):
+		for path,act in zip(self.lastFiles.getValues(),self.actionRecentFilesList):
 			act.triggered .connect( mapper.map)
 			# short.setContext(QtCore.Qt.WidgetShortcut)
 			mapper.setMapping(act, path)
@@ -304,7 +302,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			self.setWindowTitle("AthenaWriter : "+self.filepath)
 			tmp,filename = os.path.split(self.filepath)
 			self.changeMessageStatusBar("Has saved "+filename)
-			self.lastFiles.addFile(self.filepath)
+			self.lastFiles.update([self.filepath])
 			self.textEdit.setReadOnly(False)
 
 
@@ -369,7 +367,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 			self.setWindowTitle("AthenaWriter : "+self.filepath)
 			tmp,filename = os.path.split(filepath)
 			self.changeMessageStatusBar("Has opened "+filename)
-			self.lastFiles.addFile(self.filepath)
+			self.lastFiles.update([self.filepath])
 
 			return True
 		else:
@@ -579,15 +577,17 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		if d:
 			AWOverwritePreferences(d)
 			pref_dict , descr_dict = AWPreferencesToDict(skip_same_as_dft=True)
-			CLPreferencesFiles.replace(dict_to_save=pref_dict,
-													descriptions=descr_dict)
+
+			d = CLPreferencesFiles()
+			d.update(other_dict=pref_dict,where='user')
+			d.saveConfig(descriptions=descr_dict,where='user')
 
 
 	def closeEvent(self, event):
 		"""Check if we have changed something without saving"""
 		res=self.doSaveDialog()
 		if (res == QtWidgets.QMessageBox.Yes) or (res == QtWidgets.QMessageBox.No):
-			FMLastFilesFile.save(self.lastFiles.list_files)
+			self.lastFiles.saveConfig('user')
 			self.clean_tmp_files()
 			if AWPreferences['AUTOSAVE']: #We stop the thread of the autosave
 				self.threading_autosave.cancel()

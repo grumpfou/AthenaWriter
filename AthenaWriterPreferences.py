@@ -125,5 +125,5 @@ def AWPreferencesToDict(skip_same_as_dft=False):
 	return pref_dict , descr_dict
 
 
-d = CLPreferencesFiles.get_values(errors='print')
+d = CLPreferencesFiles().getValues()
 AWOverwritePreferences(d)

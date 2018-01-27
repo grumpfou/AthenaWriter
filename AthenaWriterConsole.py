@@ -85,11 +85,11 @@ class AWConsole (AWCore):
 			if self.args.file!=None:
 				raise AWConsoleError("Do not use the '-1' argument if a file"+\
 						"is specified.")
-			if len(self.lastFiles.list_files)==0:
+			if len(self.lastFiles.getValues())==0:
 				raise AWConsoleError("The last files memory is empty can not"+\
 						"open the last of the list.")
 
-			self.args.file=self.lastFiles.list_files[self.args.last_file-1]
+			self.args.file=self.lastFiles.getValues()[self.args.last_file-1]
 
 		if self.args.importt!=None or self.args.export!=None:
 			if self.args.last_file :
@@ -175,9 +175,8 @@ class AWConsole (AWCore):
 		if self.args.list_last_files:# if we export the file, the console mode
 							# is disabled
 			self.args.console = True
-			print('self.lastFiles : ',self.lastFiles)
 
-			lf = self.lastFiles.list_files
+			lf = self.lastFiles.getValues()
 			if len(lf)>9: lf = lf[:9]
 			print("=== Last files list ===")
 			print('\n'.join([str(i+1)+'- '+v for i,v in enumerate(lf)]))

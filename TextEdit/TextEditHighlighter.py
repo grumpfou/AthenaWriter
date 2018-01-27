@@ -22,10 +22,11 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 		QtGui.QSyntaxHighlighter.__init__(self,parent)
 		self.lang = TLEnchantDico[texteditlanguage.name]
 		self.dict = enchant.Dict(self.lang)
+
 		if list_spelling!=None:
 			for w in list_spelling:
-				self.dict.add(w)
-				
+				self.dict.add_to_session(w)
+
 	def highlightBlock(self, text):
 		if TEPreferences['SPELL_CHECK'] :
 			self.spellCheckHighlight(text)

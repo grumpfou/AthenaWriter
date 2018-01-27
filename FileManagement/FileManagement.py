@@ -8,8 +8,8 @@ import zipfile
 
 class FMTextFileManagement:
 
-	@staticmethod
-	def save(text,filepath,encoding='utf-8',mode='w',ext=None):
+	@classmethod
+	def save(cls,text,filepath,encoding='utf-8',mode='w',ext=None):
 		""" Function that will save the information contained in text into
 		the file at filepath.
 		- text: the unicode string to save into the path
@@ -30,9 +30,8 @@ class FMTextFileManagement:
 
 		return True
 
-
-	@staticmethod
-	def save_gui(text,dft_opening_saving_site=None,parent=None,
+	@classmethod
+	def save_gui(cls,text,dft_opening_saving_site=None,parent=None,
 		ext=False,filter="",*args,**kargs):
 		""" Function that will open a dialog window to save the file.
 		- text : the unicode sstring to save into the file
@@ -41,18 +40,18 @@ class FMTextFileManagement:
 		- parent: the parent widget (for the dialog window to be modal)
 		- ext: if not False, will force this extension
 		"""
-		filepath = FMTextFileManagement.save_gui_filepath (
+		filepath = cls.save_gui_filepath (
 				dft_opening_saving_site=dft_opening_saving_site,
 				parent=parent, ext=ext, filter=filter)
 
 		if filepath:
 			filepath=str(filepath)
-			FMTextFileManagement.save(text,filepath,*args,**kargs)
+			cls.save(text,filepath,*args,**kargs)
 			return filepath
 		return False
 
-	@staticmethod
-	def save_gui_filepath(dft_opening_saving_site=None,parent=None,ext=False,
+	@classmethod
+	def save_gui_filepath(cls,dft_opening_saving_site=None,parent=None,ext=False,
 													filter=""):
 		""" Function that will open a dialog window to get a filepath.
 		- dft_opening_saving_site : the path where to put the window at first
@@ -91,13 +90,13 @@ class FMTextFileManagement:
 									dft_opening_saving_site,filter=filter)[0]
 		return filepath
 
-	@staticmethod
-	def open(filepath,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
+	@classmethod
+	def open(cls,filepath,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
 		"""
 		- filepath : the path of the file to open
 		- with_codecs : if true, will give a utf-8 string
 		- output : if output=='read' --> .read()
-		           if output=='readlines' (or other) --> .readlines()
+		           if output=='readlines' --> .readlines()
 		- mode : the mode option in codecs.open function
 		- encoding: the encoding option in codecs.open function
 					(only if with_codecs is True)
@@ -112,15 +111,18 @@ class FMTextFileManagement:
 		try :
 			if output=='read':
 				res = fid.read()
-			else:
+			elif output=='readlines':
 				res = fid.readlines()
-
+			else:
+				raise ValueError(
+					"`output` parameter should be in {'read' or 'readlines'}"
+					)
 		finally:
 			fid.close()
 		return res
 
-	@staticmethod
-	def open_gui(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
+	@classmethod
+	def open_gui(cls,dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to open a file.
 		- dft_opening_saving_site : the path where to put the window at first
 			(default : current path)
@@ -129,18 +131,18 @@ class FMTextFileManagement:
 		- filepath : the path to the file that is opened
 		- text : the unicode string contained in the file
 		"""
-		filepath = FMTextFileManagement.open_gui_filepath(
+		filepath = cls.open_gui_filepath(
 			dft_opening_saving_site=dft_opening_saving_site, parent=parent,
 			filter=filter)
 
 		if filepath:
 			filepath=str(filepath)
-			res = FMTextFileManagement.open(filepath,*args,**kargs)
+			res = cls.open(filepath,*args,**kargs)
 			return filepath,res
 		return False
 
-	@staticmethod
-	def open_gui_filepath(dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
+	@classmethod
+	def open_gui_filepath(cls,dft_opening_saving_site=None,parent=None,filter="",*args,**kargs):
 		""" Function that will open a dialog window to get a filepath to open.
 		- dft_opening_saving_site : the path where to put the window at first
 			(default : current path)
@@ -157,8 +159,8 @@ class FMTextFileManagement:
 
 		return filepath
 
-	@staticmethod
-	def exists(filepath):
+	@classmethod
+	def exists(cls,filepath):
 		"""Look if the file exists, and if do propose to rename it.
 		Return the new filepath (False is canceled)"""
 		if type(filepath) == pathlib.Path:
@@ -191,10 +193,51 @@ class FMTextFileManagement:
 			return False
 
 
-class FMZipFileManagement:
+class FMZipFileManagement (FMTextFileManagement):
+	@classmethod
+	def splitZipfilepath(cls,filepath):
+		""" Deals with path with the name ./foo.zip/foo1.txt
 
-	@staticmethod
-	def listFiles(filepath):
+		Returns:
+		⋅ If no zipfile can be found, returns False
+		⋅ Otherwise, returns the tuple (zipfilepath,filename,inzip) with
+			- zipfilepath : returns the zip filepath.
+			- filename : the name of the file in the archive
+			- inzip : True if the file is in the zipfile
+
+		Examples:
+		- './foo.zip/foo1.txt' with the zipfile 'foo.zip' existing and the
+			file 'foo1.txt' in the zipfile existing:
+			Returns ('foo.zip','foo1.txt',True)
+		- './foo.zip/foo1.txt' with the zipfile 'foo.zip' existing and the
+			file 'foo1.txt' not in the zipfile :
+			Returns ('foo.zip','foo1.txt',False)
+		- './foo.zip' with the zipfile 'foo.zip' existing:
+			Returns ('foo.zip',None,False)
+		- './foo.zip/foo1.txt' with the zipfile 'foo.zip' not existing:
+			Returns False
+		- './foo.txt' with the file 'foo.txt' not a zipfile:
+			Returns False
+		"""
+		filepath = pathlib.Path(filepath)
+		if zipfile.is_zipfile(str(filepath)):
+			return (str(filepath),None,False)
+
+		for zipfilepath in filepath.parents:
+			if zipfile.is_zipfile(str(zipfilepath)):
+				break
+		else:
+			return False
+
+		filename = filepath.relative_to(zipfilepath)
+
+		zipfilepath = str(zipfilepath)
+		filename = str(filename)
+		return (zipfilepath,filename,filename in cls.listFiles(zipfilepath))
+
+
+	@classmethod
+	def listFiles(cls,filepath):
 		""" Will list all the files in the filepath.
 		- filepath : the path of the file to open
 		"""
@@ -207,14 +250,14 @@ class FMZipFileManagement:
 
 		return result
 
-	@staticmethod
-	def open(zipfilepath,filename,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
+	@classmethod
+	def open(cls,zipfilepath,filename,with_codecs=True,output='read',mode='rU',encoding='utf-8'):
 		"""
 		- zipfilepath : the path of the zipfile to open
 		- filename :  the name of the file to open inside the zipfile
 		- with_codecs : if true, will give a utf-8 string
 		- output : if output=='read' --> .read()
-		           if output=='readlines' (or other) --> .readlines()
+		           if output=='readlines' --> .readlines()
 		- mode : the mode option in codecs.open function
 		- encoding: the encoding option in codecs.open function
 					(only if with_codecs is True)
@@ -226,17 +269,23 @@ class FMZipFileManagement:
 
 		try:
 			data = zf.read(filename)
+			if with_codecs:
+				data = data.decode(encoding)
+
+			if output=='readlines': # For some reason, zipfile does not have readlines methods
+				data = data.split("\n")
+
+			elif not output=='read':
+				raise ValueError(
+					"`output` parameter should be in {'read' or 'readlines'}"
+					)
 		finally:
 			zf.close()
 
-		if with_codecs:
-			# data = io.TextIOWrapper(data, encoding)
-			data = data.decode('utf-8')
-
 		return data
 
-	@staticmethod
-	def save(text,zipfilepath,filename,with_codecs=True,encoding='utf-8',
+	@classmethod
+	def save(cls,text,zipfilepath,filename,with_codecs=True,encoding='utf-8',
 										modezip='a',ext=None):
 		""" Function that will save the information contained in text into
 		the file at filepath.
@@ -247,7 +296,7 @@ class FMZipFileManagement:
 			specified in encoding)
 		- encoding: the encoding option in codecs.open function
 			(only if with_codecs is True)
-		- modezip : the open option of the the zipfile ('w' or 'a')
+		- modezip : the open option of the zipfile ('w' or 'a')
 		- ext: if not None, with ensure the extension (put the dot in front of
 			the extension)
 		"""

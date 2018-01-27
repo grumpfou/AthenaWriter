@@ -17,11 +17,9 @@ from AthenaWriterPreferences import *
 from TextEdit.TextEdit import TETextEdit
 from TextStyles.TextStyles import TSManager
 from FileManagement.FileManagement import FMTextFileManagement, FMZipFileManagement
-from FileManagement.FileManagementAutoCorrection import FMAutoCorrectionFile
-from FileManagement.FileManagementLastFiles import FMLastFilesFile
 from DocExport.DocExport import DEList
 from DocImport.DocImport import DIDict
-from ConfigLoading.ConfigLoadingLastFiles import CLLastFiles
+from ConfigLoading.ConfigLoading import CLSpelling,CLAutoCorrection,CLLastFiles
 from DocProperties.DocPropertiesMetaData import DPMetaData
 
 import sys
@@ -47,7 +45,9 @@ class AWCore:
 										TLPreferences['DFT_WRITING_LANGUAGE'])
 		self.metadata = DPMetaData()
 		self.filepath=None
-		self.lastFiles=CLLastFiles(FMLastFilesFile.open())
+		self.lastFiles=CLLastFiles()
+		self.config_spelling = CLSpelling()
+		self.config_autocor = CLAutoCorrection()
 
 
 	def CMD_FileSave(self,filepath=None):
@@ -78,10 +78,29 @@ class AWCore:
 			self.metadata.__setitem__('profile',
 						self.textEdit.language.profile, protected=False)
 
-			self.metadata['athw_version'] = __version__
+			self.metadata.__setitem__('athw_version', __version__,
+			 			protected=False)
 
 			to_save = self.metadata.toxml()
 			res = FMZipFileManagement.save(to_save,filepath,'meta.xml')
+
+			self.config_spelling.local_file = filepath
+			self.config_autocor.local_file = filepath
+
+			self.config_spelling.saveConfig('file')
+			self.config_autocor.saveConfig('file')
+
+			def updateLocal(config):
+				_,filepath_config,exists = config.get_file_list(where='local')[0]
+				if exists:
+					config_tmp = config.__class__(local_file=filepath)
+					if config.dictConfig['local'] != None:
+						config_tmp.update(config.dictConfig['local'],'local')
+					config=config_tmp
+				config.saveConfig('local')
+				return config
+			self.config_spelling = updateLocal(self.config_spelling)
+			self.config_autocor = updateLocal(self.config_autocor)
 
 		if tmpfile: #  We remove the temporary file
 			os.remove(tmpfile)
@@ -110,11 +129,15 @@ class AWCore:
 						FMZipFileManagement.open(self.filepath,'meta.xml'))
 			else:
 				metadata=DPMetaData()
+			self.config_spelling.changeFile(filepath)
+			self.config_autocor.changeFile(filepath)
+
 
 		except zipfile.BadZipFile:
 			text,metadata = self.CMD_FileOpen_version_1(filepath)
 		except KeyError as e:
 			raise IOError('Not a correct ATHW file'+str(e))
+
 
 		self.metadata =  metadata
 		language = self.metadata['language']

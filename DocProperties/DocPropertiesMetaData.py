@@ -40,7 +40,7 @@ class DPMetaData(CMConstantsManager):
 		athw_version = (str,"Unknown"),
 		)
 
-	keys_protected = {'lastpos','profile'}
+	keys_protected = {'lastpos','profile','athw_version'}
 
 	constrains = dict(
 		version = {'min':-1},
