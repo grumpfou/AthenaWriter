@@ -10,11 +10,11 @@ from ConstantsManager.ConstantsManager import CMConstantsManager
 
 class TLPreferencesAbstarct (CMConstantsManager):
 	start_defaults 	= dict(
-			DFT_WRITING_LANGUAGE = (str	,"English"),
+			DFT_WRITING_LANGUAGE = (str	,"French"),
 			DFT_TYPO_PROFILE = (int,0),
 			GUESS_NB_CHAR = (int,2000),
 			)
-			
+
 	descriptions 	= dict(
 			DFT_WRITING_LANGUAGE = "The default writing language",
 			DFT_TYPO_PROFILE = "The default typography profile (0 is, "+\

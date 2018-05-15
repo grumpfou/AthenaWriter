@@ -14,7 +14,10 @@ from CommonObjects.CommonObjects import *
 from CommonObjects.CommonObjectsWidgets import COWidgetsDict
 from pathlib import Path
 
+import inspect
+
 doubleSpinBoxStep = .1
+
 class CMWidget (QtWidgets.QWidget):
 	def __init__(self,constants_manager,constraints_dict=None,key_list=None,
 				*args,**kargs):
@@ -53,8 +56,13 @@ class CMWidget (QtWidgets.QWidget):
 			will work for basic value type
 
 		"""
-		type_ = self.constants_manager.start_defaults[key][0]
 		value = self.constants_manager[key]
+		type_ = value.__class__
+		# Why not simply using :
+		# >>> type_ = self.constants_manager.start_defaults[key][0]
+		# Because self.constants_manager.start_defaults[key][0] can be a
+		# function that returns the correct object.
+
 		descr =  self.constants_manager.descriptions.get(key,None)
 		if key in self.constraints_dict:
 			constraints = self.constraints_dict[key]
@@ -66,6 +74,7 @@ class CMWidget (QtWidgets.QWidget):
 			wid = COWidgetsDict[type_](self,value,**constraints)
 		else:
 			for k in list(COWidgetsDict.keys()):
+
 				if issubclass(type_,k):
 					wid = COWidgetsDict[k](self,value,**constraints)
 					break
@@ -102,8 +111,6 @@ class CMWidget (QtWidgets.QWidget):
 			if (not skip_same_as_init) or v!=self.constants_manager[k]:
 				res[k]=v
 		return res
-
-
 
 
 class CMDialog (QtWidgets.QDialog):

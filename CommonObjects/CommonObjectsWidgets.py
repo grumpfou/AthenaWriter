@@ -124,11 +124,10 @@ class COWidgetChoice(QtWidgets.QComboBox):
 	def __init__(self,parent,values):
 		self.choice = values
 		QtWidgets.QComboBox.__init__ ( self ,parent=parent)
-		# print 'self.choice.elements_list : ',self.choice.elements_list
-		li = [str(l) for l in self.choice.elements_list]
+		li = [str(l) for l in self.choice]
 		self.addItems(li)
 
-		i = self.choice.elements_list.index(self.choice.active_element)
+		i = self.choice.index(self.choice.active_element)
 		QtWidgets.QComboBox.setCurrentIndex ( self , i )
 
 	def getValue(self):

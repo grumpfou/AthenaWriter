@@ -8,7 +8,6 @@ import re
 
 
 from PyQt5 import QtGui, QtCore, QtWidgets
-from TextLanguages.TextLanguages import TLEnchantDico
 from .TextEditPreferences import TEPreferences,TEHasEnchant,TEDictCharReplace
 if TEHasEnchant :
 	import enchant
@@ -20,15 +19,22 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 
 	def __init__(self,parent,texteditlanguage,list_spelling=None):
 		QtGui.QSyntaxHighlighter.__init__(self,parent)
-		self.lang = TLEnchantDico[texteditlanguage.name]
-		self.dict = enchant.Dict(self.lang)
+		code = texteditlanguage.code_enchant
+		try:
+			self.dict = enchant.Dict(code)
+		except:
+			self.dict = None
+			msg = ("Enchant do not have a dictionary "
+							"%s installed, no spellcheck with this language"%code)
+			QtWidgets.QMessageBox.information(self.parent(),"Enchant dictionary not found",
+					msg)
 
-		if list_spelling!=None:
+		if self.dict!=None and list_spelling!=None:
 			for w in list_spelling:
 				self.dict.add_to_session(w)
 
 	def highlightBlock(self, text):
-		if TEPreferences['SPELL_CHECK'] :
+		if TEPreferences['SPELL_CHECK'] and self.dict != None:
 			self.spellCheckHighlight(text)
 		self.specialCharHighlight(text)
 
@@ -44,8 +50,7 @@ class TEHighlighter (QtGui.QSyntaxHighlighter):
 
 
 	def spellCheckHighlight(self,text):
-		if not self.dict :
-			return None
+		assert self.dict!=None
 
 		text = str(text)
 
@@ -150,7 +155,7 @@ if __name__ == '__main__':
 
 	app = QtWidgets.QApplication(sys.argv)
 
-	textedit = TETextEdit(language_name='French',parent=None)
+	textedit = TETextEdit(language_code='fr',parent=None)
 	textedit.highlighter = TEHighlighter(textedit.document(),textedit.language)
 	textedit.show()
 

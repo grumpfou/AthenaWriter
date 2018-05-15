@@ -18,6 +18,7 @@ class TEPreferencesAbstarct (CMConstantsManager):
 
 		RECHECK_TEXT_OPEN 	 = (bool,False),
 		DO_TYPOGRAPHY		 = (bool,True),
+		DO_DELIMITERS        = (bool,True),
 		AUTO_CORRECTION      = (bool,True),
 		LIM_RECURSIV_UNDO    = (int	,100),
 		FIND_LEN_CONTEXT 	 = (int	,10),
@@ -36,6 +37,8 @@ class TEPreferencesAbstarct (CMConstantsManager):
 								"space"),
 		DO_TYPOGRAPHY		 = "Will perform the typography checking while "+\
 			"writing",
+		DO_DELIMITERS		 = "Will auto completed the delimiters "+\
+										"(parentheses, quotation marks etc.)",
 		AUTO_CORRECTION      = "Will perform the word auto-correction while "+\
 			"writing",
 		LIM_RECURSIV_UNDO    = "The limit of recursion to come back before "+\

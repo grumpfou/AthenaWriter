@@ -11,7 +11,6 @@ from DocExport.DocExportDialog import DEDialog
 from DocImport.DocImport import DIDict
 from FileManagement.FileManagement import FMTextFileManagement
 from TextEdit.TextEdit import TETextEdit
-from TextLanguages.TextLanguages import TLDico
 from TextStyles.TextStyles import TSManager
 
 
@@ -467,11 +466,13 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 					constants_manager = self.metadata,
 					skip_same_as_init = True
 					)
+		print("d",d)
 		if d and len(d)>0 :
 			self.metadata.update(d)
 			if 'language' in list(d.keys()):
 				self.textEdit.changeLanguage(
 					language_name = str(d['language']),gui=True)
+
 
 			self.SLOT_somethingChanged()
 

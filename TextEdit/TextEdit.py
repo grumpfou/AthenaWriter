@@ -3,6 +3,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 import sys
 import shutil
 import os
+import collections
+from pathlib import Path
 
 from .TextEditCharTable 				import *
 from .TextEditPreferences 				import *
@@ -11,8 +13,9 @@ from .TextEditHighlighter				import *
 from TextStyles.TextStyles				import *
 from TextStyles.TextStylesList			import TSStyleClassChar,TSStyleClassBlock,TSFontSizeAdjusmentDict
 from TextLanguages.TextLanguages		import *
-from CommonObjects.CommonObjects		import COOrderedDict
 from FileManagement.FileManagement 		import FMTextFileManagement
+from ConstantsManager.ConstantsManager import CMConstantsManager
+from ConstantsManager.ConstantsManagerWidget import CMWidget
 
 from TextStyles.TextStylesPreferences			import TSPreferences
 from TextLanguages.TextLanguagesPreferences		import TLPreferences
@@ -78,7 +81,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.actionZoomOut					= Act("Zoom Out",self)
 		self.actionZoomNormal				= Act("Reset Zoom",self)
 
-		self.actionProfileDict				= COOrderedDict()
+		self.actionProfileDict				= collections.OrderedDict()
 		self.actionProfileDict[0]=Act("Strict profile",self) # profile = 0
 		self.actionProfileDict[1]=Act("Medium profile",self) # profile = 1
 		self.actionProfileDict[10]=Act("Loose profile",self) # profile = 10
@@ -111,7 +114,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		self.actionZoomNormal		 	    .setShortcuts(KS("Ctrl+0") )
 
 
-		self.actionStylesDict = COOrderedDict()
+		self.actionStylesDict = collections.OrderedDict()
 		charActionGroup = QtWidgets.QActionGroup(self)
 		blockActionGroup = QtWidgets.QActionGroup(self)
 		for style in TSManager.listCharStyle + TSManager.listBlockStyle :
@@ -207,11 +210,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		cursor , document= self.setDocumentFormat(document)
 		local_dir = self.get_local_dir()
 
-		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
-			if self.parent()!=None:	list_spelling = self.parent().config_spelling.getValues()
-			else: list_spelling = []
-			self.highlighter = TEHighlighter(document,self.language,
-												list_spelling=list_spelling)
+
 
 		if type=='plain' 	: cursor.insertText(text)
 		elif type=='html' 	: cursor.insertHtml (text)
@@ -226,6 +225,12 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		self.blockSignals (True)
 		self.setDocument(document)
+		if TEPreferences['SPELL_CHECK'] and TEHasEnchant :
+			if self.parent()!=None:	list_spelling = self.parent().config_spelling.getValues()
+			else: list_spelling = []
+			self.highlighter = TEHighlighter(self,self.language,
+												list_spelling=list_spelling)
+
 		# When you set a new document, for some reason, it lost the zoom
 		# just a small  In and Out and it reset the zoom
 		self.zoomIn(1)
@@ -333,7 +338,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 	def SLOT_pluggins(self,iterator):
 		"""Launch the pluggin corresponding to the iterator"""
 		function=self.dico_pluggins[iterator]
-		function(cursor=self.textCursor())
+		function(self.language,cursor=self.textCursor())# TODO, no need to specify language
 
 
 	@QtCore.pyqtSlot()
@@ -477,12 +482,12 @@ class TETextEdit(QtWidgets.QTextEdit):
 			block_id = cursor.blockFormat().property(
 												QtGui.QTextFormat.UserProperty)
 			# # block_id = block_id.toPyObject()
+			cursor.beginEditBlock()
 			if block_id==TSStyleImage.userPropertyId :
 				# if there is an image, we remove the previous one
 				TSManager.inverseStyle(cursor,block_id)
-			TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)
-			cursor.beginEditBlock()
-			cursor.insertText(newfilepath)
+			res,cursor1 = TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)
+			cursor1.insertText(newfilepath)
 			cursor.endEditBlock()
 			self.blockSignals(False)
 			self.somethingChanged .emit()
@@ -617,20 +622,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 			dict_autocorrection = None
 
 		# fill self.language according to the language in entry
-		if language_name==None:
-			lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-			self.language=lang(dict_autocorrection,profile=profile)
-		else :
-			# FUTURE to change  merge TLDico and choice
-			if str(language_name) not in TLDico:
-				lang = TLDico[TLPreferences["DFT_WRITING_LANGUAGE"]]
-				self.language=lang(dict_autocorrection,profile=profile)
-				raise WWError("Do not have the typography for the language "+\
-																language_name)
-			else:
-				lang = TLDico[language_name]
-				self.language = lang(dict_autocorrection,profile=profile)
-				profile = self.language.profile
+		self.language = TLDico[language_name]
+		self.language.update(dict_autocorrection=dict_autocorrection,profile=profile)
 
 		self.actionProfileDict[self.language.profile].setChecked(True)
 
@@ -666,7 +659,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 				list_spelling = self.parent().config_spelling.getValues()
 			else:
 				list_spelling = None
-			self.highlighter = TEHighlighter(self.document(),self.language,
+			self.highlighter = TEHighlighter(self,self.language,
 												list_spelling=list_spelling)
 			self.highlighter.rehighlight ()
 
@@ -720,8 +713,16 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.cut()
 		elif (event.key() == QtCore.Qt.Key_Tab):
 			pass # No tab…
+		elif TEPreferences['DO_DELIMITERS'] and (event.text() in self.language.delimiters):
+			# QtWidgets.QTextEdit.keyPressEvent(self,event)
+			self.blockSignals(True)
+			cursor=self.language.insert_delimiters(event.text(),self.textCursor())
+			# cursor = self.language.check_delimiters()
+			self.setTextCursor(cursor)
+			self.blockSignals(False)
 		else:
 			QtWidgets.QTextEdit.keyPressEvent(self,event)
+
 
 
 
@@ -926,7 +927,7 @@ if __name__ == '__main__':
 
 	app = QtWidgets.QApplication(sys.argv)
 
-	textedit = TETextEdit(language_name='French',parent=None)
+	textedit = TETextEdit(language_name='fr',parent=None)
 	# button_refresh	 	= QtWidgets.QPushButton('Stupidity')
 	# textedit.connect(textedit,QtCore.SIGNAL('typographyModification ()'), stupidity)
 	# textedit.emit_typographyModification()

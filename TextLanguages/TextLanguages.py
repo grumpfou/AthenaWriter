@@ -1,8 +1,9 @@
 """
 Part of the  project AthenaWriter. Written by Renaud Dessalles
 Contains the class that deal with the typograpgy.
-The TLAbstract class is the model class of all the language class
-below. It must not be used directly, only subclass should be used.
+The TLLanguage class is the model class of all the language class
+below. Instance of this class will represent a language. They are defined in the
+./languages directory.
 
 There is two ways of correcting the typography of the user :
 - by cheaking during the editing : every time the cursor moves (a char is
@@ -36,33 +37,93 @@ _ a __init__ method with :
 from PyQt5 import QtGui, QtCore, QtWidgets
 
 from .TextLanguagesPreferences import *
-from .TextLanguagesRules import *
+# from .TextLanguagesRules import *
 from TextEdit.TextEditPreferences import TEHasEnchant, TEDictCharReplace
 from TextStyles.TextStyles import TSManager
 from CommonObjects.CommonObjectsWord import *
 from CommonObjects.CommonObjects import COChoice
 
-import enchant
+if TEHasEnchant:
+	import enchant
+import warnings
 
-class TLAbstract:
-	name=''
-	encoding=''
-	shortcuts_insert={}
-	def __init__(self,dict_autocorrection=None,profile=None):
-		"""
-		- profile: int; the number above which we consider teh rule
-		"""
-		### We are creating the autocorrection:
-		if dict_autocorrection==None: dict_autocorrection={}
+class TLRuleAbstract:
+	number = -1
+	title="None"
+	description="None"
+	profile = 0
+	in_languges=[]
+	def __init__(self,language):
+		self.language=language
+		pass
 
-		self.dict_autocorrection=COWordDico(dict_autocorrection)
-		self.shortcuts_correction={	}
-		self.rules=[]
-		if profile == None:
-			profile = TLPreferences['DFT_TYPO_PROFILE']
-		self.profile = profile
+	def __str__(self):
+		return self.title+'\n'+self.description
+
+	def correct(self,last_char,next_char,cursor):
+		raise NotImplementedError
+		return False
+
+
+
+def plugin_deleteBloc(language,cursor):
+	pos1=cursor.selectionStart()
+	pos2=cursor.selectionEnd ()
+	startCursor=QtGui.QTextCursor(cursor)
+	endCursor=QtGui.QTextCursor(cursor)
+	startCursor.setPosition(pos1)
+	endCursor  .setPosition(pos2)
+	startCursor. movePosition(QtGui.QTextCursor.StartOfBlock)
+	endCursor  . movePosition(QtGui.QTextCursor.EndOfBlock)
+
+	cur_tmp=QtGui.QTextCursor(startCursor)
+	cur_tmp.setPosition(endCursor.position(), QtGui.QTextCursor.KeepAnchor)
+	cur_tmp.deleteChar()
+
+
+class TLLanguage:
+
+	#The pluggins common to all languages:
+	shortcuts_correction_plugins = {(QtCore.Qt.CTRL+QtCore.Qt.Key_L,):plugin_deleteBloc}
+
+	def __init__(self,name,code,code_enchant,
+				afterCharRules=[],afterWordRules=[],shortcuts_insert={},
+				shortcuts_correction_plugins={},dict_autocorrection={},
+				profile=None,delimiters=[]):
+		"""
+		name: name of the Language (e.g.: "English" or "French")
+		code: code of the language (e.g.: "en" for English, "fr" for French)
+		afterCharRules : list of TLRuleAbstract subclass that need to be check
+			after each char.
+		afterWordRules : list of TLRuleAbstract subclass that need to be check
+			after each words.
+		shortcuts_insert : dict to insert chars specific to the language under
+			the form of {KeySequence:char_to_insert}
+		shortcuts_correction_plugins : dict to pluggins specific to the language
+			under the form of {KeySequence:function_to_execute} where
+			function_to_execute takes into argument the QTextCursor.
+		delimiters : list of 2-elements tuples (or dictionaries), that
+			represents the different delimiters of the language (like
+			parentheses, quotations marks, etc.).
+		"""
+		for rule in afterCharRules : assert issubclass(rule,TLRuleAbstract)
+		for rule in afterWordRules : assert issubclass(rule,TLRuleAbstract)
+		self.afterCharRules = [rule(language=self) for rule in afterCharRules]
+		self.afterWordRules = [rule(language=self) for rule in afterWordRules]
+		self.name = name
+		self.code = code
+		self.code_enchant = code_enchant
+		self.shortcuts_insert = shortcuts_insert
+		self.shortcuts_correction_plugins .update( shortcuts_correction_plugins)
 		self.dictCharReplace = TEDictCharReplace
+		self.update(dict_autocorrection=dict_autocorrection,profile=profile)
+		self.delimiters = dict(delimiters)
 
+	def update(self,dict_autocorrection=False,profile=False):
+		if dict_autocorrection!=False:
+			self.dict_autocorrection = COWordDico(dict_autocorrection)
+		if profile!=False:
+			self.profile = TLPreferences['DFT_TYPO_PROFILE'] if (profile is None) else profile
 
 
 	def correct_between_chars(self,cursor):
@@ -87,6 +148,34 @@ class TLAbstract:
 
 
 		return False
+
+	def insert_delimiters(self,delim_key,cursor):
+		assert delim_key in self.delimiters
+		if cursor.hasSelection():
+			selectionStart	= cursor.selectionStart()
+			selectionEnd	= cursor.selectionEnd()
+			position		= cursor.position()
+
+			l1 = len(self.delimiters[delim_key][0])
+			l2 = len(self.delimiters[delim_key][1])
+			
+			cursor.beginEditBlock()
+			cursor.setPosition(selectionStart)
+			cursor.insertText(self.delimiters[delim_key][0])
+			cursor.setPosition(selectionEnd+l1)
+			cursor.insertText(self.delimiters[delim_key][1])
+			cursor.setPosition(selectionStart+l1,QtGui.QTextCursor.MoveAnchor)
+			cursor.setPosition(selectionEnd+l1,QtGui.QTextCursor.KeepAnchor)
+			cursor.endEditBlock()
+			# cursor.setPosition(position+l1,QtGui.QTextCursor.KeepAnchor)
+
+		else:
+			cursor.insertText(self.delimiters[delim_key][0])
+			cursor.insertText(self.delimiters[delim_key][1])
+			cursor.movePosition(QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor,len(self.delimiters[delim_key][1]))
+
+		return cursor
+
 
 	def lastChar(self,cursor,n=1):
 		"""Return the left char at the distance n from the cursor (n=1 means
@@ -213,96 +302,6 @@ class TLAbstract:
 
 
 
-class TLEnglish (TLAbstract):
-	encoding='utf-8'
-	name='English'
-	shortcuts_insert={}
-
-
-	def __init__(self,*args,**kargs):
-		TLAbstract.__init__(self,*args,**kargs)
-		self.shortcuts_correction_plugins={}
-		self.afterCharRules=[	\
-						TLRuleEnglish0001(language=self),
-						TLRuleEnglish0002(language=self),
-						TLRuleEnglish0003(language=self),
-						TLRuleEnglish0004(language=self),
-						TLRuleEnglish0005(language=self),
-						TLRuleEnglish0006(language=self),
-						TLRuleEnglish0007(language=self),
-						TLRuleEnglish0008(language=self),
-						TLRuleEnglish0009(language=self),
-						TLRuleEnglish0010(language=self),
-						TLRuleEnglish0011(language=self)]
-		self.afterWordRules = [	]
-
-	def wordCorrection(self,word):
-		return False
-
-
-
-
-class TLFrench (TLAbstract):
-	encoding='utf-8'
-	name='French'
-	shortcuts_insert={
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_7		,QtCore.Qt.SHIFT+QtCore.Qt.Key_A)	:"\u00C0",
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_Comma	,QtCore.Qt.SHIFT+QtCore.Qt.Key_C)	:"\u00C7",
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_4		,QtCore.Qt.SHIFT+QtCore.Qt.Key_E)	:"\u00C9",
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_7		,QtCore.Qt.SHIFT+QtCore.Qt.Key_E)	:"\u00C8"}
-
-
-	def __init__(self,*args,**kargs):
-		TLAbstract.__init__(self,*args,**kargs)
-		self.shortcuts_correction_plugins={
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_D,)	: self.dialog_correction ,
-			(QtCore.Qt.CTRL+QtCore.Qt.Key_L,)	: self.delete_bloc       ,
-			}
-		self.afterCharRules=[	TLRuleFrench0001(language=self),
-						TLRuleFrench0002(language=self),
-						TLRuleFrench0003(language=self),
-						TLRuleFrench0004(language=self),
-						TLRuleFrench0005(language=self),
-						TLRuleFrench0006(language=self),
-						TLRuleFrench0007(language=self),
-						TLRuleFrench0008(language=self),
-						TLRuleFrench0009(language=self),
-						TLRuleFrench0010(language=self),
-						TLRuleFrench0011(language=self),
-						TLRuleFrench0012(language=self),
-						TLRuleFrench0013(language=self)]
-
-		self.afterWordRules = [
-			TLWordCorrectionRuleFrench0001(language=self),
-			]
-
-
-	def dialog_correction(self,cursor):
-		for block in cursor.yieldBlockInSelection():
-			cur_tmp=QtGui.QTextCursor(block)
-			next_char=self.nextChar(cur_tmp)
-			if next_char=='\u2014':
-				cur_tmp.deleteChar()
-			else:
-				cur_tmp.insertText('\u2014')
-			self.correct_between_chars(cur_tmp)
-
-	def delete_bloc(self,cursor):
-		pos1=cursor.selectionStart()
-		pos2=cursor.selectionEnd ()
-		startCursor=QtGui.QTextCursor(cursor)
-		endCursor=QtGui.QTextCursor(cursor)
-		startCursor.setPosition(pos1)
-		endCursor  .setPosition(pos2)
-		startCursor. movePosition(QtGui.QTextCursor.StartOfBlock)
-		endCursor  . movePosition(QtGui.QTextCursor.EndOfBlock)
-
-		cur_tmp=QtGui.QTextCursor(startCursor)
-		cur_tmp.setPosition(endCursor.position(), QtGui.QTextCursor.KeepAnchor)
-		cur_tmp.deleteChar()
-
-TLDico = {"French":TLFrench,"English":TLEnglish}
-TLEnchantDico={"French":'fr_FR',"English":'en_UK'}
 
 
 def TLGuessLanguages(text):
@@ -319,24 +318,54 @@ def TLGuessLanguages(text):
 
 	k_max = TLPreferences['DFT_WRITING_LANGUAGE']
 	i_max = 0
-	for k,v in list(TLEnchantDico.items()):
-		d = enchant.Dict(v)
-		i = 0
-		for w in a:
-			if d.check(w):
-				i += 1
-		print("v,i : ",v,i)
-		if i>i_max:
-			i_max = i
-			k_max = k
+	for k,v in list(TLDico.items()):
+		if v.code_enchant in enchant.list_languages():
+			d = enchant.Dict(v.code_enchant)
+			i = 0
+			for w in a:
+				if d.check(w):
+					i += 1
+			if i>i_max:
+				i_max = i
+				k_max = k
 	return k_max
 
 
 
 
-class TLChoice(COChoice):			# bofff
-	elements_list = list(TLDico.keys())	# bofff
 
+# TLDico = {"French":TLFrench,"English":TLEnglish}
+# TLEnchantDico={"French":'fr_FR',"English":'en_UK'}
+
+
+## We upload all the dictionaries in ./languages/
+class TLDicoClass (dict):
+	def __getitem__(self,key):
+		if key==None:
+			# if key==None, returns the default one
+			return dict.__getitem__(self,TLPreferences['DFT_WRITING_LANGUAGE'])
+		if key not in self:
+			warnings.warn(("Unknown language specified `%s`,"
+											" take English instead")%key)
+			assert "English" in self, "I can not even get the english dictionary!"
+			return self["English"]
+		else:
+			return dict.__getitem__(self,key)
+
+TLDico = TLDicoClass()
+
+import pathlib
+f = pathlib.Path(__file__).absolute().parent
+f /= "./languages/"
+Language = TLLanguage # for compatibility with RTypography
+for lang_file in f.glob('*.py'):
+	with lang_file.open() as ff:
+		exec(ff.read())
+		TLDico[language.name] = language
+
+
+
+TLChoice = COChoice(sorted(TLDico.keys()))
 
 
 if __name__ == '__main__':

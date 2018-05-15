@@ -277,7 +277,7 @@ class TSStyleClassImage (TSStyleClassBlock):
 		if id_ != self.userPropertyId:
 			if cursor.hasSelection() :
 				cursor.clearSelection()
-			if cursor.block().text().strip()!='':
+			elif cursor.block().text().strip()!='':
 				cursor.insertBlock()
 			# cursor.insertText(TSPreferences['SEPARATOR_MOTIF'])
 			pos = cursor.position()

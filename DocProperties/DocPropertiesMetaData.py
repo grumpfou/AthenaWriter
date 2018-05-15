@@ -12,8 +12,8 @@ from PyQt5 import QtGui, QtCore, QtWidgets
 
 import xml.dom.minidom as XML
 from TextLanguages.TextLanguages import TLChoice
+from CommonObjects.CommonObjects import COChoice
 from ConstantsManager.ConstantsManager import CMConstantsManager
-from TextLanguages.TextLanguages import TLChoice
 from TextLanguages.TextLanguagesPreferences import TLPreferences
 from .DocPropertiesPreferences import DPPreferences
 
@@ -29,11 +29,12 @@ def getFirstElementsByTagName(node,name):
 
 
 
+
 class DPMetaData(CMConstantsManager):
 	start_defaults 	= dict(
 		author = (str,DPPreferences['DEFAULT_AUTHOR']),
 		date = (str,''),
-		language = (TLChoice,TLPreferences['DFT_WRITING_LANGUAGE']),
+		language = (TLChoice.copy,TLPreferences['DFT_WRITING_LANGUAGE']),
 		version = (float,-1),
 		lastpos = (int,-1),
 		profile = (int,0),
@@ -46,6 +47,7 @@ class DPMetaData(CMConstantsManager):
 		version = {'min':-1},
 		lastpos = {'min':-1},
 		)
+
 
 	@staticmethod
 	def init_from_xml_string(xml_string=None):
@@ -61,11 +63,12 @@ class DPMetaData(CMConstantsManager):
 			node	= getFirstElementsByTagName(node_structure,element)
 			if node!=None and node.hasChildNodes():
 				try :
+					print("node.childNodes[0].toxml()",node.childNodes[0].toxml())
 					information = type_(node.childNodes[0].toxml())
 					element_dict[element]=information
 				except ValueError:
-					print("Warning, metadata <"+element+\
-							"> do not fit the format")
+					print("Warning, metadata `%s` do not fit the format"%element)
+		print("element_dict",element_dict)
 		res.update(element_dict,protected=False)
 		return res
 

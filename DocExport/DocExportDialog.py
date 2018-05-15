@@ -54,7 +54,8 @@ class DEDialog(QtWidgets.QDialog):
 
 		# def
 		if source_d==None: source_d={}
-		self.source_d = CMConstantsManager.new_from_defaults(source_d,keys_list=self.keys_list)()
+		self.source_d = CMConstantsManager.new_from_defaults(
+										source_d,keys_list=self.keys_list)()
 
 
 		# # fill the fileds

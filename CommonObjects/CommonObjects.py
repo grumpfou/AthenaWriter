@@ -21,87 +21,76 @@ class COContrainedDict(dict):
 			raise KeyError('The key '+k+' is unkown for this ContrainedDict.')
 		return dict.__getitem__(self,k)
 
-class COOrderedDict(dict):
-	"""
-	A dictionnary where the order in which we putted the items is remembered
-	and displayed again in the same order
-	"""
-	def __init__(self,a=None):
-		if a!=None:
-			if type(a)==dict:
-				self.list_keys = list(a.keys())
-			elif type(a)==list:
-				self.list_keys = [v[0] for v in a]
-			dict.__init__(self,a)
-		else:
-			self.list_keys = []
-			dict.__init__(self)
+## REPLACED by collections.OrdedDict
+# class COOrderedDict(dict):
+# 	"""
+# 	A dictionnary where the order in which we putted the items is remembered
+# 	and displayed again in the same order
+# 	"""
+# 	def __init__(self,a=None):
+# 		if a!=None:
+# 			if type(a)==dict:
+# 				self.list_keys = list(a.keys())
+# 			elif type(a)==list:
+# 				self.list_keys = [v[0] for v in a]
+# 			dict.__init__(self,a)
+# 		else:
+# 			self.list_keys = []
+# 			dict.__init__(self)
+#
+# 	def keys(self):
+# 		return self.list_keys
+#
+# 	def items(self):
+# 		for k in list(self.keys()):
+# 			yield k,self[k]
+#
+# 	def __setitem__(self,k,v):
+# 		if k not in list(self.keys()):
+# 			self.list_keys.append(k)
+# 		dict.__setitem__(self,k,v)
+#
+# 	def pop(self,k):
+# 		res = dict.pop(self,k)
+# 		self.list_keys.remove(k)
+# 		return res
 
-	def keys(self):
-		return self.list_keys
-
-	def items(self):
-		for k in list(self.keys()):
-			yield k,self[k]
-
-	def __setitem__(self,k,v):
-		if k not in list(self.keys()):
-			self.list_keys.append(k)
-		dict.__setitem__(self,k,v)
-
-	def pop(self,k):
-		res = dict.pop(self,k)
-		self.list_keys.remove(k)
-		return res
 
 
-
-class COChoice:
-	elements_list = [None]
-	def __init__(self,value=None):
+class COChoice(list):
+	def __init__(self,*args,active_element=None,**kargs):
 		"""
 		A simple class where we have to chose an element in a given list.
 
-		- elements_list : the element list in which the choice has to be made
-		- value: the initial value. If None, we take the first element of the
-			list (unless if with_None is True, in which case, we take the None
-			element
-		- with_None : if True, add a None element to the list.
+		- *args,**kargs : the element list in which the choice has to be made
+		- active_element: the initial value. If None, we take the first element of the
+			list
 		"""
-		if value==None:
-			self.set_active_element(self.elements_list[0])
+		list.__init__(self,*args,**kargs)
+		if active_element==None:
+			self.set_active_element(self[0])
 		else:
-			self.set_active_element(value)
+			self.set_active_element(active_element)
 
 
-	def has_element(self,k):
-		return k in self.elements_list
-
-	def set_active_element(self,value,fromString=False):
+	def set_active_element(self,active_element,fromString=False):
 		"""
 		- fromString : if true, will look if the key corresponds to the string
 		version of each elements (usefull if None, is an element of the choice
 		in which case, the string 'None' will return the good value).
 		"""
 		if fromString:
-			dd = {str(k):k for k in self.elements_list}
-			if value not in list(dd.keys()):
-				raise ValueError('the value is not in the elements list')
-			self.active_element = dd[value]
+			dd = {str(k):k for k in self}
+			if active_element not in list(dd.keys()):
+				raise ValueError('the value `%s` is not in the elements list'%active_element)
+			self.active_element = dd[active_element]
 		else:
-			if value not in self.elements_list:
-				raise ValueError('the value is not in the elements list')
-			self.active_element = value
+			if active_element not in self:
+				raise ValueError('the value `%s` is not in the elements list'%active_element)
+			self.active_element = active_element
 
-
-
-	def __eq__(self,other):
-		if isinstance(other,self.__class__):
-			return self.active_element == other.active_element
-		else:
-			return self.active_element == other
-	def __ne__(self,other):
-		return not self.__eq__(other)
+	def __repr__(self):
+		return "'%s' of %s"%(self.active_element,list.__repr__(self))
 
 	def __str__(self):
 		return str(self.active_element)
@@ -109,5 +98,16 @@ class COChoice:
 	def __hash__(self):
 		return self.active_element.__hash__()
 
-	def copy(self):
-		return self.__class__(self.active_element)
+
+	def __eq__(self,other):
+		if isinstance(other,self.__class__):
+			other = other.active_element
+		return self.active_element==other
+
+	def __ne__(self,other):
+		return not (self.__eq__(other))
+
+	def copy(self,active_element=None):
+		if active_element==self: return self.copy()
+		if active_element==None: return self.__class__(self,active_element=self.active_element)
+		else: return self.__class__(self,active_element=active_element)

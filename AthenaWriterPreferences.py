@@ -8,16 +8,13 @@ from FileManagement.FileManagementPreferences import FMPreferences
 from TextEdit.TextEditPreferences 			  import TEPreferences
 from TextLanguages.TextLanguagesPreferences	  import TLPreferences
 from TextStyles.TextStylesPreferences	  	  import TSPreferences
-
-
 from ConfigLoading.ConfigLoading import CLPreferencesFiles
-from CommonObjects.CommonObjects import COOrderedDict
-
 
 
 import os
 import sys
 import pathlib
+import collections
 
 class AWPreferencesAbstract (CMConstantsManager):
 	start_defaults 	= dict(
@@ -72,7 +69,7 @@ class Class(dict):
 
 
 
-AWDictPreferences = COOrderedDict([
+AWDictPreferences = collections.OrderedDict([
 						('General'			, AWPreferences),
 						('ConfigLoading'	, CLPreferences),
 						('DocExport'		, DEPreferences),
