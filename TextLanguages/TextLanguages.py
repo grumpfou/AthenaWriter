@@ -6,7 +6,7 @@ below. Instance of this class will represent a language. They are defined in the
 ./languages directory.
 
 There is two ways of correcting the typography of the user :
-- by cheaking during the editing : every time the cursor moves (a char is
+- by checking during the editing : every time the cursor moves (a char is
 inserted or a the user moves the cursor), the software is cheking if the chars
 around the place leaved by the cursor are correct, and correct them if
 necessary. The method used to do so is correct_between_chars.
@@ -37,32 +37,15 @@ _ a __init__ method with :
 from PyQt5 import QtGui, QtCore, QtWidgets
 
 from .TextLanguagesPreferences import *
-# from .TextLanguagesRules import *
-from TextEdit.TextEditPreferences import TEHasEnchant, TEDictCharReplace
+from TextEdit.TextEditPreferences import TEHasEnchant, TEDictCharReplace,TEPreferences
 from TextStyles.TextStyles import TSManager
 from CommonObjects.CommonObjectsWord import *
-from CommonObjects.CommonObjects import COChoice
-
+from CommonObjects.CommonObjects import COChoice,COTextCursorFunctions
 if TEHasEnchant:
 	import enchant
 import warnings
 
-class TLRuleAbstract:
-	number = -1
-	title="None"
-	description="None"
-	profile = 0
-	in_languges=[]
-	def __init__(self,language):
-		self.language=language
-		pass
 
-	def __str__(self):
-		return self.title+'\n'+self.description
-
-	def correct(self,last_char,next_char,cursor):
-		raise NotImplementedError
-		return False
 
 
 
@@ -89,7 +72,7 @@ class TLLanguage:
 	def __init__(self,name,code,code_enchant,
 				afterCharRules=[],afterWordRules=[],shortcuts_insert={},
 				shortcuts_correction_plugins={},dict_autocorrection={},
-				profile=None,delimiters=[]):
+				profile=None,delimiters=[],quotes=None,inside_quotes=None):
 		"""
 		name: name of the Language (e.g.: "English" or "French")
 		code: code of the language (e.g.: "en" for English, "fr" for French)
@@ -105,19 +88,28 @@ class TLLanguage:
 		delimiters : list of 2-elements tuples (or dictionaries), that
 			represents the different delimiters of the language (like
 			parentheses, quotations marks, etc.).
+		quotes : List of two elements like ["«","»"] representing the opening
+			and closing quote marks of the language
+		inside_quotes : The character (ususally non-breakable space) that should
+			be after an openning quote and before a closing quote.
 		"""
-		for rule in afterCharRules : assert issubclass(rule,TLRuleAbstract)
-		for rule in afterWordRules : assert issubclass(rule,TLRuleAbstract)
-		self.afterCharRules = [rule(language=self) for rule in afterCharRules]
-		self.afterWordRules = [rule(language=self) for rule in afterWordRules]
+		# for rule in afterCharRules : assert issubclass(rule,TLRuleAbstract)
+		# for rule in afterWordRules : assert issubclass(rule,TLRuleAbstract)
 		self.name = name
 		self.code = code
 		self.code_enchant = code_enchant
+		assert not (quotes is None)
+
+		self.quotes =  quotes
+		self.inside_quotes = inside_quotes
+
 		self.shortcuts_insert = shortcuts_insert
 		self.shortcuts_correction_plugins .update( shortcuts_correction_plugins)
 		self.dictCharReplace = TEDictCharReplace
 		self.update(dict_autocorrection=dict_autocorrection,profile=profile)
 		self.delimiters = dict(delimiters)
+		self.afterCharRules = [rule(language=self) for rule in afterCharRules]
+		self.afterWordRules = [rule(language=self) for rule in afterWordRules]
 
 	def update(self,dict_autocorrection=False,profile=False):
 		if dict_autocorrection!=False:
@@ -137,8 +129,8 @@ class TLLanguage:
 		if block_id!=None and TSManager.dictStyle[block_id].protected :
 			return False
 
-		last_char=self.lastChar(cursor)
-		next_char=self.nextChar(cursor)
+		last_char = COTextCursorFunctions.lastChar(cursor)
+		next_char = COTextCursorFunctions.nextChar(cursor)
 
 		for rule in self.afterCharRules:
 			if self.profile <= rule.profile:
@@ -158,21 +150,23 @@ class TLLanguage:
 
 			l1 = len(self.delimiters[delim_key][0])
 			l2 = len(self.delimiters[delim_key][1])
-			
+
 			cursor.beginEditBlock()
 			cursor.setPosition(selectionStart)
-			cursor.insertText(self.delimiters[delim_key][0])
+			COTextCursorFunctions.insertText(cursor,self.delimiters[delim_key][0])
 			cursor.setPosition(selectionEnd+l1)
-			cursor.insertText(self.delimiters[delim_key][1])
+			COTextCursorFunctions.insertText(cursor,self.delimiters[delim_key][1])
 			cursor.setPosition(selectionStart+l1,QtGui.QTextCursor.MoveAnchor)
 			cursor.setPosition(selectionEnd+l1,QtGui.QTextCursor.KeepAnchor)
 			cursor.endEditBlock()
 			# cursor.setPosition(position+l1,QtGui.QTextCursor.KeepAnchor)
 
 		else:
-			cursor.insertText(self.delimiters[delim_key][0])
-			cursor.insertText(self.delimiters[delim_key][1])
+			cursor.beginEditBlock()
+			COTextCursorFunctions.insertText(cursor,self.delimiters[delim_key][0])
+			COTextCursorFunctions.insertText(cursor,self.delimiters[delim_key][1])
 			cursor.movePosition(QtGui.QTextCursor.Left,QtGui.QTextCursor.MoveAnchor,len(self.delimiters[delim_key][1]))
+			cursor.endEditBlock()
 
 		return cursor
 
@@ -192,7 +186,10 @@ class TLLanguage:
 					return '\n'
 			cur_tmp.movePosition (QtGui.QTextCursor.Left,
 												QtGui.QTextCursor.KeepAnchor)
-			return cur_tmp.selectedText ()
+			text = cur_tmp.selectedText ()
+			for k,v in self.dictCharReplace.items():
+				text = text.replace(v,k)
+			return text
 
 	def nextChar(self,cursor,n=1):
 		"""Return the right char at the distance n from the cursor (n=1 means
@@ -209,8 +206,29 @@ class TLLanguage:
 					return '\n'
 			cur_tmp.movePosition (QtGui.QTextCursor.Right,
 											QtGui.QTextCursor.KeepAnchor,n=n)
-			return cur_tmp.selectedText ()
+			text = cur_tmp.selectedText ()
+			for k,v in self.dictCharReplace.items():
+				text = text.replace(v,k)
+			return text
 
+	def correct_between_chars_recurs(self,cursor):
+		"""
+		Will check the typography at the position until no modification is made
+		or until the LIM_RECURSIV_TYPO is reached.
+		"""
+		i = 0
+		modified = False
+		res = True
+		res_list = []
+		while res and i<TEPreferences["LIM_RECURSIV_TYPO"]:
+			res = self.correct_between_chars(cursor)
+			res_list.append(res)
+			if res: modified=res
+			i = i+1
+
+		if i == TEPreferences["LIM_RECURSIV_TYPO"]:
+			print("LIM_RECURSIV_TYPO reached at posistion %i."%(cursor.position()))
+		return modified
 	def getWordUnderCursor(self,cursor,char_exception=None):
 		"""
 		Return the word under the cursor. char_exception in entry should be
@@ -244,18 +262,18 @@ class TLLanguage:
 		return cur_start.selectedText(),cur_start
 
 
-	def cheak_after_paste(self,cursor,nb_ite=-1):
+
+	def check_after_paste(self,cursor,nb_ite=-1):
 		"""Method that will be called after a paste. It will correct the
 		typography from the position of the cursor during nb_ite. If nb_ite is
 		-1 then it will do the correction until the end of the document."""
 		i=0
 		res=False
-		res_tmp=self.correct_between_chars(cursor)
+		res_tmp=self.correct_between_chars_recurs(cursor)
 		res=res or res_tmp
 		while cursor.movePosition(QtGui.QTextCursor.Right) and i!=nb_ite:
-			res_tmp=self.correct_between_chars(cursor)
+			res_tmp=self.correct_between_chars_recurs(cursor)
 			res=res or res_tmp
-			i+=1
 		return res
 
 	def afterWordWritten(self,cursor):
@@ -294,7 +312,7 @@ class TLLanguage:
 				replace=True
 
 			if replace:
-				cur_tmp.insertText(word)
+				COTextCursorFunctions.insertText(cur_tmp,word)
 			return replace
 		return False
 
@@ -331,41 +349,12 @@ def TLGuessLanguages(text):
 	return k_max
 
 
+from .TextLanguagesRules import *
 
 
 
 # TLDico = {"French":TLFrench,"English":TLEnglish}
 # TLEnchantDico={"French":'fr_FR',"English":'en_UK'}
-
-
-## We upload all the dictionaries in ./languages/
-class TLDicoClass (dict):
-	def __getitem__(self,key):
-		if key==None:
-			# if key==None, returns the default one
-			return dict.__getitem__(self,TLPreferences['DFT_WRITING_LANGUAGE'])
-		if key not in self:
-			warnings.warn(("Unknown language specified `%s`,"
-											" take English instead")%key)
-			assert "English" in self, "I can not even get the english dictionary!"
-			return self["English"]
-		else:
-			return dict.__getitem__(self,key)
-
-TLDico = TLDicoClass()
-
-import pathlib
-f = pathlib.Path(__file__).absolute().parent
-f /= "./languages/"
-Language = TLLanguage # for compatibility with RTypography
-for lang_file in f.glob('*.py'):
-	with lang_file.open() as ff:
-		exec(ff.read())
-		TLDico[language.name] = language
-
-
-
-TLChoice = COChoice(sorted(TLDico.keys()))
 
 
 if __name__ == '__main__':

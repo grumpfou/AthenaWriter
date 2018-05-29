@@ -20,7 +20,7 @@ class TEPreferencesAbstarct (CMConstantsManager):
 		DO_TYPOGRAPHY		 = (bool,True),
 		DO_DELIMITERS        = (bool,True),
 		AUTO_CORRECTION      = (bool,True),
-		LIM_RECURSIV_UNDO    = (int	,100),
+		LIM_RECURSIV_TYPO    = (int	,10),
 		FIND_LEN_CONTEXT 	 = (int	,10),
 		SPELL_CHECK 		 = (bool,True),
 		SPECIAL_CHAR_COLOR   = (str,"lightGray"),
@@ -41,8 +41,8 @@ class TEPreferencesAbstarct (CMConstantsManager):
 										"(parentheses, quotation marks etc.)",
 		AUTO_CORRECTION      = "Will perform the word auto-correction while "+\
 			"writing",
-		LIM_RECURSIV_UNDO    = "The limit of recursion to come back before "+\
-			"the typography correction while making an undo",
+		LIM_RECURSIV_TYPO    = "The limit of recursion to come back before "+\
+			"the typography correction.",
 		FIND_LEN_CONTEXT 	 = "Number of chars in which the context is "+\
 			"inserted when searching for a pattern.",
 		SPELL_CHECK 		 = "Set whenever the spelling needs to be check",
@@ -56,33 +56,33 @@ class TEPreferencesAbstarct (CMConstantsManager):
 TEPreferences=TEPreferencesAbstarct()
 
 
-def yieldBlockInSelection_WW(self,direction=1):
-	"""
-	- direction : if positive, then will go forward otherwise, it will go
-			backward.
-	"""
-	pos1=self.selectionStart()
-	pos2=self.selectionEnd ()
-
-	startCursor=QtGui.QTextCursor(self)
-	endCursor=QtGui.QTextCursor(self)
-	startCursor.setPosition(pos1)
-	endCursor  .setPosition(pos2)
-
-	if direction>=0:
-		bl=startCursor.block()
-		bl_end=endCursor.block()
-	else:
-		bl=endCursor.block()
-		bl_end=startCursor.block()
-
-	yield bl
-	while bl!=bl_end:
-		if direction>=0:bl=bl.next()
-		# if direction>=0:bl=bl.previous()
-		else:bl=bl.previous()
-		yield bl
-QtGui.QTextCursor.yieldBlockInSelection=yieldBlockInSelection_WW
+# def yieldBlockInSelection_WW(self,direction=1):
+# 	"""
+# 	- direction : if positive, then will go forward otherwise, it will go
+# 			backward.
+# 	"""
+# 	pos1=self.selectionStart()
+# 	pos2=self.selectionEnd ()
+#
+# 	startCursor=QtGui.QTextCursor(self)
+# 	endCursor=QtGui.QTextCursor(self)
+# 	startCursor.setPosition(pos1)
+# 	endCursor  .setPosition(pos2)
+#
+# 	if direction>=0:
+# 		bl=startCursor.block()
+# 		bl_end=endCursor.block()
+# 	else:
+# 		bl=endCursor.block()
+# 		bl_end=startCursor.block()
+#
+# 	yield bl
+# 	while bl!=bl_end:
+# 		if direction>=0:bl=bl.next()
+# 		# if direction>=0:bl=bl.previous()
+# 		else:bl=bl.previous()
+# 		yield bl
+# QtGui.QTextCursor.yieldBlockInSelection=yieldBlockInSelection_WW
 
 TEDictCharReplace = {'\u00A0':'⎵'}
 

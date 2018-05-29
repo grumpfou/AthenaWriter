@@ -14,8 +14,9 @@ from TextStyles.TextStyles				import *
 from TextStyles.TextStylesList			import TSStyleClassChar,TSStyleClassBlock,TSFontSizeAdjusmentDict
 from TextLanguages.TextLanguages		import *
 from FileManagement.FileManagement 		import FMTextFileManagement
-from ConstantsManager.ConstantsManager import CMConstantsManager
+from ConstantsManager.ConstantsManager 	import CMConstantsManager
 from ConstantsManager.ConstantsManagerWidget import CMWidget
+from CommonObjects.CommonObjects 		import COTextCursorFunctions
 
 from TextStyles.TextStylesPreferences			import TSPreferences
 from TextLanguages.TextLanguagesPreferences		import TLPreferences
@@ -135,9 +136,6 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 
 	def setup_connections(self):
-
-
-
 		self.actionCopy.triggered.connect(self.copy)
 		self.actionCut.triggered.connect(self.cut)
 		self.actionPaste.triggered.connect(self.paste)
@@ -212,8 +210,8 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 
 
-		if type=='plain' 	: cursor.insertText(text)
-		elif type=='html' 	: cursor.insertHtml (text)
+		if type=='plain' 	: cursor.insertText(text)  # TODO : change with COTextCursorFunctions
+		elif type=='html' 	: cursor.insertHtml (text)     # TODO : change with COTextCursorFunctions
 		elif type=='xml' 	:
 			cursor.insertText(text)
 			TSManager.fromXml(document)
@@ -221,7 +219,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		# Recheck the document typography if necessary
 		if TEPreferences["RECHECK_TEXT_OPEN"]:
-			self.language.cheak_after_paste(cursor)
+			self.language.check_after_paste(cursor)
 
 		self.blockSignals (True)
 		self.setDocument(document)
@@ -291,16 +289,15 @@ class TETextEdit(QtWidgets.QTextEdit):
 			cursor.clearSelection()
 			cursor.setPosition(self.old_cursor_position)
 			cursor.beginEditBlock()
-			modification=self.language.correct_between_chars(cursor)
 
-			# i=0
-			# while modification and i<TEPreferences["LIM_RECURSIV_UNDO"]:
-			# 	modification=self.language.correct_between_chars(cursor)
+			modification=self.language.correct_between_chars_recurs(cursor)
+
+
 			# 	if i>1:
 			# 		print("modification",modification)
 			# 	i+=1
-			# 	if i==TEPreferences["LIM_RECURSIV_UNDO"]:
-			# 		print ("Reach LIM_RECURSIV_UNDO in "
+			# 	if i==TEPreferences["LIM_RECURSIV_TYPO"]:
+			# 		print ("Reach LIM_RECURSIV_TYPO in "
 			# 				"SLOT_cursorPositionChanged")
 			cursor.endEditBlock()
 
@@ -378,7 +375,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 				return False
 		cursor=self.textCursor()
 		cursor.setPosition(0)
-		self.language.cheak_after_paste(cursor)
+		self.language.check_after_paste(cursor)
 
 	def SLOT_correctWord(self,word):
 		"""
@@ -388,9 +385,9 @@ class TETextEdit(QtWidgets.QTextEdit):
 		cursor.beginEditBlock()
 
 		cursor.removeSelectedText()
-		cursor.insertText(word)
+		COTextCursorFunctions.insertText(cursor,word)
 
-		self.language.cheak_after_paste(cursor,len(word) )
+		self.language.check_after_paste(cursor,len(word) )
 
 		cursor.endEditBlock()
 
@@ -487,7 +484,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 				# if there is an image, we remove the previous one
 				TSManager.inverseStyle(cursor,block_id)
 			res,cursor1 = TSManager.inverseStyle(cursor,TSStyleImage.userPropertyId)
-			cursor1.insertText(newfilepath)
+			COTextCursorFunctions.insertText(cursor1,newfilepath)
 			cursor.endEditBlock()
 			self.blockSignals(False)
 			self.somethingChanged .emit()
@@ -555,14 +552,14 @@ class TETextEdit(QtWidgets.QTextEdit):
 		else :
 			text=source.text()
 			text.replace("\t", " ")
-			for k,v in TEDictCharReplace.items():
-				text = text.replace(k,v)
-			cursor.insertText(text)
+			# for k,v in TEDictCharReplace.items():
+			# 	text = text.replace(k,v)
+			COTextCursorFunctions.insertText(cursor,text)
 			size = len(text)
 
 		cursor.setPosition(cursor_pos)
 		if TEPreferences["DO_TYPOGRAPHY"]:
-			self.language.cheak_after_paste(cursor,size)
+			self.language.check_after_paste(cursor,size)
 		cursor.setPosition(cursor_pos)
 		cursor.movePosition(
 				QtGui.QTextCursor.Right,
@@ -585,7 +582,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 		QtGui.QTextCursor(document).insertFragment(selection)
 
 		for k,v in TEDictCharReplace.items(): # replace the non-breakable spaces
-			cursor = document.find(v)
+			cursor = document.find(v) # TODO replace by COTextCursorFunctions.insertText
 			while not cursor.isNull():
 				cursor.insertText(k)
 				cursor = document.find(v,cursor.position()+1)
@@ -627,7 +624,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 
 		self.actionProfileDict[self.language.profile].setChecked(True)
 
-		## PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS
+		## TODO PROBLEM IF WE CHANGE OF LANGUAGE, WE KEEP THE OLD PLUGGINS
 		# add the language insert shortcuts to the class
 		dico = self.language.shortcuts_insert
 		mapper = QtCore.QSignalMapper(self)
@@ -664,6 +661,7 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.highlighter.rehighlight ()
 
 		if gui and not self.document().isEmpty():
+			# If there is a gui option, we check the typography
 			self.SLOT_actionRecheckTypography(ask=True)
 
 	def undo(self):
@@ -682,21 +680,26 @@ class TETextEdit(QtWidgets.QTextEdit):
 		if TEPreferences["DO_TYPOGRAPHY"]:
 			i=1
 			do_again=True
-			while do_again and i<TEPreferences["LIM_RECURSIV_UNDO"]:
+			while do_again and i<TEPreferences["LIM_RECURSIV_TYPO"]:
 				for j in range(i):
 					QtWidgets.QTextEdit.undo(self)
 				cursor=self.textCursor()
 				cursor.clearSelection()
 				do_again=self.language.correct_between_chars(cursor)
 				i+=1
-			if i==TEPreferences["LIM_RECURSIV_UNDO"]:
-				print("Reach LIM_RECURSIV_UNDO in undo")
+			if i==TEPreferences["LIM_RECURSIV_TYPO"]:
+				print("Reach LIM_RECURSIV_TYPO in undo")
 			self.old_cursor_position = self.textCursor().position() # update
 					# the cursor position
 		else:
 			QtWidgets.QTextEdit.undo(self)
 		self.blockSignals (False)
 
+	def insertPlainText(self,text):
+		for k,v in TEDictCharReplace.items():
+			text=text.replace(k,v)
+		print("text",text)
+		QtWidgets.QTextEdit.insertPlainText(self,text)
 
 	def keyPressEvent(self,event):
 		"""
@@ -713,10 +716,10 @@ class TETextEdit(QtWidgets.QTextEdit):
 			self.cut()
 		elif (event.key() == QtCore.Qt.Key_Tab):
 			pass # No tab…
-		elif TEPreferences['DO_DELIMITERS'] and (event.text() in self.language.delimiters):
+		elif  TEPreferences['DO_DELIMITERS'] and (event.text() in self.language.delimiters):
 			# QtWidgets.QTextEdit.keyPressEvent(self,event)
 			self.blockSignals(True)
-			cursor=self.language.insert_delimiters(event.text(),self.textCursor())
+			cursor = self.language.insert_delimiters(event.text(),self.textCursor())
 			# cursor = self.language.check_delimiters()
 			self.setTextCursor(cursor)
 			self.blockSignals(False)

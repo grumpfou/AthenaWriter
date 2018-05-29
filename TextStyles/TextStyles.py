@@ -3,37 +3,7 @@ import copy
 
 from .TextStylesPreferences import TSPreferences
 from .TextStylesList import *
-
-
-def yieldBlock(cursor):
-	"""return [block, cursor_with_selection]
-	- direction : if positive, then will go forward otherwise, it will go
-			backward.
-	"""
-
-	pos1=cursor.selectionStart()
-	pos2=cursor.selectionEnd ()
-
-	if pos1>pos2:
-		tmp = pos1
-		pos1=pos2
-		pos2=tmp
-
-	startCursor=QtGui.QTextCursor(cursor)
-	endCursor=QtGui.QTextCursor(cursor)
-	startCursor.setPosition(pos1)
-	endCursor  .setPosition(pos2)
-
-	while 	startCursor.blockNumber()<endCursor.blockNumber():
-		bl = startCursor.block()
-		startCursor.movePosition(QtGui.QTextCursor.EndOfBlock,QtGui.QTextCursor.KeepAnchor)
-		yield bl,startCursor
-		startCursor.clearSelection()
-		startCursor.movePosition(QtGui.QTextCursor.Right)
-
-	bl = startCursor.block()
-	startCursor.setPosition(pos2,QtGui.QTextCursor.KeepAnchor)
-	yield bl,startCursor
+from CommonObjects.CommonObjects import COTextCursorFunctions
 
 # def getBlockId(cursor):
 	# return cursor.blockFormat().property(QtGui.QTextFormat.UserProperty).toPyObject()
@@ -241,7 +211,7 @@ class TSClassManager:
 				style_begin_position = cursor1.position()-1
 
 	def recheckBlockStyle(self,cursor):
-		for block in cursor.yieldBlockInSelection():
+		for block,_ in COTextCursorFunctions.yieldBlock(cursor):
 			cursor1 = QtGui.QTextCursor(block)
 
 			qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)
@@ -271,7 +241,7 @@ class TSClassManager:
 			style = self.dictBlockStyle[style_id]
 			res,cursor1 = style.inverseId(cursor)
 			self.recheckBlockStyle(cursor1)
-			for bl,cursor2 in yieldBlock(cursor1):
+			for bl,cursor2 in COTextCursorFunctions.yieldBlock(cursor1):
 				cursor2.select(QtGui.QTextCursor.BlockUnderCursor)
 				self.recheckCharStyle(cursor2)
 			return res,cursor1
@@ -281,7 +251,7 @@ class TSClassManager:
 			style = self.dictCharStyle[style_id]
 			res,cursor1 = style.inverseId(cursor)
 			if cursor1.hasSelection():
-				for block,cursor2 in yieldBlock(cursor1):
+				for block,cursor2 in COTextCursorFunctions.yieldBlock(cursor1):
 					self.recheckCharStyle(cursor2)
 			else :
 				qtBlockFormat,qtCharFormat = self.getDefaultFormat(cursor1)
@@ -323,7 +293,7 @@ class TSClassManager:
 		res1 = False
 		res2 = False
 		## Let's remove the style of all the selected blocks
-		for block,cursor1 in yieldBlock(cursor):
+		for block,cursor1 in COTextCursorFunctions.yieldBlock(cursor):
 			qtBlockFormat_id = getBlockId(cursor1)
 
 			if qtBlockFormat_id in list(self.dictBlockStyle.keys()):

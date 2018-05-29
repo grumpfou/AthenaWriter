@@ -1,3 +1,14 @@
+from PyQt5 import QtGui, QtCore, QtWidgets
+############################# LIBRARIES AVAILABLE #############################
+import os,sys
+file_dir = os.path.realpath(os.path.dirname(__file__))
+p = os.path.join(file_dir,'../')
+sys.path.append(p)
+###############################################################################
+
+from TextEdit.TextEditPreferences import TEDictCharReplace
+
+
 class COError (Exception):pass
 
 class COContrainedDict(dict):
@@ -111,3 +122,89 @@ class COChoice(list):
 		if active_element==self: return self.copy()
 		if active_element==None: return self.__class__(self,active_element=self.active_element)
 		else: return self.__class__(self,active_element=active_element)
+
+
+class COTextCursorFunctions:
+	@staticmethod
+	def insertText(cursor,text):
+		for k,v in TEDictCharReplace.items():
+			text = text.replace(k,v)
+		cursor.insertText(text)
+
+	@staticmethod
+	def lastChar(cursor,n=1):
+		"""Return the left char at the distance n from the cursor (n=1 means
+		the one just on the left)."""
+		if cursor.atBlockStart():
+			return '\n'
+		else :
+			cur_tmp=QtGui.QTextCursor(cursor)
+			cur_tmp.clearSelection()
+			for i in range(n-1):
+				cur_tmp.movePosition(QtGui.QTextCursor.Left,
+												QtGui.QTextCursor.MoveAnchor)
+				if cur_tmp.atBlockStart():
+					return '\n'
+			cur_tmp.movePosition (QtGui.QTextCursor.Left,
+												QtGui.QTextCursor.KeepAnchor)
+			text = cur_tmp.selectedText ()
+			for k,v in TEDictCharReplace.items():
+				text = text.replace(v,k)
+			return text
+
+	@staticmethod
+	def nextChar(cursor,n=1):
+		"""Return the right char at the distance n from the cursor (n=1 means
+		the one just on the right)."""
+		if cursor.atBlockEnd():
+			return '\n'
+		else :
+			cur_tmp=QtGui.QTextCursor(cursor)
+			cur_tmp.clearSelection()
+			for i in range(n-1):
+				cur_tmp.movePosition(QtGui.QTextCursor.Right,
+												QtGui.QTextCursor.MoveAnchor)
+				if cur_tmp.atBlockEnd():
+					return '\n'
+			cur_tmp.movePosition (QtGui.QTextCursor.Right,
+											QtGui.QTextCursor.KeepAnchor,n=n)
+			text = cur_tmp.selectedText ()
+			for k,v in TEDictCharReplace.items():
+				text = text.replace(v,k)
+			return text
+
+	@classmethod
+	def lastNextChar(cls,cursor):
+		return cls.lastChar(cursor),cls.nextChar(cursor)
+
+
+	@staticmethod
+	def yieldBlock(cursor):
+		"""return [block, cursor_with_selection]
+		- direction : if positive, then will go forward otherwise, it will go
+				backward.
+		"""
+
+		pos1=cursor.selectionStart()
+		pos2=cursor.selectionEnd ()
+
+		if pos1>pos2:
+			tmp = pos1
+			pos1=pos2
+			pos2=tmp
+
+		startCursor=QtGui.QTextCursor(cursor)
+		endCursor=QtGui.QTextCursor(cursor)
+		startCursor.setPosition(pos1)
+		endCursor  .setPosition(pos2)
+
+		while 	startCursor.blockNumber()<endCursor.blockNumber():
+			bl = startCursor.block()
+			startCursor.movePosition(QtGui.QTextCursor.EndOfBlock,QtGui.QTextCursor.KeepAnchor)
+			yield bl,startCursor
+			startCursor.clearSelection()
+			startCursor.movePosition(QtGui.QTextCursor.Right)
+
+		bl = startCursor.block()
+		startCursor.setPosition(pos2,QtGui.QTextCursor.KeepAnchor)
+		yield bl,startCursor

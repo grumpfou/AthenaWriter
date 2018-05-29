@@ -31,7 +31,7 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 		# dict_autocorrection = FMAutoCorrectionFile.open()
 
 
-		self.textEdit = TETextEdit(
+		self.textEdit = TETextEdit(parent=self,
 						language_name=TLPreferences['DFT_WRITING_LANGUAGE'])
 
 		self.setCentralWidget (self.textEdit)
@@ -466,7 +466,6 @@ class AWWriterText(QtWidgets.QMainWindow,AWCore):
 					constants_manager = self.metadata,
 					skip_same_as_init = True
 					)
-		print("d",d)
 		if d and len(d)>0 :
 			self.metadata.update(d)
 			if 'language' in list(d.keys()):

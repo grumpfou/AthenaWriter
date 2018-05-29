@@ -32,6 +32,9 @@ import itertools
 import zipfile
 import shutil
 
+
+
+
 class AWCore:
 	class Error (Exception):
 		def __init__(self,raison):
